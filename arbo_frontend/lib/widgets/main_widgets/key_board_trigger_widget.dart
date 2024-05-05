@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class KeyBoardTrigger extends StatefulWidget {
   const KeyBoardTrigger({
@@ -21,8 +22,11 @@ class _KeyBoardTriggerState extends State<KeyBoardTrigger> {
   Widget build(BuildContext context) {
     return TextField(
       controller: _controller,
-
       showCursor: true, // Dynamically control cursor visibility
+
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[0-9a-zA-Zㄱ-ㅎ가-힣]')),
+      ],
 
       decoration: InputDecoration(
         counterText: '',
