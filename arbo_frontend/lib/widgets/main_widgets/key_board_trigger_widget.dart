@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 
 class KeyBoardTrigger extends StatefulWidget {
@@ -22,9 +23,6 @@ class _KeyBoardTriggerState extends State<KeyBoardTrigger> {
       controller: _controller,
 
       showCursor: true, // Dynamically control cursor visibility
-
-      // textDirection 속성 추가하여 왼쪽에서 오른쪽으로 텍스트 입력
-      textDirection: TextDirection.ltr,
 
       decoration: InputDecoration(
         counterText: '',
