@@ -1,5 +1,7 @@
+import 'package:arbo_frontend/screens/navigation_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'key_board_trigger_widget.dart';
 
@@ -25,20 +27,16 @@ class MainAppBar extends StatelessWidget implements PreferredSizeWidget {
       shadowColor: Colors.black,
       elevation: 2,
       foregroundColor: Colors.green,
-      toolbarHeight: 180, // toolbar의 height
+      toolbarHeight: 180, // toolbar의 height -> 나중에 비율화 해야된다.
       leadingWidth: screenWidth,
       leading: Padding(
         // title을 실행하기전에 보이는 아이콘이나 아이콘 버튼
-        padding: const EdgeInsets.all(10.0),
+        padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.menu),
-                ),
                 const Text(
                   'Arbo Logo',
                   style: TextStyle(fontSize: 30, fontWeight: FontWeight.w600),
@@ -65,9 +63,9 @@ class MainAppBar extends StatelessWidget implements PreferredSizeWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(
-                  width: 600,
-                  child: KeyBoardTrigger(labelText: '검색할 나무를 입력하세요'),
+                KeyBoardTrigger(
+                  labelText: '검색할 나무를 입력하세요',
+                  screenWidth: screenWidth,
                 ),
                 const SizedBox(
                   width: 10,
