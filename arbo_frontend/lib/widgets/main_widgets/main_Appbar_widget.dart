@@ -22,15 +22,15 @@ class MainAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      automaticallyImplyLeading: false, // 뒤로 가기 버튼 사용 유무
+      // automaticallyImplyLeading: false, // 뒤로 가기 버튼 사용 유무
       surfaceTintColor: Colors.white,
       shadowColor: Colors.black,
       elevation: 2,
       foregroundColor: Colors.green,
       toolbarHeight: 180, // toolbar의 height -> 나중에 비율화 해야된다.
-      leadingWidth: screenWidth,
-      leading: Padding(
-        // title을 실행하기전에 보이는 아이콘이나 아이콘 버튼
+
+      title: Padding(
+        // leading: title을 실행하기전에 보이는 아이콘이나 아이콘 버튼
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [

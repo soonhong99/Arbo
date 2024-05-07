@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 import '../widgets/main_widgets/main_Appbar_widget.dart';
+import 'main_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,11 +34,74 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     // 현재 화면의 가로 길이
-    final double screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: MainAppBar(screenWidth: screenWidth),
-      body: _widgetOptions[_selectedIndex],
+      body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return <Widget>[
+              SliverAppBar(
+                foregroundColor: Colors.green,
+                title: Row(
+                  children: [
+                    const Text('Weight Tracker'),
+                    const Spacer(), // 띄어쓰기
+                    TextButton(
+                      onPressed: () {
+                        // Navigate to MyPage
+                        Navigator.pushNamed(context,
+                            '/myPage'); // Replace with your actual route name
+                      },
+                      child: const Row(
+                        children: [
+                          Icon(Icons.person),
+                          Text('마이페이지'),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+              )
+            ];
+          },
+          body: _widgetOptions[_selectedIndex]),
+      // appBar: AppBar(
+      //   // automaticallyImplyLeading: false, // 뒤로 가기 버튼 사용 유무
+      //   surfaceTintColor: Colors.white,
+      //   shadowColor: Colors.black,
+      //   elevation: 2,
+      //   foregroundColor: Colors.green,
+      //   // toolbarHeight: 180, // toolbar의 height -> 나중에 비율화 해야된다.
+
+      //   title: Padding(
+      //     // leading: title을 실행하기전에 보이는 아이콘이나 아이콘 버튼
+      //     padding: const EdgeInsets.all(8.0),
+      //     child: Row(
+      //       mainAxisAlignment: MainAxisAlignment.start,
+      //       children: [
+      //         const Text(
+      //           '옹기종기',
+      //           style: TextStyle(fontSize: 30, fontWeight: FontWeight.w600),
+      //         ),
+      //         const Spacer(), // 띄어쓰기
+      //         TextButton(
+      //           onPressed: () {
+      //             // Navigate to MyPage
+      //             Navigator.pushNamed(context,
+      //                 '/myPage'); // Replace with your actual route name
+      //           },
+      //           child: const Row(
+      //             children: [
+      //               Icon(Icons.person),
+      //               Text('마이페이지'),
+      //             ],
+      //           ),
+      //         ),
+      //       ],
+      //     ),
+      //   ),
+      // ),
+      //MainAppBar(screenWidth: screenWidth),
+      // body: _widgetOptions[_selectedIndex],
       drawer: Drawer(
         // Add a ListView to the drawer. This ensures the user can scroll
         // through the options in the drawer if there isn't enough vertical
@@ -84,39 +148,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class MainScreen extends StatelessWidget {
-  const MainScreen({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: ListView(
-        padding: const EdgeInsets.all(8),
-        children: [
-          Container(
-            height: 500,
-            color: Colors.green[500],
-            child: const Center(child: Text('Entry A')),
-          ),
-          Container(
-            height: 500,
-            color: Colors.green[300],
-            child: const Center(child: Text('Entry B')),
-          ),
-          Container(
-            height: 500,
-            color: Colors.green[100],
-            child: const Center(child: Text('Entry C')),
-          ),
-        ],
       ),
     );
   }

@@ -17,8 +17,8 @@ class KeyBoardTrigger extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       // Icon + 여백 크기: 100
-      width: screenWidth - 100 < formalScreenWidth
-          ? screenWidth - 100
+      width: screenWidth - 200 < formalScreenWidth
+          ? screenWidth - 200
           : formalScreenWidth,
       child: TextField(
         showCursor: true, // Dynamically control cursor visibility
