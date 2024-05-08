@@ -12,9 +12,12 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      shortcuts: {
-        LogicalKeySet(LogicalKeyboardKey.space): const ActivateIntent(),
-      },
+      // https://stackoverflow.com/questions/74028226/space-bar-key-doesnt-work-on-textfields-flutter-web
+      shortcuts: Map.of(WidgetsApp.defaultShortcuts)
+        ..addAll({
+          LogicalKeySet(LogicalKeyboardKey.space): const ActivateIntent(),
+        }),
+
       home: const HomeScreen(),
     );
   }

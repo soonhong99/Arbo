@@ -12,7 +12,7 @@ class KeyBoardTrigger extends StatelessWidget {
   final String labelText;
   final double screenWidth;
   final double formalScreenWidth = 600;
-
+  // focus node to capture keyboard events
   @override
   Widget build(BuildContext context) {
     return SizedBox(
