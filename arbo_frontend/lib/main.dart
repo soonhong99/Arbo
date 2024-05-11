@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:arbo_frontend/screens/home_screen.dart';
+import 'package:arbo_frontend/root.dart';
 import 'package:flutter/services.dart';
 
 void main() {
@@ -18,7 +18,7 @@ class App extends StatelessWidget {
           LogicalKeySet(LogicalKeyboardKey.space): const ActivateIntent(),
         }),
 
-      home: const HomeScreen(),
+      home: const Root(),
     );
   }
 }

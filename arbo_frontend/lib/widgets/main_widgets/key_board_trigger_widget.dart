@@ -17,8 +17,8 @@ class KeyBoardTrigger extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       // Icon + 여백 크기: 100
-      width: screenWidth - 200 < formalScreenWidth
-          ? screenWidth - 200
+      width: screenWidth - 250 < formalScreenWidth
+          ? screenWidth - 250
           : formalScreenWidth,
       child: TextField(
         showCursor: true, // Dynamically control cursor visibility
@@ -31,7 +31,7 @@ class KeyBoardTrigger extends StatelessWidget {
 
         decoration: const InputDecoration(
           counterText: '',
-          labelText: '검색할 나무를 입력하세요',
+          labelText: '검색할 게시글을 입력하세요',
           labelStyle: TextStyle(color: Colors.black26),
           focusedBorder: UnderlineInputBorder(
             borderSide: BorderSide(width: 1, color: Colors.black12),
