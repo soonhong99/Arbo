@@ -1,3 +1,4 @@
+import 'package:arbo_frontend/root.dart';
 import 'package:flutter/material.dart';
 
 class SpecificPostScreen extends StatelessWidget {
@@ -8,7 +9,6 @@ class SpecificPostScreen extends StatelessWidget {
   final int likes;
   final int comments;
   final DateTime timestamp;
-  final Widget bottomNavigationBar;
 
   const SpecificPostScreen({
     super.key,
@@ -19,7 +19,6 @@ class SpecificPostScreen extends StatelessWidget {
     required this.likes,
     required this.comments,
     required this.timestamp,
-    required this.bottomNavigationBar,
   });
 
   @override
@@ -87,7 +86,7 @@ class SpecificPostScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: bottomNavigationBar,
+      // bottomNavigationBar: const rootObject.Initialize(),
     );
   }
 }

@@ -9,7 +9,6 @@ class SimplePostWidget extends StatelessWidget {
   final int likes;
   final int comments;
   final DateTime timestamp;
-  final Widget bottomNavigationBar;
 
   const SimplePostWidget({
     super.key,
@@ -20,7 +19,6 @@ class SimplePostWidget extends StatelessWidget {
     required this.comments,
     required this.timestamp,
     required this.postTopic,
-    required this.bottomNavigationBar,
   });
 
   @override
@@ -31,7 +29,6 @@ class SimplePostWidget extends StatelessWidget {
           context,
           MaterialPageRoute(
               builder: (context) => SpecificPostScreen(
-                  bottomNavigationBar: bottomNavigationBar,
                   postTopic: postTopic,
                   nickname: nickname,
                   title: title,

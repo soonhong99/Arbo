@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:arbo_frontend/widgets/main_widgets/key_board_trigger_widget.dart';
 
 class MainScreen extends StatefulWidget {
-  final Widget bottomNavigationBar;
   const MainScreen({
     super.key,
-    required this.bottomNavigationBar,
   });
 
   @override
@@ -144,7 +142,6 @@ class _MainScreenState extends State<MainScreen> {
           child: Column(
             children: [
               SimplePostWidget(
-                bottomNavigationBar: widget.bottomNavigationBar,
                 postTopic: '경제',
                 nickname: '난나야',
                 //thumbnailUrl: '',

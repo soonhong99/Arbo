@@ -13,44 +13,8 @@ class Root extends StatefulWidget {
 }
 
 class _RootState extends State<Root> {
+  // home page, 대자보 page, 소자보 page구분.
   int _selectedIndex = 0;
-  late Widget _bottomNavigationBar;
-  @override
-  void initState() {
-    super.initState();
-    _bottomNavigationBar = BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.arrow_back),
-          label: 'Previous',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.arrow_forward),
-          label: 'Next',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.refresh),
-          label: 'Refresh',
-        ),
-      ],
-      currentIndex: _selectedIndex,
-      selectedItemColor: Colors.blue,
-      onTap: (index) {
-        // 각 버튼에 대한 탭 핸들러
-        switch (index) {
-          case 0:
-            _previousPage();
-            break;
-          case 1:
-            _nextPage();
-            break;
-          case 2:
-            _refreshPage();
-            break;
-        }
-      },
-    );
-  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -70,7 +34,11 @@ class _RootState extends State<Root> {
     setState(() {
       if (_selectedIndex > 0) {
         _selectedIndex--;
+      } else {
+        // 이전 페이지가 없으면 현재 페이지를 팝하여 이전 화면으로 이동합니다.
+        Navigator.pop(context);
       }
+      print(_selectedIndex);
     });
   }
 
@@ -80,6 +48,7 @@ class _RootState extends State<Root> {
       if (_selectedIndex < _pages.length - 1) {
         _selectedIndex++;
       }
+      print(_selectedIndex);
     });
   }
 
@@ -94,7 +63,7 @@ class _RootState extends State<Root> {
   Widget build(BuildContext context) {
     // 현재 화면의 가로 길이
     final List<Widget> widgetOptions = <Widget>[
-      MainScreen(bottomNavigationBar: _bottomNavigationBar),
+      const MainScreen(),
       const Text(
         'Index 1: 대자보',
       ),
@@ -169,7 +138,42 @@ class _RootState extends State<Root> {
           ],
         ),
       ),
-      bottomNavigationBar: _bottomNavigationBar,
+      bottomNavigationBar: InitializeBotNavi(),
+    );
+  }
+
+  BottomNavigationBar InitializeBotNavi() {
+    return BottomNavigationBar(
+      items: const <BottomNavigationBarItem>[
+        BottomNavigationBarItem(
+          icon: Icon(Icons.arrow_back),
+          label: 'Previous',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.arrow_forward),
+          label: 'Next',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.refresh),
+          label: 'Refresh',
+        ),
+      ],
+      currentIndex: _selectedIndex,
+      selectedItemColor: Colors.blue,
+      onTap: (index) {
+        // 각 버튼에 대한 탭 핸들러
+        switch (index) {
+          case 0:
+            _previousPage();
+            break;
+          case 1:
+            _nextPage();
+            break;
+          case 2:
+            _refreshPage();
+            break;
+        }
+      },
     );
   }
 
