@@ -1,7 +1,6 @@
-import 'package:arbo_frontend/screens/root_screen.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:arbo_frontend/resources/previous_data.dart';
+import 'package:arbo_frontend/resources/history_data.dart';
 
 // 무슨 댓글인지, 하트를 누르면 하트 수가 늘어나고, 댓글을 쓸 수 있게 하는 기능 구현
 class SpecificPostScreen extends StatelessWidget {
@@ -53,8 +52,6 @@ class SpecificPostScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 방문기록 추가
-    addPageToHistory(toMap());
     return Scaffold(
       // 다시 돌아갈 수 있는 홈페이지 버튼도 있으면 좋을 듯
       appBar: AppBar(

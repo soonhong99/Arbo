@@ -1,4 +1,4 @@
-import 'package:arbo_frontend/resources/previous_data.dart';
+import 'package:arbo_frontend/resources/history_data.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -17,27 +17,22 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
   void _previousPage() {
     setState(() {
       Navigator.pop(context);
-      if (page_location != 0) {
-        page_location--;
-      }
-      print(
-          'page location: $page_location, page length: ${previousPageList.length}');
+      print('page location: $page_location, page length: ${pageList.length}');
     });
   }
 
   // 다음 페이지로 이동 fix it
   void _nextPage() {
     setState(() {
-      final lastVisitedPage = getNextVisitedPage();
-      if (lastVisitedPage != null && page_location != previousPageList.length) {
+      // lastVisitedPage: 아직 page location이 바뀌기 전이므로 바로 전 페이지의 값들을 갖고 있다.
+      final lastVisitedPage = getLastVisitedPage();
+
+      if (lastVisitedPage != null && page_location <= pageList.length) {
         Navigator.pushNamed(
           context,
           SpecificPostScreen.routeName,
           arguments: lastVisitedPage,
         );
-        page_location++;
-        print(
-            'page location: $page_location, page length: ${previousPageList.length}');
       }
     });
   }
@@ -47,7 +42,6 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
     setState(() {
       // 현재 페이지를 다시 그립니다.
     });
-    print('way!');
   }
 
   @override
@@ -64,8 +58,7 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
         BottomNavigationBarItem(
           icon: Icon(
             Icons.arrow_forward,
-            color: (page_location == previousPageList.length ||
-                    previousPageList.isEmpty)
+            color: (page_location == pageList.length || pageList.isEmpty)
                 ? Colors.grey
                 : Colors.blue,
           ),
@@ -82,11 +75,13 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
         switch (index) {
           case 0:
             if (page_location != 0) {
+              page_location--;
               _previousPage();
             }
             break;
           case 1:
-            if (page_location < previousPageList.length) {
+            if (page_location < pageList.length) {
+              page_location++;
               _nextPage();
             }
             break;

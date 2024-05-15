@@ -1,8 +1,8 @@
 // previous_specific_data.dart
-import 'package:flutter/material.dart';
 
-class PreviousSpecificData {
-  static Map<String, dynamic> previousSpecific = {
+// 잠시 데이터들을 저장하는 보관소
+class SpecificData {
+  static Map<String, dynamic> specificData = {
     'postTopic': '',
     'nickname': '',
     'title': '',
@@ -12,6 +12,7 @@ class PreviousSpecificData {
     'timestamp': DateTime.now().toIso8601String(),
   };
 
+  // previous Specific Map에 내용들 추가.
   static void updateData({
     required String postTopic,
     required String nickname,
@@ -21,7 +22,7 @@ class PreviousSpecificData {
     required int comments,
     required DateTime timestamp,
   }) {
-    previousSpecific = {
+    specificData = {
       'postTopic': postTopic,
       'nickname': nickname,
       'title': title,

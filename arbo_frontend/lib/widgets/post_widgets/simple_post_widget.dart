@@ -1,4 +1,5 @@
-import 'package:arbo_frontend/resources/previous_specific_data.dart';
+import 'package:arbo_frontend/resources/history_data.dart';
+import 'package:arbo_frontend/resources/specific_data.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -26,7 +27,7 @@ class SimplePostWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        PreviousSpecificData.updateData(
+        SpecificData.updateData(
             postTopic: postTopic,
             nickname: nickname,
             title: title,
@@ -35,7 +36,10 @@ class SimplePostWidget extends StatelessWidget {
             comments: comments,
             timestamp: timestamp);
         Navigator.pushNamed(context, SpecificPostScreen.routeName,
-            arguments: PreviousSpecificData.previousSpecific);
+            arguments: SpecificData.specificData);
+        // 방문기록 추가
+        page_location++;
+        addPageToHistory(SpecificData.specificData);
       },
       child: Container(
         padding: const EdgeInsets.all(8.0),
