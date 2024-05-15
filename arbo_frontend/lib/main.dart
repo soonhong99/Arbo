@@ -1,5 +1,7 @@
+import 'package:arbo_frontend/resources/previous_specific_data.dart';
+import 'package:arbo_frontend/screens/root_screen.dart';
+import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:arbo_frontend/root.dart';
 import 'package:flutter/services.dart';
 
 void main() {
@@ -17,8 +19,14 @@ class App extends StatelessWidget {
         ..addAll({
           LogicalKeySet(LogicalKeyboardKey.space): const ActivateIntent(),
         }),
-
-      home: const Root(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const RootScreen(),
+        SpecificPostScreen.routeName: (context) {
+          final args = PreviousSpecificData.previousSpecific;
+          return SpecificPostScreen.fromMap(args);
+        },
+      },
     );
   }
 }

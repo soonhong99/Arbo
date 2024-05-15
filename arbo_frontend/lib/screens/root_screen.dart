@@ -1,18 +1,18 @@
+import 'package:arbo_frontend/widgets/main_widgets/main_widget.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
+import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-import 'screens/main_screen.dart';
-
-class Root extends StatefulWidget {
-  const Root({super.key});
+class RootScreen extends StatefulWidget {
+  const RootScreen({super.key});
 
   @override
-  State<Root> createState() => _RootState();
+  State<RootScreen> createState() => _RootScreenState();
 }
 
-class _RootState extends State<Root> {
+class _RootScreenState extends State<RootScreen> {
   // home page, 대자보 page, 소자보 page구분.
   int _selectedIndex = 0;
 
@@ -63,7 +63,7 @@ class _RootState extends State<Root> {
   Widget build(BuildContext context) {
     // 현재 화면의 가로 길이
     final List<Widget> widgetOptions = <Widget>[
-      const MainScreen(),
+      const MainWidget(),
       const Text(
         'Index 1: 대자보',
       ),
@@ -138,42 +138,7 @@ class _RootState extends State<Root> {
           ],
         ),
       ),
-      bottomNavigationBar: InitializeBotNavi(),
-    );
-  }
-
-  BottomNavigationBar InitializeBotNavi() {
-    return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.arrow_back),
-          label: 'Previous',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.arrow_forward),
-          label: 'Next',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.refresh),
-          label: 'Refresh',
-        ),
-      ],
-      currentIndex: _selectedIndex,
-      selectedItemColor: Colors.blue,
-      onTap: (index) {
-        // 각 버튼에 대한 탭 핸들러
-        switch (index) {
-          case 0:
-            _previousPage();
-            break;
-          case 1:
-            _nextPage();
-            break;
-          case 2:
-            _refreshPage();
-            break;
-        }
-      },
+      bottomNavigationBar: const BotNaviWidget(),
     );
   }
 

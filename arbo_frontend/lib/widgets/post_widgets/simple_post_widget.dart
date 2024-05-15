@@ -1,3 +1,4 @@
+import 'package:arbo_frontend/resources/previous_specific_data.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -25,19 +26,16 @@ class SimplePostWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => SpecificPostScreen(
-                  postTopic: postTopic,
-                  nickname: nickname,
-                  title: title,
-                  content: content,
-                  likes: likes,
-                  comments: comments,
-                  timestamp: timestamp),
-              fullscreenDialog: true),
-        );
+        PreviousSpecificData.updateData(
+            postTopic: postTopic,
+            nickname: nickname,
+            title: title,
+            content: content,
+            likes: likes,
+            comments: comments,
+            timestamp: timestamp);
+        Navigator.pushNamed(context, SpecificPostScreen.routeName,
+            arguments: PreviousSpecificData.previousSpecific);
       },
       child: Container(
         padding: const EdgeInsets.all(8.0),
