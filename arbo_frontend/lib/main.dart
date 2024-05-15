@@ -1,4 +1,5 @@
 import 'package:arbo_frontend/resources/specific_data.dart';
+import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/screens/root_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:flutter/material.dart';
@@ -26,6 +27,7 @@ class App extends StatelessWidget {
           final args = SpecificData.specificData;
           return SpecificPostScreen.fromMap(args);
         },
+        CreatePostScreen.routeName: (context) => const CreatePostScreen(),
       },
     );
   }

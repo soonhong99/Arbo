@@ -1,4 +1,5 @@
 import 'package:arbo_frontend/resources/history_data.dart';
+import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -12,6 +13,10 @@ class BotNaviWidget extends StatefulWidget {
 }
 
 class _BotNaviWidgetState extends State<BotNaviWidget> {
+  void _navigateToScreen(String routeName) {
+    Navigator.pushNamed(context, routeName);
+  }
+
   // 이전 페이지로 이동 fix it
   // 인자로 전달된 전 페이지로 넘어간다.
   void _previousPage() {
@@ -47,29 +52,37 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      items: <BottomNavigationBarItem>[
+      type: BottomNavigationBarType.fixed,
+      items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
           icon: Icon(
             Icons.arrow_back,
-            color: page_location == 0 ? Colors.grey : Colors.blue,
+            color: Colors.blue,
           ),
           label: 'Previous',
         ),
         BottomNavigationBarItem(
           icon: Icon(
             Icons.arrow_forward,
-            color: (page_location == pageList.length || pageList.isEmpty)
-                ? Colors.grey
-                : Colors.blue,
+            color: Colors.blue,
           ),
           label: 'Next',
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.refresh),
+        BottomNavigationBarItem(
+          icon: Icon(
+            Icons.refresh,
+            color: Colors.blue,
+          ),
           label: 'Refresh',
         ),
+        BottomNavigationBarItem(
+          icon: Icon(
+            Icons.create,
+            color: Colors.blue,
+          ),
+          label: 'Write',
+        ),
       ],
-      selectedItemColor: Colors.blue,
       onTap: (index) {
         // 각 버튼에 대한 탭 핸들러
         switch (index) {
@@ -87,6 +100,9 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
             break;
           case 2:
             _refreshPage();
+            break;
+          case 3:
+            _navigateToScreen(CreatePostScreen.routeName);
             break;
         }
       },

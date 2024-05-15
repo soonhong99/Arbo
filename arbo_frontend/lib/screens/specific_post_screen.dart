@@ -59,6 +59,7 @@ class SpecificPostScreen extends StatelessWidget {
         shadowColor: Colors.black,
         elevation: 2,
         foregroundColor: Colors.black,
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
