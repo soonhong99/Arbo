@@ -149,6 +149,13 @@ class _RootScreenState extends State<RootScreen> {
           _selectedIndex == 1, // Adjust initial expansion based on selection
       children: [
         ListTile(
+          title: const Text('자유'),
+          onTap: () {
+            _onItemTapped(1); // Adjust index based on selected category
+            Navigator.pop(context);
+          },
+        ),
+        ListTile(
           title: const Text('정치'),
           onTap: () {
             _onItemTapped(1); // Adjust index based on selected category

@@ -12,7 +12,8 @@ class CreatePostScreen extends StatefulWidget {
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final _formKey = GlobalKey<FormState>();
   String _title = '';
-  String _topic = '';
+  String _topic = '자유';
+  String _scale = '대자보';
   String _content = '';
 
   void _savePost() {
@@ -50,10 +51,47 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 },
                 onSaved: (value) => _title = value!,
               ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Topic'),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(labelText: 'Scale'),
+                value: _scale,
+                items: <String>['대자보', '소자보']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _scale = newValue!;
+                  });
+                },
                 validator: (value) {
-                  return value!.isEmpty ? 'Please enter a topic' : null;
+                  return value == null || value.isEmpty
+                      ? 'Please select a scale'
+                      : null;
+                },
+                onSaved: (value) => _scale = value!,
+              ),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(labelText: 'Topic'),
+                value: _topic,
+                items: <String>['정치', '경제', '사회', '정보', '호소', '자유']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _topic = newValue!;
+                  });
+                },
+                validator: (value) {
+                  return value == null || value.isEmpty
+                      ? 'Please select a topic'
+                      : null;
                 },
                 onSaved: (value) => _topic = value!,
               ),
