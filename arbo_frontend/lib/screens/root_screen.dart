@@ -1,9 +1,10 @@
+import 'package:arbo_frontend/widgets/User_widgets/user_info_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/main_widget.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RootScreen extends StatefulWidget {
   const RootScreen({super.key});
@@ -13,8 +14,8 @@ class RootScreen extends StatefulWidget {
 }
 
 class _RootScreenState extends State<RootScreen> {
-  // home page, 대자보 page, 소자보 page구분.
   int _selectedIndex = 0;
+  User? _user; // Firebase user object to track authentication state
 
   void _onItemTapped(int index) {
     setState(() {
@@ -22,54 +23,48 @@ class _RootScreenState extends State<RootScreen> {
     });
   }
 
-  // fix it
+  void _previousPage() {
+    setState(() {
+      if (_selectedIndex > 0) {
+        _selectedIndex--;
+      } else {
+        Navigator.pop(context);
+      }
+    });
+  }
+
+  void _nextPage() {
+    setState(() {
+      if (_selectedIndex < _pages.length - 1) {
+        _selectedIndex++;
+      }
+    });
+  }
+
+  void _refreshPage() {
+    setState(() {
+      // Refresh current page
+    });
+  }
+
   static final List<Widget> _pages = <Widget>[
     const Text('Home'),
     const Text('Search'),
     const Text('Profile'),
   ];
 
-  // 이전 페이지로 이동 fix it
-  void _previousPage() {
+  void _updateUser(User? user) {
     setState(() {
-      if (_selectedIndex > 0) {
-        _selectedIndex--;
-      } else {
-        // 이전 페이지가 없으면 현재 페이지를 팝하여 이전 화면으로 이동합니다.
-        Navigator.pop(context);
-      }
-      print(_selectedIndex);
-    });
-  }
-
-  // 다음 페이지로 이동 fix it
-  void _nextPage() {
-    setState(() {
-      if (_selectedIndex < _pages.length - 1) {
-        _selectedIndex++;
-      }
-      print(_selectedIndex);
-    });
-  }
-
-  // 현재 페이지 새로 고침
-  void _refreshPage() {
-    setState(() {
-      // 현재 페이지를 다시 그립니다.
+      _user = user;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // 현재 화면의 가로 길이
     final List<Widget> widgetOptions = <Widget>[
       const MainWidget(),
-      const Text(
-        'Index 1: 대자보',
-      ),
-      const Text(
-        'Index 2: 소자보',
-      ),
+      const Text('Index 1: 대자보'),
+      const Text('Index 2: 소자보'),
     ];
     return Scaffold(
       backgroundColor: Colors.white,
@@ -83,17 +78,29 @@ class _RootScreenState extends State<RootScreen> {
               title: Row(
                 children: [
                   const Text('자보'),
-                  const Spacer(), // 띄어쓰기
-
+                  const Spacer(),
                   TextButton(
                     onPressed: () {
-                      // 마이페이지 버튼을 눌렀을 때 로그인 창을 팝업으로 표시합니다.
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return const LoginPopupWidget(); // LoginPage 위젯을 반환합니다.
-                        },
-                      );
+                      if (_user == null) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return LoginPopupWidget(
+                              onLoginSuccess: (user) {
+                                _updateUser(user);
+                              },
+                            );
+                          },
+                        );
+                      } else {
+                        // Display user information
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return UserInfoWidget(user: _user!);
+                          },
+                        );
+                      }
                     },
                     child: const Row(
                       children: [
@@ -110,11 +117,7 @@ class _RootScreenState extends State<RootScreen> {
         body: widgetOptions[_selectedIndex],
       ),
       drawer: Drawer(
-        // Add a ListView to the drawer. This ensures the user can scroll
-        // through the options in the drawer if there isn't enough vertical
-        // space to fit everything.
         child: ListView(
-          // Important: Remove any padding from the ListView.
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
@@ -127,9 +130,7 @@ class _RootScreenState extends State<RootScreen> {
               title: const Text('Home'),
               selected: _selectedIndex == 0,
               onTap: () {
-                // Update the state of the app
                 _onItemTapped(0);
-                // Then close the drawer
                 Navigator.pop(context);
               },
             ),
@@ -145,48 +146,47 @@ class _RootScreenState extends State<RootScreen> {
   ExpansionTile navigation_toggle(BuildContext context, String postSize) {
     return ExpansionTile(
       title: Text(postSize),
-      initiallyExpanded:
-          _selectedIndex == 1, // Adjust initial expansion based on selection
+      initiallyExpanded: _selectedIndex == 1,
       children: [
         ListTile(
           title: const Text('자유'),
           onTap: () {
-            _onItemTapped(1); // Adjust index based on selected category
+            _onItemTapped(1);
             Navigator.pop(context);
           },
         ),
         ListTile(
           title: const Text('정치'),
           onTap: () {
-            _onItemTapped(1); // Adjust index based on selected category
+            _onItemTapped(1);
             Navigator.pop(context);
           },
         ),
         ListTile(
           title: const Text('경제'),
           onTap: () {
-            _onItemTapped(1); // Adjust index based on selected category
+            _onItemTapped(1);
             Navigator.pop(context);
           },
         ),
         ListTile(
           title: const Text('사회'),
           onTap: () {
-            _onItemTapped(1); // Adjust index based on selected category
+            _onItemTapped(1);
             Navigator.pop(context);
           },
         ),
         ListTile(
           title: const Text('정보'),
           onTap: () {
-            _onItemTapped(1); // Adjust index based on selected category
+            _onItemTapped(1);
             Navigator.pop(context);
           },
         ),
         ListTile(
           title: const Text('호소'),
           onTap: () {
-            _onItemTapped(1); // Adjust index based on selected category
+            _onItemTapped(1);
             Navigator.pop(context);
           },
         ),
