@@ -1,10 +1,11 @@
-import 'package:arbo_frontend/widgets/User_widgets/user_info_widget.dart';
+import 'package:arbo_frontend/screens/user_info_screen.dart';
 import 'package:arbo_frontend/widgets/main_widgets/main_widget.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RootScreen extends StatefulWidget {
   const RootScreen({super.key});
@@ -16,6 +17,7 @@ class RootScreen extends StatefulWidget {
 class _RootScreenState extends State<RootScreen> {
   int _selectedIndex = 0;
   User? _user; // Firebase user object to track authentication state
+  String? _nickname; // To store the nickname of the user
 
   void _onItemTapped(int index) {
     setState(() {
@@ -53,10 +55,28 @@ class _RootScreenState extends State<RootScreen> {
     const Text('Profile'),
   ];
 
-  void _updateUser(User? user) {
-    setState(() {
-      _user = user;
-    });
+  void _updateUser(User? user) async {
+    if (user != null) {
+      // Fetch the user's nickname from Firestore
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      setState(() {
+        _user = user;
+        _nickname = userDoc['닉네임'];
+      });
+    } else {
+      setState(() {
+        _user = null;
+        _nickname = null;
+      });
+    }
+  }
+
+  void _logout() {
+    FirebaseAuth.instance.signOut();
+    _updateUser(null);
   }
 
   @override
@@ -79,6 +99,19 @@ class _RootScreenState extends State<RootScreen> {
                 children: [
                   const Text('자보'),
                   const Spacer(),
+                  if (_user != null) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Text(
+                        '$_nickname 님, 환영합니다',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.logout),
+                      onPressed: _logout,
+                    ),
+                  ],
                   TextButton(
                     onPressed: () {
                       if (_user == null) {
@@ -97,7 +130,7 @@ class _RootScreenState extends State<RootScreen> {
                         showDialog(
                           context: context,
                           builder: (BuildContext context) {
-                            return UserInfoWidget(user: _user!);
+                            return UserInfoScreen(user: _user!);
                           },
                         );
                       }
@@ -108,7 +141,7 @@ class _RootScreenState extends State<RootScreen> {
                         Text('마이페이지'),
                       ],
                     ),
-                  )
+                  ),
                 ],
               ),
             )

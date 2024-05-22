@@ -1,5 +1,4 @@
-import 'package:arbo_frontend/screens/root_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -20,6 +19,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   final TextEditingController _emailController = TextEditingController();
 
   bool isLoading = false;
+  String? errorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +57,14 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
                 padding: EdgeInsets.only(top: 16.0),
                 child: CircularProgressIndicator(),
               ),
+            if (errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Text(
+                  errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
           ],
         ),
       ),
@@ -90,6 +98,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   void signUp() async {
     setState(() {
       isLoading = true;
+      errorMessage = null;
     });
     try {
       // 회원가입
@@ -117,18 +126,33 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     } on FirebaseAuthException catch (e) {
       setState(() {
         isLoading = false;
+        errorMessage = getErrorMessage(e.code);
       });
-
-      if (e.code == 'weak-password') {
-        print('The password provided is too weak.');
-      } else if (e.code == 'email-already-in-use') {
-        print('The account already exists for that email.');
-      }
     } catch (e) {
       setState(() {
         isLoading = false;
+        errorMessage = '알 수 없는 오류가 발생했습니다. 다시 시도해주세요.';
       });
-      debugPrint('에러: $e');
+    }
+  }
+
+  String getErrorMessage(String errorCode) {
+    switch (errorCode) {
+      case "user-not-found":
+      case "wrong-password":
+        return "이메일 혹은 비밀번호가 일치하지 않습니다.";
+      case "email-already-in-use":
+        return "이미 사용 중인 이메일입니다.";
+      case "weak-password":
+        return "비밀번호는 6글자 이상이어야 합니다.";
+      case "network-request-failed":
+        return "네트워크 연결에 실패 하였습니다.";
+      case "invalid-email":
+        return "잘못된 이메일 형식입니다.";
+      case "internal-error":
+        return "잘못된 요청입니다.";
+      default:
+        return "로그인에 실패 하였습니다.";
     }
   }
 

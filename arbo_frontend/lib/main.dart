@@ -2,6 +2,7 @@ import 'package:arbo_frontend/resources/specific_data.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/screens/root_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
+import 'package:arbo_frontend/screens/user_info_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -34,6 +35,20 @@ class App extends StatelessWidget {
           return SpecificPostScreen.fromMap(args);
         },
         CreatePostScreen.routeName: (context) => const CreatePostScreen(),
+      },
+      //when you need to pass arguments to a route,
+      //onGenerateRoute provides a more flexible solution.
+      onGenerateRoute: (settings) {
+        if (settings.name == UserInfoScreen.routeName) {
+          final args = settings.arguments as UserInfoScreen;
+          return MaterialPageRoute(
+            builder: (context) {
+              return UserInfoScreen(user: args.user);
+            },
+          );
+        }
+        assert(false, 'Need to implement ${settings.name}');
+        return null;
       },
     );
   }

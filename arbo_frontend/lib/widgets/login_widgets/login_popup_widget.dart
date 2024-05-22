@@ -1,3 +1,4 @@
+import 'package:arbo_frontend/widgets/login_widgets/signup_popup_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -15,37 +16,74 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
+  bool isLoginSuccessful = false;
+  String errorMessage = '';
 
   void validate() {
-    if (emailController.text.trim() == '' ||
-        passwordController.text.trim() == '') {
+    if (emailController.text.trim().isEmpty ||
+        passwordController.text.trim().isEmpty) {
+      setState(() {
+        errorMessage = '이메일과 비밀번호를 입력하세요.';
+      });
       return;
     }
 
     setState(() {
       isLoading = true;
+      errorMessage = '';
     });
 
-    Future.delayed(const Duration(seconds: 2)).then((value) {
-      setState(() {
-        isLoading = false;
-        signIn();
-      });
-    });
+    signIn();
   }
 
-  void signIn() {
+  void signIn() async {
     try {
-      FirebaseAuth.instance
-          .signInWithEmailAndPassword(
-              email: emailController.text.trim(),
-              password: passwordController.text.trim())
-          .then((value) {
-        widget.onLoginSuccess(value.user!);
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      setState(() {
+        isLoginSuccessful = true;
+        isLoading = false;
+      });
+
+      widget.onLoginSuccess(userCredential.user!);
+
+      Future.delayed(const Duration(seconds: 1)).then((_) {
         Navigator.of(context).pop();
       });
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        isLoading = false;
+        errorMessage = _handleFirebaseAuthError(e.code);
+      });
     } catch (e) {
-      debugPrint('에러: $e');
+      setState(() {
+        isLoading = false;
+        errorMessage = '로그인 중 오류가 발생했습니다. 다시 시도하세요.';
+      });
+    }
+  }
+
+  String _handleFirebaseAuthError(String errorCode) {
+    switch (errorCode) {
+      case 'user-not-found':
+      case 'wrong-password':
+        return '이메일 혹은 비밀번호가 일치하지 않습니다.';
+      case 'email-already-in-use':
+        return '이미 사용 중인 이메일입니다.';
+      case 'weak-password':
+        return '비밀번호는 6글자 이상이어야 합니다.';
+      case 'network-request-failed':
+        return '네트워크 연결에 실패 하였습니다.';
+      case 'invalid-email':
+        return '잘못된 이메일 형식입니다.';
+      case 'internal-error':
+        return '잘못된 요청입니다.';
+      default:
+        return '로그인에 실패 하였습니다.';
     }
   }
 
@@ -70,6 +108,26 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
                 labelText: '비밀번호',
               ),
             ),
+            if (errorMessage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  errorMessage,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
+            if (isLoginSuccessful)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: AnimatedOpacity(
+                  opacity: isLoginSuccessful ? 1.0 : 0.0,
+                  duration: const Duration(seconds: 1),
+                  child: const Text(
+                    '로그인 성공!',
+                    style: TextStyle(color: Colors.green),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -87,6 +145,12 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
           child: const Text('회원가입'),
           onPressed: () {
             // Handle sign up navigation
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return const SignupPopupWidget(); // SignupPopupWidget을 반환합니다.
+              },
+            );
           },
         ),
       ],
