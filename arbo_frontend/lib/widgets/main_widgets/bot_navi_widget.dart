@@ -1,12 +1,13 @@
 import 'package:arbo_frontend/resources/history_data.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
+import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class BotNaviWidget extends StatefulWidget {
-  const BotNaviWidget({
-    super.key,
-  });
+  final VoidCallback? onLoginSuccess;
+  const BotNaviWidget({super.key, this.onLoginSuccess});
 
   @override
   State<BotNaviWidget> createState() => _BotNaviWidgetState();
@@ -17,8 +18,6 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
     Navigator.pushNamed(context, routeName);
   }
 
-  // 이전 페이지로 이동 fix it
-  // 인자로 전달된 전 페이지로 넘어간다.
   void _previousPage() {
     setState(() {
       Navigator.pop(context);
@@ -26,10 +25,8 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
     });
   }
 
-  // 다음 페이지로 이동 fix it
   void _nextPage() {
     setState(() {
-      // lastVisitedPage: 아직 page location이 바뀌기 전이므로 바로 전 페이지의 값들을 갖고 있다.
       final lastVisitedPage = getLastVisitedPage();
 
       if (lastVisitedPage != null && page_location <= pageList.length) {
@@ -42,11 +39,32 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
     });
   }
 
-  // 현재 페이지 새로 고침
   void _refreshPage() {
     setState(() {
       // 현재 페이지를 다시 그립니다.
     });
+  }
+
+  Future<void> _checkAndNavigateToCreatePost() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _navigateToScreen(CreatePostScreen.routeName);
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return LoginPopupWidget(
+            onLoginSuccess: (user) {
+              Future.delayed(const Duration(seconds: 1)).then((_) {
+                Navigator.of(context).pop();
+              });
+              // 로그인되어서 user 갖고왔으니까 부모한테 callback
+              widget.onLoginSuccess?.call();
+            },
+          );
+        },
+      );
+    }
   }
 
   @override
@@ -84,7 +102,6 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
         ),
       ],
       onTap: (index) {
-        // 각 버튼에 대한 탭 핸들러
         switch (index) {
           case 0:
             if (page_location != 0) {
@@ -102,7 +119,7 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
             _refreshPage();
             break;
           case 3:
-            _navigateToScreen(CreatePostScreen.routeName);
+            _checkAndNavigateToCreatePost();
             break;
         }
       },

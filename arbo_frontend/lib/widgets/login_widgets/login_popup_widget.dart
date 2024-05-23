@@ -62,7 +62,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
     } catch (e) {
       setState(() {
         isLoading = false;
-        errorMessage = '로그인 중 오류가 발생했습니다. 다시 시도하세요.';
+        errorMessage = '오류: $e';
       });
     }
   }

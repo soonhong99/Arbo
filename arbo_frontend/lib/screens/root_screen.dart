@@ -11,10 +11,10 @@ class RootScreen extends StatefulWidget {
   const RootScreen({super.key});
 
   @override
-  State<RootScreen> createState() => _RootScreenState();
+  State<RootScreen> createState() => RootScreenState();
 }
 
-class _RootScreenState extends State<RootScreen> {
+class RootScreenState extends State<RootScreen> {
   int _selectedIndex = 0;
   User? _user; // Firebase user object to track authentication state
   String? _nickname; // To store the nickname of the user
@@ -25,37 +25,8 @@ class _RootScreenState extends State<RootScreen> {
     });
   }
 
-  void _previousPage() {
-    setState(() {
-      if (_selectedIndex > 0) {
-        _selectedIndex--;
-      } else {
-        Navigator.pop(context);
-      }
-    });
-  }
-
-  void _nextPage() {
-    setState(() {
-      if (_selectedIndex < _pages.length - 1) {
-        _selectedIndex++;
-      }
-    });
-  }
-
-  void _refreshPage() {
-    setState(() {
-      // Refresh current page
-    });
-  }
-
-  static final List<Widget> _pages = <Widget>[
-    const Text('Home'),
-    const Text('Search'),
-    const Text('Profile'),
-  ];
-
-  void _updateUser(User? user) async {
+  // widget화 필요
+  void updateUser(User? user) async {
     if (user != null) {
       // Fetch the user's nickname from Firestore
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -76,7 +47,7 @@ class _RootScreenState extends State<RootScreen> {
 
   void _logout() {
     FirebaseAuth.instance.signOut();
-    _updateUser(null);
+    updateUser(null);
   }
 
   @override
@@ -120,7 +91,7 @@ class _RootScreenState extends State<RootScreen> {
                           builder: (BuildContext context) {
                             return LoginPopupWidget(
                               onLoginSuccess: (user) {
-                                _updateUser(user);
+                                updateUser(user);
                               },
                             );
                           },
@@ -172,7 +143,11 @@ class _RootScreenState extends State<RootScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: const BotNaviWidget(),
+      bottomNavigationBar: BotNaviWidget(
+        onLoginSuccess: () {
+          updateUser(FirebaseAuth.instance.currentUser);
+        },
+      ),
     );
   }
 
