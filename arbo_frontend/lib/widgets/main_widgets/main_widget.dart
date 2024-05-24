@@ -1,4 +1,5 @@
 import 'package:arbo_frontend/widgets/post_widgets/simple_post_widget.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:arbo_frontend/widgets/main_widgets/key_board_trigger_widget.dart';
@@ -18,6 +19,53 @@ class _MainWidgetState extends State<MainWidget> {
   String selectedCategory = '전체'; // 초기에는 전체 카테고리를 선택합니다.
   String selectedUpdatedTime = '지난 1개월';
   bool showAllCategories = false; // 초기에는 전체 카테고리를 숨깁니다.
+  List<DocumentSnapshot> posts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPosts();
+  }
+
+  Future<void> _fetchPosts() async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('posts')
+        .orderBy('timestamp', descending: true)
+        .get();
+    setState(() {
+      posts = querySnapshot.docs;
+    });
+  }
+
+  List<DocumentSnapshot> _filteredPosts() {
+    DateTime now = DateTime.now();
+    DateTime cutoff;
+
+    switch (selectedUpdatedTime) {
+      case '지난 1일':
+        cutoff = now.subtract(const Duration(days: 1));
+        break;
+      case '지난 1주':
+        cutoff = now.subtract(const Duration(days: 7));
+        break;
+      case '지난 1개월':
+        cutoff = now.subtract(const Duration(days: 30));
+        break;
+      case '지난 1년':
+        cutoff = now.subtract(const Duration(days: 365));
+        break;
+      default:
+        cutoff = DateTime(1970);
+    }
+    return posts.where((post) {
+      bool matchesCategory =
+          selectedCategory == '전체' || post['topic'] == selectedCategory;
+      bool matchesTime =
+          (post['timestamp'] as Timestamp).toDate().isAfter(cutoff);
+      return matchesCategory && matchesTime;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -123,58 +171,37 @@ class _MainWidgetState extends State<MainWidget> {
           ],
         ),
         Expanded(
-          child: Post(screenWidth, horizontalPadding),
+          child: _buildPostList(screenWidth, horizontalPadding),
         ),
       ],
     );
   }
 
-  ListView Post(double screenWidth, double horizontalPadding) {
+  ListView _buildPostList(double screenWidth, double horizontalPadding) {
+    List<DocumentSnapshot> filteredPosts = _filteredPosts();
     return ListView.separated(
       scrollDirection: Axis.vertical,
       separatorBuilder: (context, index) => const SizedBox(
-        height: 100,
+        height: 10,
       ),
-      itemCount: 5, // hardcoding
+      itemCount: filteredPosts.length,
       itemBuilder: (context, index) {
+        var post = filteredPosts[index];
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Column(
             children: [
               SimplePostWidget(
-                postTopic: '경제',
-                nickname: '난나야',
-                //thumbnailUrl: '',
-                title: '더현대 대구 5월 팝업 후토마끼가 맛있는 분위기 좋은 일식 맛집 초이다이닝',
-                content:
-                    '오늘은 더현대 대구 5월 팝업도 둘러볼 겸 백화점에 다녀왔는데요. 각층마다 다양한 팝업이 있어 구경하다 보니 배가 고파서 지하 푸드코트에 후토마끼 맛있기로 유명한 초이다이닝에 찾아갔어요. ',
-                likes: 10,
-                comments: 5,
-                timestamp: DateTime.now(),
+                postTopic: post['topic'],
+                nickname: '닉네임', // Firestore에 닉네임을 저장하지 않은 경우, 다른 필드로 대체
+                title: post['title'],
+                content: post['content'],
+                likes: 10, // Firestore에 좋아요 수를 저장한 경우, 해당 필드 사용
+                comments: 5, // Firestore에 댓글 수를 저장한 경우, 해당 필드 사용
+                timestamp: (post['timestamp'] as Timestamp).toDate(),
               ),
               const SizedBox(
-                height: 50,
-              ),
-              Container(
-                height: 500,
-                color: Colors.green[100],
-                child: const Center(child: Text('쓸모있죠?')),
-              ),
-              const SizedBox(
-                height: 50,
-              ),
-              Container(
-                height: 500,
-                color: Colors.green[300],
-                child: const Center(child: Text('의견이 필요해요')),
-              ),
-              const SizedBox(
-                height: 50,
-              ),
-              Container(
-                height: 500,
-                color: Colors.green[500],
-                child: const Center(child: Text('공감해줘요')),
+                height: 10,
               ),
             ],
           ),

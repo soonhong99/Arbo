@@ -21,14 +21,13 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
   void _previousPage() {
     setState(() {
       Navigator.pop(context);
-      print('page location: $page_location, page length: ${pageList.length}');
     });
   }
 
   void _nextPage() {
     setState(() {
       final lastVisitedPage = getLastVisitedPage();
-
+      // lastVistedPage는 정확한데 여기서 argument가 다른 것이 들어간다.
       if (lastVisitedPage != null && page_location <= pageList.length) {
         Navigator.pushNamed(
           context,
@@ -55,9 +54,6 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
         builder: (BuildContext context) {
           return LoginPopupWidget(
             onLoginSuccess: (user) {
-              Future.delayed(const Duration(seconds: 1)).then((_) {
-                Navigator.of(context).pop();
-              });
               // 로그인되어서 user 갖고왔으니까 부모한테 callback
               widget.onLoginSuccess?.call();
             },
@@ -112,6 +108,7 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
           case 1:
             if (page_location < pageList.length) {
               page_location++;
+              print('다음 페이지로 갑니다 $page_location');
               _nextPage();
             }
             break;

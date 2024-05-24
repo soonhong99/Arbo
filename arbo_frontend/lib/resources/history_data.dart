@@ -9,6 +9,7 @@ void addPageToHistory(Map<String, dynamic> pageData) {
   if (pageList.isEmpty) {
     pageList.add(pageData);
   } else if (!_areMapsEqual(pageList[page_location - 1], pageData)) {
+    pageList = [];
     pageList.add(pageData);
   }
 }

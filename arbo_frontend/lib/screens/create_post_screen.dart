@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CreatePostScreen extends StatefulWidget {
   static const routeName = '/create-post';
@@ -16,13 +18,27 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   String _scale = '대자보';
   String _content = '';
 
-  void _savePost() {
+  Future<void> _savePost() async {
     final isValid = _formKey.currentState!.validate();
     if (isValid) {
       _formKey.currentState!.save();
-      // 로직을 추가하여 서버에 게시물을 저장하거나, 로컬 데이터베이스에 저장합니다.
-      // 예: uploadPost(_title, _topic, _content);
-      Navigator.pop(context); // 포스트 저장 후 화면을 닫습니다.
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        try {
+          // firebase에 post라는 이름으로 저장하고 싶을 떄
+          await FirebaseFirestore.instance.collection('posts').add({
+            'title': _title,
+            'topic': _topic,
+            'scale': _scale,
+            'content': _content,
+            'userId': user.uid,
+            'timestamp': FieldValue.serverTimestamp(),
+          });
+          Navigator.pop(context);
+        } catch (e) {
+          print(e);
+        }
+      }
     }
   }
 

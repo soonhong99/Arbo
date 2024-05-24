@@ -53,26 +53,20 @@ class SimplePostWidget extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Hero(
-                        tag: 'nickname_$nickname',
-                        child: Text(
-                          nickname,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
+                      Text(
+                        nickname,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 18),
                       ),
                       const SizedBox(
                         width: 20,
                       ),
-                      Hero(
-                        tag: 'postTopic_$postTopic',
-                        child: Text(
-                          postTopic,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red,
-                              fontSize: 18),
-                        ),
+                      Text(
+                        postTopic,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                            fontSize: 18),
                       ),
                     ],
                   ),
@@ -113,15 +107,12 @@ class SimplePostWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8.0),
-            Hero(
-              tag: 'thumbnail_$title',
-              child: Container(
-                width:
-                    100, // Adjust the width of the thumbnail container as needed
-                height: 100,
-                color: Colors.grey, // Placeholder color for thumbnail
-                // Add your thumbnail widget or image here
-              ),
+            Container(
+              width:
+                  100, // Adjust the width of the thumbnail container as needed
+              height: 100,
+              color: Colors.grey, // Placeholder color for thumbnail
+              // Add your thumbnail widget or image here
             ),
           ],
         ),
