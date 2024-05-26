@@ -33,6 +33,7 @@ class _MainWidgetState extends State<MainWidget> {
         .orderBy('timestamp', descending: true)
         .get();
     setState(() {
+      // 포스트 갖고오기.
       posts = querySnapshot.docs;
     });
   }
@@ -192,12 +193,13 @@ class _MainWidgetState extends State<MainWidget> {
           child: Column(
             children: [
               SimplePostWidget(
+                postId: post.id,
                 postTopic: post['topic'],
-                nickname: '닉네임', // Firestore에 닉네임을 저장하지 않은 경우, 다른 필드로 대체
+                nickname: post['nickname'],
                 title: post['title'],
                 content: post['content'],
-                likes: 10, // Firestore에 좋아요 수를 저장한 경우, 해당 필드 사용
-                comments: 5, // Firestore에 댓글 수를 저장한 경우, 해당 필드 사용
+                hearts: post['hearts'],
+                comments: post['comments'],
                 timestamp: (post['timestamp'] as Timestamp).toDate(),
               ),
               const SizedBox(

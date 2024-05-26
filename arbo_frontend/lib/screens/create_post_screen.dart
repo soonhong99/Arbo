@@ -13,18 +13,26 @@ class CreatePostScreen extends StatefulWidget {
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _title = '';
+  String _title = 'null';
   String _topic = '자유';
   String _scale = '대자보';
-  String _content = '';
-
+  String _content = 'null';
+  String _nickName = 'null';
+  final int _hearts = 0;
+  final List<dynamic> _comments = [];
   Future<void> _savePost() async {
     final isValid = _formKey.currentState!.validate();
+
     if (isValid) {
       _formKey.currentState!.save();
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         try {
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+          _nickName = userDoc['닉네임'];
           // firebase에 post라는 이름으로 저장하고 싶을 떄
           await FirebaseFirestore.instance.collection('posts').add({
             'title': _title,
@@ -33,6 +41,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             'content': _content,
             'userId': user.uid,
             'timestamp': FieldValue.serverTimestamp(),
+            'nickname': _nickName,
+            'comments': _comments,
+            'hearts': _hearts,
           });
           Navigator.pop(context);
         } catch (e) {

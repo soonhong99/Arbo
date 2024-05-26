@@ -4,12 +4,13 @@ import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:flutter/material.dart';
 
 class SimplePostWidget extends StatelessWidget {
+  final String postId;
   final String postTopic;
   final String nickname;
   final String title;
   final String content;
-  final int likes;
-  final int comments;
+  final int hearts;
+  final List<dynamic> comments;
   final DateTime timestamp;
 
   const SimplePostWidget({
@@ -17,10 +18,11 @@ class SimplePostWidget extends StatelessWidget {
     required this.nickname,
     required this.title,
     required this.content,
-    required this.likes,
+    required this.hearts,
     required this.comments,
     required this.timestamp,
     required this.postTopic,
+    required this.postId,
   });
 
   @override
@@ -28,11 +30,12 @@ class SimplePostWidget extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         SpecificData.updateData(
+            postId: postId,
             postTopic: postTopic,
             nickname: nickname,
             title: title,
             content: content,
-            likes: likes,
+            hearts: hearts,
             comments: comments,
             timestamp: timestamp);
         Navigator.pushNamed(context, SpecificPostScreen.routeName,
@@ -96,11 +99,11 @@ class SimplePostWidget extends StatelessWidget {
                     children: [
                       const Icon(Icons.favorite_border),
                       const SizedBox(width: 4.0),
-                      Text('$likes'),
+                      Text('$hearts'),
                       const SizedBox(width: 10.0),
                       const Icon(Icons.comment),
                       const SizedBox(width: 4.0),
-                      Text('$comments'),
+                      Text('${comments.length}'),
                     ],
                   ),
                 ],
