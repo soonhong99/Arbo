@@ -1,4 +1,5 @@
 import 'package:arbo_frontend/screens/user_info_screen.dart';
+import 'package:arbo_frontend/widgets/main_widgets/appbar_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/main_widget.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
@@ -62,59 +63,36 @@ class RootScreenState extends State<RootScreen> {
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return <Widget>[
-            SliverAppBar(
-              floating: true,
-              snap: true,
-              foregroundColor: Colors.green,
-              title: Row(
-                children: [
-                  const Text('자보'),
-                  const Spacer(),
-                  if (_user != null) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: Text(
-                        '$_nickname 님, 환영합니다',
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.logout),
-                      onPressed: _logout,
-                    ),
-                  ],
-                  TextButton(
-                    onPressed: () {
-                      if (_user == null) {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return LoginPopupWidget(
-                              onLoginSuccess: (user) {
-                                updateUser(user);
-                              },
-                            );
-                          },
-                        );
-                      } else {
-                        // Display user information
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return UserInfoScreen(user: _user!);
-                          },
-                        );
-                      }
-                    },
-                    child: const Row(
-                      children: [
-                        Icon(Icons.person),
-                        Text('마이페이지'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            CustomSliverAppBar(
+              user: _user,
+              nickname: _nickname,
+              onLogout: () {
+                // 로그아웃 로직
+                FirebaseAuth.instance.signOut();
+                updateUser(null);
+              },
+              onLogin: () {
+                // 로그인 로직
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return LoginPopupWidget(
+                      onLoginSuccess: (user) {
+                        updateUser(user);
+                      },
+                    );
+                  },
+                );
+              },
+              onUserInfo: () {
+                // 사용자 정보 보기 로직
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return UserInfoScreen(user: _user!);
+                  },
+                );
+              },
             )
           ];
         },

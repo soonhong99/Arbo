@@ -1,3 +1,4 @@
+import 'package:arbo_frontend/resources/fetch_data.dart';
 import 'package:arbo_frontend/widgets/post_widgets/simple_post_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
@@ -10,31 +11,28 @@ class MainWidget extends StatefulWidget {
   });
 
   @override
-  State<MainWidget> createState() => _MainWidgetState();
+  State<MainWidget> createState() => MainWidgetState();
 }
 
-class _MainWidgetState extends State<MainWidget> {
+class MainWidgetState extends State<MainWidget> {
   List<String> categories = ['전체', '자유', '정치', '경제', '사회', '정보', '호소'];
   List<String> updatedTime = ['지난 1일', '지난 1주', '지난 1개월', '지난 1년', '전체'];
   String selectedCategory = '전체'; // 초기에는 전체 카테고리를 선택합니다.
   String selectedUpdatedTime = '지난 1개월';
   bool showAllCategories = false; // 초기에는 전체 카테고리를 숨깁니다.
   List<DocumentSnapshot> posts = [];
+  final FetchData fetchData = FetchData();
 
   @override
   void initState() {
     super.initState();
-    _fetchPosts();
+    fetchThumbData();
   }
 
-  Future<void> _fetchPosts() async {
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('posts')
-        .orderBy('timestamp', descending: true)
-        .get();
+  Future<void> fetchThumbData() async {
+    List<DocumentSnapshot> fetchedPosts = await fetchData.fetchPostData();
     setState(() {
-      // 포스트 갖고오기.
-      posts = querySnapshot.docs;
+      posts = fetchedPosts;
     });
   }
 
@@ -199,7 +197,6 @@ class _MainWidgetState extends State<MainWidget> {
                 title: post['title'],
                 content: post['content'],
                 hearts: post['hearts'],
-                comments: post['comments'],
                 timestamp: (post['timestamp'] as Timestamp).toDate(),
               ),
               const SizedBox(

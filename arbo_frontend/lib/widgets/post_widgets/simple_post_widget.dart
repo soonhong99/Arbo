@@ -1,16 +1,17 @@
+import 'package:arbo_frontend/resources/fetch_data.dart';
 import 'package:arbo_frontend/resources/history_data.dart';
 import 'package:arbo_frontend/resources/specific_data.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class SimplePostWidget extends StatelessWidget {
+class SimplePostWidget extends StatefulWidget {
   final String postId;
   final String postTopic;
   final String nickname;
   final String title;
   final String content;
   final int hearts;
-  final List<dynamic> comments;
   final DateTime timestamp;
 
   const SimplePostWidget({
@@ -19,25 +20,53 @@ class SimplePostWidget extends StatelessWidget {
     required this.title,
     required this.content,
     required this.hearts,
-    required this.comments,
     required this.timestamp,
     required this.postTopic,
     required this.postId,
   });
 
   @override
+  State<SimplePostWidget> createState() => _SimplePostWidgetState();
+}
+
+class _SimplePostWidgetState extends State<SimplePostWidget> {
+  final FetchData fetchData = FetchData();
+  List<DocumentSnapshot> comments = [];
+  List<Map<String, dynamic>> commentsData = [];
+  @override
+  void initState() {
+    super.initState();
+    fetchCommentsData();
+  }
+
+  Future<void> fetchCommentsData() async {
+    List<DocumentSnapshot> fetchedComments =
+        await fetchData.fetchCommentsData(widget.postId);
+
+    setState(() {
+      comments = fetchedComments;
+    });
+    // List<DocumentSnapshot> -> List<Map<String, dynamic>>
+    for (var commentSnapshot in comments) {
+      Map<String, dynamic> commentData =
+          commentSnapshot.data() as Map<String, dynamic>;
+      commentsData.add(commentData);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
         SpecificData.updateData(
-            postId: postId,
-            postTopic: postTopic,
-            nickname: nickname,
-            title: title,
-            content: content,
-            hearts: hearts,
-            comments: comments,
-            timestamp: timestamp);
+            postId: widget.postId,
+            postTopic: widget.postTopic,
+            nickname: widget.nickname,
+            title: widget.title,
+            content: widget.content,
+            hearts: widget.hearts,
+            comments: commentsData,
+            timestamp: widget.timestamp);
         Navigator.pushNamed(context, SpecificPostScreen.routeName,
             arguments: SpecificData.specificData);
         // 방문기록 추가
@@ -57,7 +86,7 @@ class SimplePostWidget extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        nickname,
+                        widget.nickname,
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 18),
                       ),
@@ -65,7 +94,7 @@ class SimplePostWidget extends StatelessWidget {
                         width: 20,
                       ),
                       Text(
-                        postTopic,
+                        widget.postTopic,
                         style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.red,
@@ -74,14 +103,14 @@ class SimplePostWidget extends StatelessWidget {
                     ],
                   ),
                   Text(
-                    '${timestamp.year}-${timestamp.month}-${timestamp.day}',
+                    '${widget.timestamp.year}-${widget.timestamp.month}-${widget.timestamp.day}',
                     style: const TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 8.0),
                   Hero(
-                    tag: 'title_$title',
+                    tag: 'title_${widget.title}',
                     child: Text(
-                      title,
+                      widget.title,
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.bold),
                       maxLines: 1,
@@ -90,7 +119,7 @@ class SimplePostWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 8.0),
                   Text(
-                    '세줄요약: $content',
+                    '세줄요약: ${widget.content}',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -99,7 +128,7 @@ class SimplePostWidget extends StatelessWidget {
                     children: [
                       const Icon(Icons.favorite_border),
                       const SizedBox(width: 4.0),
-                      Text('$hearts'),
+                      Text('${widget.hearts}'),
                       const SizedBox(width: 10.0),
                       const Icon(Icons.comment),
                       const SizedBox(width: 4.0),

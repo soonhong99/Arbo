@@ -1,8 +1,10 @@
+import 'package:arbo_frontend/resources/fetch_data.dart';
+import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart'; // Import the LoginPopupWidget
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-// 무슨 댓글인지, 하트를 누르면 하트 수가 늘어나고, 댓글을 쓸 수 있게 하는 기능 구현
 class SpecificPostScreen extends StatefulWidget {
   static const routeName = '/specific_post';
   final String postId;
@@ -11,8 +13,9 @@ class SpecificPostScreen extends StatefulWidget {
   final String title;
   final String content;
   final int hearts;
-  final List<dynamic> comments;
+  final List<Map<String, dynamic>> comments;
   final DateTime timestamp;
+  final VoidCallback? onheartClicked;
 
   const SpecificPostScreen({
     super.key,
@@ -24,9 +27,9 @@ class SpecificPostScreen extends StatefulWidget {
     required this.comments,
     required this.timestamp,
     required this.postId,
+    this.onheartClicked,
   });
 
-  // 인자값을 갖고오는 생성자
   factory SpecificPostScreen.fromMap(Map<String, dynamic> map) {
     return SpecificPostScreen(
       postId: map['postId'],
@@ -35,47 +38,111 @@ class SpecificPostScreen extends StatefulWidget {
       title: map['title'],
       content: map['content'],
       hearts: map['hearts'],
-      comments: map['comments'],
+      comments: List<Map<String, dynamic>>.from(map['comments']),
       timestamp: DateTime.parse(map['timestamp']),
     );
   }
 
   @override
-  State<SpecificPostScreen> createState() => _SpecificPostScreenState();
+  State<SpecificPostScreen> createState() => SpecificPostScreenState();
 }
 
-class _SpecificPostScreenState extends State<SpecificPostScreen> {
+class SpecificPostScreenState extends State<SpecificPostScreen> {
   final TextEditingController _commentController = TextEditingController();
   late int _hearts;
-  late List<dynamic> _comments;
+  late List<Map<String, dynamic>> _comments;
+  bool _hasUserLiked = false;
 
   @override
   void initState() {
     super.initState();
     _hearts = widget.hearts;
     _comments = List.from(widget.comments);
+    _checkIfUserLiked();
+  }
+
+  Future<void> _checkIfUserLiked() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    DocumentReference postRef =
+        FirebaseFirestore.instance.collection('posts').doc(widget.postId);
+    DocumentSnapshot snapshot =
+        await postRef.collection('hearts').doc(user.uid).get();
+
+    setState(() {
+      _hasUserLiked = snapshot.exists;
+    });
   }
 
   Future<void> _updateHearts() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      _showLoginPopup();
+      return;
+    }
+
+    if (_hasUserLiked) return;
+
     DocumentReference postRef =
         FirebaseFirestore.instance.collection('posts').doc(widget.postId);
+
+    await postRef.collection('hearts').doc(user.uid).set({'liked': true});
     await postRef.update({'hearts': _hearts + 1});
+
     setState(() {
       _hearts += 1;
+      _hasUserLiked = true;
     });
+
+    widget.onheartClicked?.call();
   }
 
   Future<void> _addComment(String comment) async {
+    if (comment.isEmpty) return;
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      _showLoginPopup();
+      return;
+    }
+
     DocumentReference postRef =
         FirebaseFirestore.instance.collection('posts').doc(widget.postId);
-    await postRef.collection('comments').add({
+
+    final newComment = {
       'comment': comment,
       'timestamp': Timestamp.now(),
-    });
+      'userId': user.uid,
+    };
+
+    await postRef.collection('comments').add(newComment);
+
     setState(() {
-      _comments.add({'comment': comment, 'timestamp': Timestamp.now()});
+      _comments.insert(0, newComment);
     });
+
     _commentController.clear();
+  }
+
+  Future<void> fetchSpecificData() async {
+    FetchData fetchData = FetchData();
+    Map<String, dynamic> postData =
+        await fetchData.fetchPostAndCommentsData(widget.postId);
+
+    DocumentSnapshot post = postData['post'];
+    List<DocumentSnapshot> comments = postData['comments'];
+
+    setState(() {
+      _hearts = post['hearts'];
+      _comments = comments
+          .map((comment) => {
+                'comment': comment['comment'],
+                'timestamp': comment['timestamp'],
+                'userId': comment['userId'],
+              })
+          .toList();
+    });
   }
 
   Map<String, dynamic> toMap() {
@@ -91,10 +158,22 @@ class _SpecificPostScreenState extends State<SpecificPostScreen> {
     };
   }
 
+  void _showLoginPopup() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return LoginPopupWidget(
+          onLoginSuccess: (User user) {
+            setState(() {});
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 다시 돌아갈 수 있는 홈페이지 버튼도 있으면 좋을 듯
       appBar: AppBar(
         surfaceTintColor: Colors.white,
         shadowColor: Colors.black,
@@ -115,9 +194,7 @@ class _SpecificPostScreenState extends State<SpecificPostScreen> {
                 color: Colors.red,
               ),
             ),
-            const SizedBox(
-              height: 20,
-            ),
+            const SizedBox(height: 20),
             Hero(
               tag: 'title_${widget.title}',
               child: Text(
@@ -146,15 +223,17 @@ class _SpecificPostScreenState extends State<SpecificPostScreen> {
             Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.favorite_border),
+                  icon: Icon(
+                    _hasUserLiked ? Icons.favorite : Icons.favorite_border,
+                  ),
                   onPressed: _updateHearts,
                 ),
                 const SizedBox(width: 4.0),
-                Text('${widget.hearts}'),
+                Text('$_hearts'),
                 const SizedBox(width: 10.0),
                 const Icon(Icons.comment),
                 const SizedBox(width: 4.0),
-                Text('${widget.comments.length}'),
+                Text('${_comments.length}'),
               ],
             ),
             const SizedBox(height: 16.0),
@@ -170,18 +249,17 @@ class _SpecificPostScreenState extends State<SpecificPostScreen> {
             ),
             const SizedBox(height: 16.0),
             ..._comments.map((comment) {
-              var commentData = comment as Map<String, dynamic>;
               return ListTile(
-                title: Text(commentData['comment']),
-                subtitle: Text((commentData['timestamp'] as Timestamp)
-                    .toDate()
-                    .toString()),
+                title: Text(comment['comment']),
+                subtitle: Text(
+                  (comment['timestamp'] as Timestamp).toDate().toString(),
+                ),
               );
             }),
           ],
         ),
       ),
-      bottomNavigationBar: const BotNaviWidget(),
+      bottomNavigationBar: BotNaviWidget(onRefresh: fetchSpecificData),
     );
   }
 }

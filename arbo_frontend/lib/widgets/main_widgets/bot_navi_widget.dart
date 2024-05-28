@@ -1,13 +1,16 @@
 import 'package:arbo_frontend/resources/history_data.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
+import 'package:arbo_frontend/screens/root_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
+import 'package:arbo_frontend/widgets/main_widgets/main_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class BotNaviWidget extends StatefulWidget {
+  final VoidCallback? onRefresh;
   final VoidCallback? onLoginSuccess;
-  const BotNaviWidget({super.key, this.onLoginSuccess});
+  const BotNaviWidget({super.key, this.onLoginSuccess, this.onRefresh});
 
   @override
   State<BotNaviWidget> createState() => _BotNaviWidgetState();
@@ -20,7 +23,7 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
 
   void _previousPage() {
     setState(() {
-      Navigator.pop(context);
+      Navigator.pop(context, FirebaseAuth.instance.currentUser);
     });
   }
 
@@ -39,9 +42,22 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
   }
 
   void _refreshPage() {
-    setState(() {
-      // 현재 페이지를 다시 그립니다.
-    });
+    // if (ModalRoute.of(context)?.settings.name == SpecificPostScreen.routeName) {
+    //   final specificPostState =
+    //       context.findAncestorStateOfType<SpecificPostScreenState>();
+    //   specificPostState
+    //       ?.fetchSpecificData(); // Call fetchData on SpecificPostScreen
+    // } else if (ModalRoute.of(context)?.settings.name == '/') {
+    //   final rootState = context.findAncestorStateOfType<RootScreenState>();
+
+    //   //rootState?.fetchThumbData();
+    // } else {
+    //   setState(() {
+    //     // Handle refresh for other pages if necessary
+    //   });
+    // }
+    // setState(() {});
+    widget.onRefresh?.call();
   }
 
   Future<void> _checkAndNavigateToCreatePost() async {

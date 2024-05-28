@@ -1,6 +1,3 @@
-// previous_specific_data.dart
-
-// 잠시 데이터들을 저장하는 보관소
 class SpecificData {
   static Map<String, dynamic> specificData = {
     'postId': '',
@@ -13,7 +10,6 @@ class SpecificData {
     'timestamp': DateTime.now().toIso8601String(),
   };
 
-  // previous Specific Map에 내용들 추가.
   static void updateData({
     required String postId,
     required String postTopic,
@@ -21,7 +17,7 @@ class SpecificData {
     required String title,
     required String content,
     required int hearts,
-    required List<dynamic> comments,
+    required List<Map<String, dynamic>> comments,
     required DateTime timestamp,
   }) {
     specificData = {
