@@ -23,7 +23,8 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
     Navigator.pushNamed(context, routeName);
   }
 
-  void updateNickname(User? user, Function(String) onNicknameUpdated) async {
+  // 함수의 이름과 String 인자가 들어갈 것이라는 것을 정해주기만 한 onUserUpdate 함수
+  void updateNickname(User? user, Function(String) onUserUpdate) async {
     if (user != null) {
       // Fetch the user's nickname from Firestore
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -32,14 +33,14 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
           .get();
       setState(() {
         nickname = userDoc['닉네임'];
-        print('nickname in update: $nickname');
       });
-      onNicknameUpdated(nickname);
+      // Function onUserUpdate가 실행되는 곳
+      onUserUpdate(nickname);
     } else {
       setState(() {
         nickname = '';
       });
-      onNicknameUpdated('');
+      onUserUpdate('');
     }
   }
 
@@ -48,10 +49,10 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
 
     User? user = FirebaseAuth.instance.currentUser;
     updateNickname(user, (newNickname) {
+      // 해당 부분은 onUserUpdated의 실질적인 함수, newNickname은 onUserupdated의 인자
       final userData = Provider.of<UserData>(context, listen: false);
       userData.updateUser(user);
       userData.updateNickname(newNickname);
-      print('nickname bot: $newNickname');
     });
   }
 

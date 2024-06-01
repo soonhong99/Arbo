@@ -197,6 +197,7 @@ class MainWidgetState extends State<MainWidget> {
                 title: post['title'],
                 content: post['content'],
                 hearts: post['hearts'],
+                userId: post['userId'],
                 timestamp: (post['timestamp'] as Timestamp).toDate(),
               ),
               const SizedBox(

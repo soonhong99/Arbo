@@ -108,7 +108,6 @@ class RootScreenState extends State<RootScreen> {
                             onLoginSuccess: (user) {
                               userData.updateUser(user);
                               userData.updateNickname(nickname);
-                              print('nickname root: $nickname');
                               updateNickname(user);
                             },
                           );

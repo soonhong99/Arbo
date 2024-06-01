@@ -1,5 +1,6 @@
 class SpecificData {
   static Map<String, dynamic> specificData = {
+    'userId': '',
     'postId': '',
     'postTopic': '',
     'nickname': '',
@@ -12,6 +13,7 @@ class SpecificData {
 
   static void updateData({
     required String postId,
+    required String userId,
     required String postTopic,
     required String nickname,
     required String title,
@@ -21,6 +23,7 @@ class SpecificData {
     required DateTime timestamp,
   }) {
     specificData = {
+      'userId': userId,
       'postId': postId,
       'postTopic': postTopic,
       'nickname': nickname,

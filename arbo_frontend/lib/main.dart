@@ -16,8 +16,12 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   // runApp(const App());
-  runApp(ChangeNotifierProvider(
-      create: (context) => UserData(), child: const App()));
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => UserData(),
+      child: const App(),
+    ),
+  );
 }
 
 class App extends StatelessWidget {

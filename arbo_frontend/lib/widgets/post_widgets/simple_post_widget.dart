@@ -11,6 +11,7 @@ class SimplePostWidget extends StatefulWidget {
   final String nickname;
   final String title;
   final String content;
+  final String userId;
   final int hearts;
   final DateTime timestamp;
 
@@ -23,6 +24,7 @@ class SimplePostWidget extends StatefulWidget {
     required this.timestamp,
     required this.postTopic,
     required this.postId,
+    required this.userId,
   });
 
   @override
@@ -59,14 +61,16 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
     return GestureDetector(
       onTap: () {
         SpecificData.updateData(
-            postId: widget.postId,
-            postTopic: widget.postTopic,
-            nickname: widget.nickname,
-            title: widget.title,
-            content: widget.content,
-            hearts: widget.hearts,
-            comments: commentsData,
-            timestamp: widget.timestamp);
+          postId: widget.postId,
+          postTopic: widget.postTopic,
+          nickname: widget.nickname,
+          title: widget.title,
+          content: widget.content,
+          hearts: widget.hearts,
+          comments: commentsData,
+          timestamp: widget.timestamp,
+          userId: widget.userId,
+        );
         Navigator.pushNamed(context, SpecificPostScreen.routeName,
             arguments: SpecificData.specificData);
         // 방문기록 추가
