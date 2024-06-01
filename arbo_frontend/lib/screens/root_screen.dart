@@ -1,12 +1,14 @@
+import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/screens/user_info_screen.dart';
+import 'package:arbo_frontend/widgets/main_widgets/app_state.dart';
 import 'package:arbo_frontend/widgets/main_widgets/appbar_widget.dart';
-import 'package:arbo_frontend/widgets/main_widgets/main_widget.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:arbo_frontend/widgets/main_widgets/main_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 
 class RootScreen extends StatefulWidget {
   const RootScreen({super.key});
@@ -17,8 +19,8 @@ class RootScreen extends StatefulWidget {
 
 class RootScreenState extends State<RootScreen> {
   int _selectedIndex = 0;
-  User? _user; // Firebase user object to track authentication state
-  String? _nickname; // To store the nickname of the user
+
+  bool _isLoading = false;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -26,8 +28,30 @@ class RootScreenState extends State<RootScreen> {
     });
   }
 
-  // widget화 필요
-  void updateUser(User? user) async {
+  // // widget화 필요
+  // void updateNickname(User? user) async {
+  //   if (user != null) {
+  //     // Fetch the user's nickname from Firestore
+  //     DocumentSnapshot userDoc = await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(user.uid)
+  //         .get();
+  //     setState(() {
+  //       _nickname = userDoc['닉네임'];
+  //     });
+  //   } else {
+  //     setState(() {
+  //       _nickname = null;
+  //     });
+  //   }
+  // }
+
+  void updateNickname(User? user) async {
+    // Set loading state to true
+    setState(() {
+      _isLoading = true;
+    });
+
     if (user != null) {
       // Fetch the user's nickname from Firestore
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -35,24 +59,24 @@ class RootScreenState extends State<RootScreen> {
           .doc(user.uid)
           .get();
       setState(() {
-        _user = user;
-        _nickname = userDoc['닉네임'];
+        nickname = userDoc['닉네임'];
       });
     } else {
       setState(() {
-        _user = null;
-        _nickname = null;
+        nickname = '';
       });
     }
-  }
 
-  void _logout() {
-    FirebaseAuth.instance.signOut();
-    updateUser(null);
+    // Set loading state to false after data is fetched
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final userData = Provider.of<UserData>(context);
+    final user = userData.user;
     final List<Widget> widgetOptions = <Widget>[
       const MainWidget(),
       const Text('Index 1: 대자보'),
@@ -60,44 +84,51 @@ class RootScreenState extends State<RootScreen> {
     ];
     return Scaffold(
       backgroundColor: Colors.white,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return <Widget>[
-            CustomSliverAppBar(
-              user: _user,
-              nickname: _nickname,
-              onLogout: () {
-                // 로그아웃 로직
-                FirebaseAuth.instance.signOut();
-                updateUser(null);
-              },
-              onLogin: () {
-                // 로그인 로직
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return LoginPopupWidget(
-                      onLoginSuccess: (user) {
-                        updateUser(user);
-                      },
-                    );
-                  },
-                );
-              },
-              onUserInfo: () {
-                // 사용자 정보 보기 로직
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return UserInfoScreen(user: _user!);
-                  },
-                );
-              },
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
             )
-          ];
-        },
-        body: widgetOptions[_selectedIndex],
-      ),
+          : NestedScrollView(
+              headerSliverBuilder: (context, innerBoxIsScrolled) {
+                return <Widget>[
+                  CustomSliverAppBar(
+                    user: user,
+                    nickname: nickname,
+                    onLogout: () {
+                      // 로그아웃 로직
+                      FirebaseAuth.instance.signOut();
+                      userData.updateUser(null);
+                    },
+                    onLogin: () {
+                      // 로그인 로직
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return LoginPopupWidget(
+                            onLoginSuccess: (user) {
+                              userData.updateUser(user);
+                              userData.updateNickname(nickname);
+                              print('nickname root: $nickname');
+                              updateNickname(user);
+                            },
+                          );
+                        },
+                      );
+                    },
+                    onUserInfo: () {
+                      // 사용자 정보 보기 로직
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return UserInfoScreen(user: user!);
+                        },
+                      );
+                    },
+                  )
+                ];
+              },
+              body: widgetOptions[_selectedIndex],
+            ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -121,11 +152,7 @@ class RootScreenState extends State<RootScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BotNaviWidget(
-        onLoginSuccess: () {
-          updateUser(FirebaseAuth.instance.currentUser);
-        },
-      ),
+      bottomNavigationBar: const BotNaviWidget(),
     );
   }
 

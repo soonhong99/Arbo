@@ -1,16 +1,18 @@
 import 'package:arbo_frontend/resources/history_data.dart';
+import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
-import 'package:arbo_frontend/screens/root_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
-import 'package:arbo_frontend/widgets/main_widgets/main_widget.dart';
+import 'package:arbo_frontend/widgets/main_widgets/app_state.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 
 class BotNaviWidget extends StatefulWidget {
-  final VoidCallback? onRefresh;
-  final VoidCallback? onLoginSuccess;
-  const BotNaviWidget({super.key, this.onLoginSuccess, this.onRefresh});
+  const BotNaviWidget({
+    super.key,
+  });
 
   @override
   State<BotNaviWidget> createState() => _BotNaviWidgetState();
@@ -21,9 +23,35 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
     Navigator.pushNamed(context, routeName);
   }
 
-  void _previousPage() {
-    setState(() {
-      Navigator.pop(context, FirebaseAuth.instance.currentUser);
+  void updateNickname(User? user, Function(String) onNicknameUpdated) async {
+    if (user != null) {
+      // Fetch the user's nickname from Firestore
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      setState(() {
+        nickname = userDoc['닉네임'];
+        print('nickname in update: $nickname');
+      });
+      onNicknameUpdated(nickname);
+    } else {
+      setState(() {
+        nickname = '';
+      });
+      onNicknameUpdated('');
+    }
+  }
+
+  void _previousPage() async {
+    Navigator.pop(context);
+
+    User? user = FirebaseAuth.instance.currentUser;
+    updateNickname(user, (newNickname) {
+      final userData = Provider.of<UserData>(context, listen: false);
+      userData.updateUser(user);
+      userData.updateNickname(newNickname);
+      print('nickname bot: $newNickname');
     });
   }
 
@@ -41,24 +69,7 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
     });
   }
 
-  void _refreshPage() {
-    // if (ModalRoute.of(context)?.settings.name == SpecificPostScreen.routeName) {
-    //   final specificPostState =
-    //       context.findAncestorStateOfType<SpecificPostScreenState>();
-    //   specificPostState
-    //       ?.fetchSpecificData(); // Call fetchData on SpecificPostScreen
-    // } else if (ModalRoute.of(context)?.settings.name == '/') {
-    //   final rootState = context.findAncestorStateOfType<RootScreenState>();
-
-    //   //rootState?.fetchThumbData();
-    // } else {
-    //   setState(() {
-    //     // Handle refresh for other pages if necessary
-    //   });
-    // }
-    // setState(() {});
-    widget.onRefresh?.call();
-  }
+  void _refreshPage() {}
 
   Future<void> _checkAndNavigateToCreatePost() async {
     User? user = FirebaseAuth.instance.currentUser;
@@ -70,8 +81,8 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
         builder: (BuildContext context) {
           return LoginPopupWidget(
             onLoginSuccess: (user) {
-              // 로그인되어서 user 갖고왔으니까 부모한테 callback
-              widget.onLoginSuccess?.call();
+              final userData = Provider.of<UserData>(context, listen: false);
+              userData.updateUser(FirebaseAuth.instance.currentUser);
             },
           );
         },
@@ -124,7 +135,6 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
           case 1:
             if (page_location < pageList.length) {
               page_location++;
-              print('다음 페이지로 갑니다 $page_location');
               _nextPage();
             }
             break;

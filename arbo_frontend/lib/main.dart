@@ -3,9 +3,11 @@ import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/screens/root_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:arbo_frontend/screens/user_info_screen.dart';
+import 'package:arbo_frontend/widgets/main_widgets/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 import 'firebase/firebase_options.dart';
 
 void main() async {
@@ -13,7 +15,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const App());
+  // runApp(const App());
+  runApp(ChangeNotifierProvider(
+      create: (context) => UserData(), child: const App()));
 }
 
 class App extends StatelessWidget {
@@ -27,9 +31,10 @@ class App extends StatelessWidget {
         ..addAll({
           LogicalKeySet(LogicalKeyboardKey.space): const ActivateIntent(),
         }),
-      initialRoute: '/',
+      // initialRoute: '/',
+      home: const RootScreen(),
       routes: {
-        '/': (context) => const RootScreen(),
+        // '/': (context) => const RootScreen(),
         SpecificPostScreen.routeName: (context) {
           final args = SpecificData.specificData;
           return SpecificPostScreen.fromMap(args);

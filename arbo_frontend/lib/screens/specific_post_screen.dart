@@ -75,25 +75,35 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     });
   }
 
-  Future<void> _updateHearts() async {
+  void _updateHearts() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       _showLoginPopup();
       return;
     }
 
-    if (_hasUserLiked) return;
-
     DocumentReference postRef =
         FirebaseFirestore.instance.collection('posts').doc(widget.postId);
 
-    await postRef.collection('hearts').doc(user.uid).set({'liked': true});
-    await postRef.update({'hearts': _hearts + 1});
+    if (_hasUserLiked) {
+      // If the user has already liked the post, remove the like
+      await postRef.collection('hearts').doc(user.uid).delete();
+      await postRef.update({'hearts': _hearts - 1});
 
-    setState(() {
-      _hearts += 1;
-      _hasUserLiked = true;
-    });
+      setState(() {
+        _hearts -= 1;
+        _hasUserLiked = false;
+      });
+    } else {
+      // If the user hasn't liked the post, add the like
+      await postRef.collection('hearts').doc(user.uid).set({'liked': true});
+      await postRef.update({'hearts': _hearts + 1});
+
+      setState(() {
+        _hearts += 1;
+        _hasUserLiked = true;
+      });
+    }
 
     widget.onheartClicked?.call();
   }
@@ -259,7 +269,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BotNaviWidget(onRefresh: fetchSpecificData),
+      bottomNavigationBar: const BotNaviWidget(),
     );
   }
 }
