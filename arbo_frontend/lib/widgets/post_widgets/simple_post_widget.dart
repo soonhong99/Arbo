@@ -1,6 +1,7 @@
 import 'package:arbo_frontend/resources/fetch_data.dart';
 import 'package:arbo_frontend/resources/history_data.dart';
 import 'package:arbo_frontend/resources/specific_data.dart';
+import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -33,27 +34,11 @@ class SimplePostWidget extends StatefulWidget {
 
 class _SimplePostWidgetState extends State<SimplePostWidget> {
   final FetchData fetchData = FetchData();
-  List<DocumentSnapshot> comments = [];
-  List<Map<String, dynamic>> commentsData = [];
   @override
   void initState() {
+    // TODO: implement initState
     super.initState();
-    fetchCommentsData();
-  }
-
-  Future<void> fetchCommentsData() async {
-    List<DocumentSnapshot> fetchedComments =
-        await fetchData.fetchCommentsData(widget.postId);
-
-    setState(() {
-      comments = fetchedComments;
-    });
-    // List<DocumentSnapshot> -> List<Map<String, dynamic>>
-    for (var commentSnapshot in comments) {
-      Map<String, dynamic> commentData =
-          commentSnapshot.data() as Map<String, dynamic>;
-      commentsData.add(commentData);
-    }
+    fetchData.fetchPostAndCommentsData(widget.postId);
   }
 
   @override
@@ -67,7 +52,7 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
           title: widget.title,
           content: widget.content,
           hearts: widget.hearts,
-          comments: commentsData,
+          comments: commentstoMap,
           timestamp: widget.timestamp,
           userId: widget.userId,
         );
@@ -136,7 +121,7 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
                       const SizedBox(width: 10.0),
                       const Icon(Icons.comment),
                       const SizedBox(width: 4.0),
-                      Text('${comments.length}'),
+                      Text('${commentsSnapshotDocs.length}'),
                     ],
                   ),
                 ],

@@ -31,7 +31,7 @@ class CustomSliverAppBar extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(left: 8.0),
               child: Text(
-                '$nickname 님, 환영합니다',
+                '$nickname',
                 style: const TextStyle(fontSize: 13),
               ),
             ),

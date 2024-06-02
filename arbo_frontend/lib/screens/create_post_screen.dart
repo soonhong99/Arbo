@@ -1,3 +1,4 @@
+import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -28,11 +29,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         try {
-          DocumentSnapshot userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .get();
-          _nickName = userDoc['닉네임'];
+          _nickName = loginUserData!['닉네임'];
           // firebase에 post라는 이름으로 저장하고 싶을 떄
           await FirebaseFirestore.instance.collection('posts').add({
             'title': _title,

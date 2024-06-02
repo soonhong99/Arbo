@@ -28,24 +28,6 @@ class RootScreenState extends State<RootScreen> {
     });
   }
 
-  // // widget화 필요
-  // void updateNickname(User? user) async {
-  //   if (user != null) {
-  //     // Fetch the user's nickname from Firestore
-  //     DocumentSnapshot userDoc = await FirebaseFirestore.instance
-  //         .collection('users')
-  //         .doc(user.uid)
-  //         .get();
-  //     setState(() {
-  //       _nickname = userDoc['닉네임'];
-  //     });
-  //   } else {
-  //     setState(() {
-  //       _nickname = null;
-  //     });
-  //   }
-  // }
-
   void updateNickname(User? user) async {
     // Set loading state to true
     setState(() {
@@ -53,13 +35,8 @@ class RootScreenState extends State<RootScreen> {
     });
 
     if (user != null) {
-      // Fetch the user's nickname from Firestore
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
       setState(() {
-        nickname = userDoc['닉네임'];
+        nickname = loginUserData!['닉네임'];
       });
     } else {
       setState(() {

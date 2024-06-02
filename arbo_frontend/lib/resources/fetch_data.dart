@@ -1,4 +1,6 @@
+import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class FetchData {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -11,31 +13,31 @@ class FetchData {
     return querySnapshot.docs;
   }
 
-  // Comments 컬렉션의 문서 가져오기
-  Future<List<DocumentSnapshot>> fetchCommentsData(String postId) async {
-    QuerySnapshot querySnapshot = await _firestore
+  Future<void> fetchLoginUserData(User user) async {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    loginUserData = userDoc;
+  }
+
+  // 특정 postId의 포스트 정보와 해당 포스트의 댓글들을 모두 가져오기
+  Future<void> fetchPostAndCommentsData(String postId) async {
+    DocumentSnapshot withPostIdSnapshot =
+        await _firestore.collection('posts').doc(postId).get();
+    QuerySnapshot commentSnapshot = await _firestore
         .collection('posts')
         .doc(postId)
         .collection('comments')
         .orderBy('timestamp', descending: true)
         .get();
-    return querySnapshot.docs;
-  }
-
-  // 특정 postId에 해당하는 포스트의 정보를 가져오기
-  Future<DocumentSnapshot> fetchPostDataById(String postId) async {
-    DocumentSnapshot documentSnapshot =
-        await _firestore.collection('posts').doc(postId).get();
-    return documentSnapshot;
-  }
-
-  // 특정 postId의 포스트 정보와 해당 포스트의 댓글들을 모두 가져오기
-  Future<Map<String, dynamic>> fetchPostAndCommentsData(String postId) async {
-    DocumentSnapshot postSnapshot = await fetchPostDataById(postId);
-    List<DocumentSnapshot> commentsSnapshot = await fetchCommentsData(postId);
-    return {
-      'post': postSnapshot,
-      'comments': commentsSnapshot,
-    };
+    dataWithPostIdSnapshot = withPostIdSnapshot;
+    commentsSnapshotDocs = commentSnapshot.docs;
+    for (var commentSnapshot in commentsSnapshotDocs) {
+      Map<String, dynamic> commentData =
+          commentSnapshot.data() as Map<String, dynamic>;
+      commentstoMap.add(commentData);
+    }
+    print(commentstoMap.length);
   }
 }

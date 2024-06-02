@@ -4,7 +4,6 @@ import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/app_state.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -26,13 +25,9 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
   // 함수의 이름과 String 인자가 들어갈 것이라는 것을 정해주기만 한 onUserUpdate 함수
   void updateNickname(User? user, Function(String) onUserUpdate) async {
     if (user != null) {
-      // Fetch the user's nickname from Firestore
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
       setState(() {
-        nickname = userDoc['닉네임'];
+        nickname = loginUserData!['닉네임'];
+        print(nickname);
       });
       // Function onUserUpdate가 실행되는 곳
       onUserUpdate(nickname);

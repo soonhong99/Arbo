@@ -1,7 +1,6 @@
 import 'package:arbo_frontend/resources/fetch_data.dart';
 import 'package:arbo_frontend/widgets/post_widgets/simple_post_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:arbo_frontend/widgets/main_widgets/key_board_trigger_widget.dart';
 

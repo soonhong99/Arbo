@@ -1,3 +1,4 @@
+import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -24,12 +25,8 @@ class _UserInfoWidgetState extends State<UserInfoScreen> {
   }
 
   Future<void> _fetchUserData() async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.user.uid)
-        .get();
     setState(() {
-      _nicknameController.text = userDoc['닉네임'];
+      _nicknameController.text = loginUserData!['닉네임'];
     });
   }
 

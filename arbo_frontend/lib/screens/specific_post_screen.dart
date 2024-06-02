@@ -1,4 +1,4 @@
-import 'package:arbo_frontend/resources/fetch_data.dart';
+import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -53,7 +53,6 @@ class SpecificPostScreen extends StatefulWidget {
 class SpecificPostScreenState extends State<SpecificPostScreen> {
   final TextEditingController _commentController = TextEditingController();
   late int _hearts;
-  late List<Map<String, dynamic>> _comments;
   bool _hasUserLiked = false;
   User? _currentUser;
   bool _isPostOwner = false;
@@ -62,7 +61,6 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   void initState() {
     super.initState();
     _hearts = widget.hearts;
-    _comments = List.from(widget.comments);
     _checkIfUserLiked();
     _checkIfPostOwner();
   }
@@ -143,29 +141,15 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     await postRef.collection('comments').add(newComment);
 
     setState(() {
-      _comments.insert(0, newComment);
+      commentstoMap.insert(0, newComment);
     });
 
     _commentController.clear();
   }
 
   Future<void> fetchSpecificData() async {
-    FetchData fetchData = FetchData();
-    Map<String, dynamic> postData =
-        await fetchData.fetchPostAndCommentsData(widget.postId);
-
-    DocumentSnapshot post = postData['post'];
-    List<DocumentSnapshot> comments = postData['comments'];
-
     setState(() {
-      _hearts = post['hearts'];
-      _comments = comments
-          .map((comment) => {
-                'comment': comment['comment'],
-                'timestamp': comment['timestamp'],
-                'userId': comment['userId'],
-              })
-          .toList();
+      _hearts = dataWithPostIdSnapshot!['hearts'];
     });
   }
 
@@ -273,7 +257,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                 const SizedBox(width: 10.0),
                 const Icon(Icons.comment),
                 const SizedBox(width: 4.0),
-                Text('${_comments.length}'),
+                Text('${commentstoMap.length}'),
               ],
             ),
             const SizedBox(height: 16.0),
@@ -288,7 +272,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
               ),
             ),
             const SizedBox(height: 16.0),
-            ..._comments.map((comment) {
+            ...commentstoMap.map((comment) {
               return ListTile(
                 title: Text(comment['comment']),
                 subtitle: Text(
