@@ -1,13 +1,12 @@
+import 'package:arbo_frontend/resources/user_data_provider.dart';
 import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/screens/user_info_screen.dart';
-import 'package:arbo_frontend/widgets/main_widgets/app_state.dart';
 import 'package:arbo_frontend/widgets/main_widgets/appbar_widget.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/main_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 
 class RootScreen extends StatefulWidget {
@@ -20,40 +19,17 @@ class RootScreen extends StatefulWidget {
 class RootScreenState extends State<RootScreen> {
   int _selectedIndex = 0;
 
-  bool _isLoading = false;
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
-  void updateNickname(User? user) async {
-    // Set loading state to true
-    setState(() {
-      _isLoading = true;
-    });
-
-    if (user != null) {
-      setState(() {
-        nickname = loginUserData!['닉네임'];
-      });
-    } else {
-      setState(() {
-        nickname = '';
-      });
-    }
-
-    // Set loading state to false after data is fetched
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final userData = Provider.of<UserData>(context);
-    final user = userData.user;
+    // listen: true이므로 만약 userData가 바뀌었다면 싹다 rebuild
+    final userData = Provider.of<UserDataProvider>(context);
+
     final List<Widget> widgetOptions = <Widget>[
       const MainWidget(),
       const Text('Index 1: 대자보'),
@@ -61,50 +37,44 @@ class RootScreenState extends State<RootScreen> {
     ];
     return Scaffold(
       backgroundColor: Colors.white,
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : NestedScrollView(
-              headerSliverBuilder: (context, innerBoxIsScrolled) {
-                return <Widget>[
-                  CustomSliverAppBar(
-                    user: user,
-                    nickname: nickname,
-                    onLogout: () {
-                      // 로그아웃 로직
-                      FirebaseAuth.instance.signOut();
-                      userData.updateUser(null);
-                    },
-                    onLogin: () {
-                      // 로그인 로직
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return LoginPopupWidget(
-                            onLoginSuccess: (user) {
-                              userData.updateUser(user);
-                              userData.updateNickname(nickname);
-                              updateNickname(user);
-                            },
-                          );
-                        },
-                      );
-                    },
-                    onUserInfo: () {
-                      // 사용자 정보 보기 로직
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return UserInfoScreen(user: user!);
-                        },
-                      );
-                    },
-                  )
-                ];
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return <Widget>[
+            CustomSliverAppBar(
+              user: currentLoginUser,
+              nickname: nickname,
+              onLogout: () {
+                // 로그아웃 로직
+                FirebaseAuth.instance.signOut();
+                userData.fetchLoginUserData(null);
               },
-              body: widgetOptions[_selectedIndex],
-            ),
+              onLogin: () {
+                // 로그인 로직
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return LoginPopupWidget(
+                      onLoginSuccess: (user) {
+                        userData.fetchLoginUserData(currentLoginUser!);
+                      },
+                    );
+                  },
+                );
+              },
+              onUserInfo: () {
+                // 사용자 정보 보기 로직
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return UserInfoScreen(user: currentLoginUser!);
+                  },
+                );
+              },
+            )
+          ];
+        },
+        body: widgetOptions[_selectedIndex],
+      ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,

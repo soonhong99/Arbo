@@ -54,7 +54,6 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   final TextEditingController _commentController = TextEditingController();
   late int _hearts;
   bool _hasUserLiked = false;
-  User? _currentUser;
   bool _isPostOwner = false;
 
   @override
@@ -66,51 +65,47 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   }
 
   Future<void> _checkIfUserLiked() async {
-    _currentUser = FirebaseAuth.instance.currentUser;
-    if (_currentUser == null) return;
+    if (currentLoginUser == null) return;
 
-    DocumentReference postRef =
-        FirebaseFirestore.instance.collection('posts').doc(widget.postId);
-    DocumentSnapshot snapshot =
-        await postRef.collection('hearts').doc(_currentUser!.uid).get();
-
-    setState(() {
-      _hasUserLiked = snapshot.exists;
-    });
+    if (loginUserData!.exists) {
+      List<dynamic> likedPosts = loginUserData!['하트 누른 게시물'] ?? [];
+      setState(() {
+        _hasUserLiked = likedPosts.contains(widget.postId);
+      });
+    }
   }
 
   Future<void> _checkIfPostOwner() async {
-    _currentUser = FirebaseAuth.instance.currentUser;
-    if (_currentUser == null) return;
+    if (currentLoginUser == null) return;
 
     setState(() {
-      _isPostOwner = _currentUser!.uid == widget.userId;
+      _isPostOwner = currentLoginUser!.uid == widget.userId;
     });
   }
 
   void _updateHearts() async {
-    if (_currentUser == null) {
+    if (currentLoginUser == null) {
       _showLoginPopup();
       return;
     }
 
-    DocumentReference postRef =
-        FirebaseFirestore.instance.collection('posts').doc(widget.postId);
+    DocumentReference userRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentLoginUser!.uid);
 
     if (_hasUserLiked) {
-      await postRef.collection('hearts').doc(_currentUser!.uid).delete();
-      await postRef.update({'hearts': _hearts - 1});
+      await userRef.update({
+        '하트 누른 게시물': FieldValue.arrayRemove([widget.postId])
+      });
 
       setState(() {
         _hearts -= 1;
         _hasUserLiked = false;
       });
     } else {
-      await postRef
-          .collection('hearts')
-          .doc(_currentUser!.uid)
-          .set({'liked': true});
-      await postRef.update({'hearts': _hearts + 1});
+      await userRef.update({
+        '하트 누른 게시물': FieldValue.arrayUnion([widget.postId])
+      });
 
       setState(() {
         _hearts += 1;
@@ -124,7 +119,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   Future<void> _addComment(String comment) async {
     if (comment.isEmpty) return;
 
-    if (_currentUser == null) {
+    if (currentLoginUser == null) {
       _showLoginPopup();
       return;
     }
@@ -135,13 +130,13 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     final newComment = {
       'comment': comment,
       'timestamp': Timestamp.now(),
-      'userId': _currentUser!.uid,
+      'userId': currentLoginUser!.uid,
     };
 
     await postRef.collection('comments').add(newComment);
 
     setState(() {
-      commentstoMap.insert(0, newComment);
+      commentstoMap[widget.postId]?.insert(0, newComment);
     });
 
     _commentController.clear();
@@ -173,7 +168,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
         return LoginPopupWidget(
           onLoginSuccess: (User user) {
             setState(() {
-              _currentUser = user;
+              currentLoginUser = user;
               _checkIfUserLiked();
               _checkIfPostOwner();
             });
@@ -189,6 +184,8 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final comments = commentstoMap[widget.postId] ?? widget.comments;
+
     return Scaffold(
       appBar: AppBar(
         surfaceTintColor: Colors.white,
@@ -257,7 +254,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                 const SizedBox(width: 10.0),
                 const Icon(Icons.comment),
                 const SizedBox(width: 4.0),
-                Text('${commentstoMap.length}'),
+                Text('${comments.length}'),
               ],
             ),
             const SizedBox(height: 16.0),
@@ -272,7 +269,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
               ),
             ),
             const SizedBox(height: 16.0),
-            ...commentstoMap.map((comment) {
+            ...comments.map((comment) {
               return ListTile(
                 title: Text(comment['comment']),
                 subtitle: Text(

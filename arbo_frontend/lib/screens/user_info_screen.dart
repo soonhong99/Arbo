@@ -26,7 +26,7 @@ class _UserInfoWidgetState extends State<UserInfoScreen> {
 
   Future<void> _fetchUserData() async {
     setState(() {
-      _nicknameController.text = loginUserData!['닉네임'];
+      _nicknameController.text = nickname;
     });
   }
 

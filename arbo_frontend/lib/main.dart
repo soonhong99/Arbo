@@ -1,9 +1,9 @@
+import 'package:arbo_frontend/resources/user_data_provider.dart';
 import 'package:arbo_frontend/resources/specific_data.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/screens/root_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:arbo_frontend/screens/user_info_screen.dart';
-import 'package:arbo_frontend/widgets/main_widgets/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -18,7 +18,7 @@ void main() async {
   // runApp(const App());
   runApp(
     ChangeNotifierProvider(
-      create: (context) => UserData(),
+      create: (context) => UserDataProvider(),
       child: const App(),
     ),
   );

@@ -26,17 +26,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     if (isValid) {
       _formKey.currentState!.save();
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
+      if (currentLoginUser != null) {
         try {
-          _nickName = loginUserData!['닉네임'];
+          _nickName = nickname;
           // firebase에 post라는 이름으로 저장하고 싶을 떄
           await FirebaseFirestore.instance.collection('posts').add({
             'title': _title,
             'topic': _topic,
             'scale': _scale,
             'content': _content,
-            'userId': user.uid,
+            'userId': currentLoginUser!.uid,
             'timestamp': FieldValue.serverTimestamp(),
             'nickname': _nickName,
             'comments': _comments,

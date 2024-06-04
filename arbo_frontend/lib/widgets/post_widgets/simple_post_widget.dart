@@ -1,9 +1,8 @@
-import 'package:arbo_frontend/resources/fetch_data.dart';
+import 'package:arbo_frontend/resources/user_data_provider.dart';
 import 'package:arbo_frontend/resources/history_data.dart';
 import 'package:arbo_frontend/resources/specific_data.dart';
 import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class SimplePostWidget extends StatefulWidget {
@@ -33,12 +32,17 @@ class SimplePostWidget extends StatefulWidget {
 }
 
 class _SimplePostWidgetState extends State<SimplePostWidget> {
-  final FetchData fetchData = FetchData();
+  final UserDataProvider userDataProvider = UserDataProvider();
+  List<Map<String, dynamic>> comments = [];
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    fetchData.fetchPostAndCommentsData(widget.postId);
+    userDataProvider.fetchPostAndCommentsData(widget.postId).then((_) {
+      setState(() {
+        comments = commentstoMap[widget.postId] ?? [];
+      });
+    });
   }
 
   @override
@@ -52,7 +56,7 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
           title: widget.title,
           content: widget.content,
           hearts: widget.hearts,
-          comments: commentstoMap,
+          comments: comments,
           timestamp: widget.timestamp,
           userId: widget.userId,
         );
@@ -121,7 +125,7 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
                       const SizedBox(width: 10.0),
                       const Icon(Icons.comment),
                       const SizedBox(width: 4.0),
-                      Text('${commentsSnapshotDocs.length}'),
+                      Text('${comments.length}'),
                     ],
                   ),
                 ],

@@ -1,4 +1,4 @@
-import 'package:arbo_frontend/resources/fetch_data.dart';
+import 'package:arbo_frontend/resources/user_data_provider.dart';
 import 'package:arbo_frontend/widgets/post_widgets/simple_post_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +20,7 @@ class MainWidgetState extends State<MainWidget> {
   String selectedUpdatedTime = '지난 1개월';
   bool showAllCategories = false; // 초기에는 전체 카테고리를 숨깁니다.
   List<DocumentSnapshot> posts = [];
-  final FetchData fetchData = FetchData();
+  final UserDataProvider userDataProvider = UserDataProvider();
 
   @override
   void initState() {
@@ -28,8 +28,10 @@ class MainWidgetState extends State<MainWidget> {
     fetchThumbData();
   }
 
+// fix
   Future<void> fetchThumbData() async {
-    List<DocumentSnapshot> fetchedPosts = await fetchData.fetchPostData();
+    List<DocumentSnapshot> fetchedPosts =
+        await userDataProvider.fetchPostData();
     setState(() {
       posts = fetchedPosts;
     });

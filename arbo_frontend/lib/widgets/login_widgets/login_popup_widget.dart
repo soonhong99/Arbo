@@ -1,7 +1,9 @@
-import 'package:arbo_frontend/resources/fetch_data.dart';
+import 'package:arbo_frontend/resources/user_data_provider.dart';
+import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/widgets/login_widgets/signup_popup_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 
 class LoginPopupWidget extends StatefulWidget {
   // 로그인에 성공하면 해야할 콜백 함수 - login을 다른 class에서 했을 때 사용
@@ -28,7 +30,6 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
       });
       return;
     }
-
     setState(() {
       isLoading = true;
       errorMessage = '';
@@ -38,8 +39,6 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
   }
 
   void signIn() async {
-    FetchData fetchData = FetchData();
-
     try {
       UserCredential userCredential =
           await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -47,18 +46,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
         password: passwordController.text.trim(),
       );
 
-      setState(() {
-        isLoginSuccessful = true;
-        isLoading = false;
-      });
-      // 로그인된 회원 정보 fetch 장소
-      fetchData.fetchLoginUserData(userCredential.user!);
-
-      widget.onLoginSuccess(userCredential.user!);
-
-      Future.delayed(const Duration(seconds: 2)).then((_) {
-        Navigator.of(context).pop();
-      });
+      currentLoginUser = userCredential.user;
     } on FirebaseAuthException catch (e) {
       setState(() {
         isLoading = false;
@@ -70,6 +58,19 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
         errorMessage = '오류: $e';
       });
     }
+
+    setState(() {
+      isLoginSuccessful = true;
+      isLoading = false;
+    });
+
+    Future.delayed(const Duration(seconds: 2)).then((_) {
+      final userData = Provider.of<UserDataProvider>(context, listen: false);
+      userData.fetchLoginUserData(currentLoginUser!);
+      Navigator.of(context).pop();
+    });
+
+    widget.onLoginSuccess(currentLoginUser!);
   }
 
   String _handleFirebaseAuthError(String errorCode) {
