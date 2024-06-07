@@ -4,7 +4,7 @@ import 'package:arbo_frontend/screens/user_info_screen.dart';
 import 'package:arbo_frontend/widgets/main_widgets/appbar_widget.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
-import 'package:arbo_frontend/widgets/main_widgets/main_widget.dart';
+import 'package:arbo_frontend/rootscreen/main_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +18,13 @@ class RootScreen extends StatefulWidget {
 
 class RootScreenState extends State<RootScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -55,7 +62,7 @@ class RootScreenState extends State<RootScreen> {
                   builder: (BuildContext context) {
                     return LoginPopupWidget(
                       onLoginSuccess: (user) {
-                        userData.fetchLoginUserData(currentLoginUser!);
+                        // userData.fetchLoginUserData(currentLoginUser!);
                       },
                     );
                   },

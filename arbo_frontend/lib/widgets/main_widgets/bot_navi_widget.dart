@@ -15,6 +15,13 @@ class BotNaviWidget extends StatefulWidget {
 }
 
 class _BotNaviWidgetState extends State<BotNaviWidget> {
+  @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
   void _navigateToScreen(String routeName) {
     Navigator.pushNamed(context, routeName);
   }

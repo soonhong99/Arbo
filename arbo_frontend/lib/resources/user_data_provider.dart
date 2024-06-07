@@ -6,14 +6,6 @@ import 'package:flutter/material.dart';
 class UserDataProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<List<DocumentSnapshot>> fetchPostData() async {
-    QuerySnapshot querySnapshot = await _firestore
-        .collection('posts')
-        .orderBy('timestamp', descending: true)
-        .get();
-    return querySnapshot.docs;
-  }
-
   Future<void> fetchLoginUserData(User? user) async {
     if (user == null) {
       currentLoginUser = null;
@@ -26,9 +18,18 @@ class UserDataProvider with ChangeNotifier {
         .get();
     loginUserData = userDoc;
     nickname = loginUserData!['닉네임'];
-    // currentLoginUser = user;
     notifyListeners();
-    print('nickname in fetch: $nickname');
+  }
+
+  // 이걸로 다 이용가능 할듯, comment만 어떻게 collection 분리된거 다시 합쳐서 해야될듯
+  Future<void> fetchPostData() async {
+    QuerySnapshot querySnapshot = await _firestore
+        .collection('posts')
+        .orderBy('timestamp', descending: true)
+        .get();
+    postListSnapshot = querySnapshot.docs;
+    // 바뀐것을 알리고 싶을 때 - Provider.of<UserDataProvider>(context);
+    notifyListeners();
   }
 
   Future<void> fetchPostAndCommentsData(String postId) async {
@@ -40,11 +41,13 @@ class UserDataProvider with ChangeNotifier {
         .collection('comments')
         .orderBy('timestamp', descending: true)
         .get();
+
     dataWithPostIdSnapshot = withPostIdSnapshot;
     commentsSnapshotDocs = commentSnapshot.docs;
     commentstoMap[postId] = commentsSnapshotDocs
         .map(
             (commentSnapshot) => commentSnapshot.data() as Map<String, dynamic>)
         .toList();
+    notifyListeners();
   }
 }

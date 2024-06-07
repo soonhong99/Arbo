@@ -57,6 +57,13 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   bool _isPostOwner = false;
 
   @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
     _hearts = widget.hearts;
@@ -65,22 +72,32 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   }
 
   Future<void> _checkIfUserLiked() async {
-    if (currentLoginUser == null) return;
+    try {
+      if (currentLoginUser == null) return;
 
-    if (loginUserData!.exists) {
-      List<dynamic> likedPosts = loginUserData!['하트 누른 게시물'] ?? [];
-      setState(() {
-        _hasUserLiked = likedPosts.contains(widget.postId);
-      });
+      if (loginUserData!.exists) {
+        List<dynamic> likedPosts = loginUserData!['하트 누른 게시물'] ?? [];
+        setState(() {
+          _hasUserLiked = likedPosts.contains(widget.postId);
+          dataChanged = true;
+        });
+      }
+    } catch (e) {
+      // unexpected null value error
+      print('error in check if user liked: $e');
     }
   }
 
   Future<void> _checkIfPostOwner() async {
-    if (currentLoginUser == null) return;
+    try {
+      if (currentLoginUser == null) return;
 
-    setState(() {
-      _isPostOwner = currentLoginUser!.uid == widget.userId;
-    });
+      setState(() {
+        _isPostOwner = currentLoginUser!.uid == widget.userId;
+      });
+    } catch (e) {
+      print('error in check if post owner');
+    }
   }
 
   void _updateHearts() async {
@@ -123,7 +140,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       _showLoginPopup();
       return;
     }
-
+    dataChanged = true;
     DocumentReference postRef =
         FirebaseFirestore.instance.collection('posts').doc(widget.postId);
 

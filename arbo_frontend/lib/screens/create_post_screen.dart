@@ -21,6 +21,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   String _nickName = 'null';
   final int _hearts = 0;
   final List<dynamic> _comments = [];
+
+  @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
   Future<void> _savePost() async {
     final isValid = _formKey.currentState!.validate();
 

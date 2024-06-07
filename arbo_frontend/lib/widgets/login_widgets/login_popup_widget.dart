@@ -18,9 +18,18 @@ class LoginPopupWidget extends StatefulWidget {
 class _LoginPopupWidgetState extends State<LoginPopupWidget> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   bool isLoading = false;
   bool isLoginSuccessful = false;
   String errorMessage = '';
+
+  @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
 
   void validate() {
     if (emailController.text.trim().isEmpty ||
@@ -34,19 +43,23 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
       isLoading = true;
       errorMessage = '';
     });
-
     signIn();
   }
 
   void signIn() async {
+    // try를 쓰면 해당 안에 들어가있는 변수는 무조건 null이 아니어야 한다. null 이면 catch e로 넘어감.
     try {
-      UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
+      UserCredential? userCredential = await _auth.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
       currentLoginUser = userCredential.user;
+
+      setState(() {
+        isLoginSuccessful = true;
+        isLoading = false;
+      });
     } on FirebaseAuthException catch (e) {
       setState(() {
         isLoading = false;
@@ -59,16 +72,13 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
       });
     }
 
-    setState(() {
-      isLoginSuccessful = true;
-      isLoading = false;
-    });
-
-    Future.delayed(const Duration(seconds: 2)).then((_) {
-      final userData = Provider.of<UserDataProvider>(context, listen: false);
-      userData.fetchLoginUserData(currentLoginUser!);
-      Navigator.of(context).pop();
-    });
+    if (isLoginSuccessful == true) {
+      Future.delayed(const Duration(seconds: 2)).then((_) {
+        final userData = Provider.of<UserDataProvider>(context, listen: false);
+        userData.fetchLoginUserData(currentLoginUser!);
+        Navigator.of(context).pop();
+      });
+    }
 
     widget.onLoginSuccess(currentLoginUser!);
   }
@@ -76,8 +86,9 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
   String _handleFirebaseAuthError(String errorCode) {
     switch (errorCode) {
       case 'user-not-found':
+        return '아이디가 일치하지 않습니다.';
       case 'wrong-password':
-        return '이메일 혹은 비밀번호가 일치하지 않습니다.';
+        return '비밀번호가 일치하지 않습니다.';
       case 'email-already-in-use':
         return '이미 사용 중인 이메일입니다.';
       case 'weak-password':

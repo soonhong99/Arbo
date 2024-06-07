@@ -19,6 +19,13 @@ class _UserInfoWidgetState extends State<UserInfoScreen> {
   bool _isLoading = false;
 
   @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
     _fetchUserData();

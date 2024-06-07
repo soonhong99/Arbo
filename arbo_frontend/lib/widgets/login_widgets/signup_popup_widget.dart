@@ -22,6 +22,13 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   String? errorMessage;
 
   @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('회원가입'),

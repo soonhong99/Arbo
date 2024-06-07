@@ -1,7 +1,7 @@
 import 'package:arbo_frontend/resources/user_data_provider.dart';
 import 'package:arbo_frontend/resources/specific_data.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
-import 'package:arbo_frontend/screens/root_screen.dart';
+import 'package:arbo_frontend/rootscreen/root_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:arbo_frontend/screens/user_info_screen.dart';
 import 'package:flutter/material.dart';
