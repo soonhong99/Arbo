@@ -1,4 +1,5 @@
 // import 'package:firebase_core/firebase_core.dart';
+import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -109,10 +110,9 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     });
     try {
       // 회원가입
-      UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-              email: _emailController.text.trim(),
-              password: _passwordController.text.trim());
+      UserCredential userCredential = await auth.createUserWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim());
 
       await FirebaseFirestore.instance
           .collection('users')
@@ -174,7 +174,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
           TextButton(
             child: const Text('확인'),
             onPressed: () {
-              FirebaseAuth.instance.signOut();
+              auth.signOut();
               Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
             },
           ),

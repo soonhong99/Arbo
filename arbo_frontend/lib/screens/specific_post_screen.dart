@@ -2,7 +2,6 @@ import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class SpecificPostScreen extends StatefulWidget {
@@ -106,9 +105,8 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       return;
     }
 
-    DocumentReference userRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentLoginUser!.uid);
+    DocumentReference userRef =
+        FirebaseFirestore.instance.collection('users').doc(userUid);
 
     if (_hasUserLiked) {
       await userRef.update({
@@ -183,9 +181,8 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       context: context,
       builder: (BuildContext context) {
         return LoginPopupWidget(
-          onLoginSuccess: (User user) {
+          onLoginSuccess: () {
             setState(() {
-              currentLoginUser = user;
               _checkIfUserLiked();
               _checkIfPostOwner();
             });

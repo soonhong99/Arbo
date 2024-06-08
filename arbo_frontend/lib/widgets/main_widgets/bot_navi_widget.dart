@@ -54,7 +54,7 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
         context: context,
         builder: (BuildContext context) {
           return LoginPopupWidget(
-            onLoginSuccess: (user) {},
+            onLoginSuccess: () {},
           );
         },
       );

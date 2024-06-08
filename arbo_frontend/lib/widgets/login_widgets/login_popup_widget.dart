@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 
 class LoginPopupWidget extends StatefulWidget {
   // 로그인에 성공하면 해야할 콜백 함수 - login을 다른 class에서 했을 때 사용
-  final Function(User) onLoginSuccess;
+  final Function() onLoginSuccess;
 
   const LoginPopupWidget({super.key, required this.onLoginSuccess});
 
@@ -18,7 +18,7 @@ class LoginPopupWidget extends StatefulWidget {
 class _LoginPopupWidgetState extends State<LoginPopupWidget> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  // final FirebaseAuth _auth = FirebaseAuth.instance;
 
   bool isLoading = false;
   bool isLoginSuccessful = false;
@@ -49,13 +49,16 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
   void signIn() async {
     // try를 쓰면 해당 안에 들어가있는 변수는 무조건 null이 아니어야 한다. null 이면 catch e로 넘어감.
     try {
-      UserCredential? userCredential = await _auth.signInWithEmailAndPassword(
+      UserCredential? userCredential = await auth.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
       currentLoginUser = userCredential.user;
-
+      if (currentLoginUser != null) {
+        userUid = currentLoginUser!.uid;
+        return;
+      }
       setState(() {
         isLoginSuccessful = true;
         isLoading = false;
@@ -63,24 +66,27 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
     } on FirebaseAuthException catch (e) {
       setState(() {
         isLoading = false;
+        isLoginSuccessful = false;
         errorMessage = _handleFirebaseAuthError(e.code);
       });
     } catch (e) {
       setState(() {
         isLoading = false;
+        isLoginSuccessful = false;
         errorMessage = '오류: $e';
       });
     }
 
-    if (isLoginSuccessful == true) {
+    if (isLoginSuccessful == true && mounted) {
       Future.delayed(const Duration(seconds: 2)).then((_) {
         final userData = Provider.of<UserDataProvider>(context, listen: false);
         userData.fetchLoginUserData(currentLoginUser!);
         Navigator.of(context).pop();
       });
     }
-
-    widget.onLoginSuccess(currentLoginUser!);
+    if (currentLoginUser != null) {
+      widget.onLoginSuccess();
+    }
   }
 
   String _handleFirebaseAuthError(String errorCode) {

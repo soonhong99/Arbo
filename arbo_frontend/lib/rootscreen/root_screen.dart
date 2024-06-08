@@ -6,7 +6,6 @@ import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:arbo_frontend/rootscreen/main_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 
 class RootScreen extends StatefulWidget {
@@ -52,7 +51,7 @@ class RootScreenState extends State<RootScreen> {
               nickname: nickname,
               onLogout: () {
                 // 로그아웃 로직
-                FirebaseAuth.instance.signOut();
+                auth.signOut();
                 userData.fetchLoginUserData(null);
               },
               onLogin: () {
@@ -61,9 +60,7 @@ class RootScreenState extends State<RootScreen> {
                   context: context,
                   builder: (BuildContext context) {
                     return LoginPopupWidget(
-                      onLoginSuccess: (user) {
-                        // userData.fetchLoginUserData(currentLoginUser!);
-                      },
+                      onLoginSuccess: () {},
                     );
                   },
                 );
@@ -73,7 +70,9 @@ class RootScreenState extends State<RootScreen> {
                 showDialog(
                   context: context,
                   builder: (BuildContext context) {
-                    return UserInfoScreen(user: currentLoginUser!);
+                    return UserInfoScreen(
+                      user: currentLoginUser,
+                    );
                   },
                 );
               },

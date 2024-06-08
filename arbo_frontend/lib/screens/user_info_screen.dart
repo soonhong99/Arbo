@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserInfoScreen extends StatefulWidget {
-  final User user;
+  final User? user;
   static const routeName = '/user-info';
 
   const UserInfoScreen({super.key, required this.user});
@@ -43,7 +43,7 @@ class _UserInfoWidgetState extends State<UserInfoScreen> {
     });
     await FirebaseFirestore.instance
         .collection('users')
-        .doc(widget.user.uid)
+        .doc(widget.user!.uid)
         .update({'닉네임': _nicknameController.text});
     setState(() {
       _isLoading = false;
@@ -57,7 +57,7 @@ class _UserInfoWidgetState extends State<UserInfoScreen> {
     setState(() {
       _isLoading = true;
     });
-    await widget.user.updatePassword(_passwordController.text);
+    await widget.user!.updatePassword(_passwordController.text);
     setState(() {
       _isLoading = false;
     });
@@ -79,8 +79,8 @@ class _UserInfoWidgetState extends State<UserInfoScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text('이메일: ${widget.user.email}'),
-                  Text('UID: ${widget.user.uid}'),
+                  Text('이메일: ${widget.user!.email}'),
+                  Text('UID: ${widget.user!.uid}'),
                   const SizedBox(height: 20),
                   const Divider(),
                   const Text(
@@ -121,7 +121,7 @@ class _UserInfoWidgetState extends State<UserInfoScreen> {
                   FutureBuilder<QuerySnapshot>(
                     future: FirebaseFirestore.instance
                         .collection('posts')
-                        .where('userId', isEqualTo: widget.user.uid)
+                        .where('userId', isEqualTo: widget.user!.uid)
                         .get(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {

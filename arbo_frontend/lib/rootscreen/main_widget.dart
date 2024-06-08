@@ -4,7 +4,6 @@ import 'package:arbo_frontend/rootscreen/simple_post_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:arbo_frontend/widgets/main_widgets/key_board_trigger_widget.dart';
-import 'package:provider/provider.dart';
 
 class MainWidget extends StatefulWidget {
   const MainWidget({
@@ -30,31 +29,6 @@ class MainWidgetState extends State<MainWidget> {
       super.setState(fn);
     }
   }
-
-  // @override
-  // void initState() {
-  //   super.initState();
-
-  //   // fetchThumbData();
-  //   userDataProvider.fetchPostData();
-  // }
-
-// fix
-  // Future<void> fetchThumbData() async {
-  //   List<DocumentSnapshot> fetchedPosts =
-  //       await userDataProvider.fetchPostData();
-  //   setState(() {
-  //     posts = fetchedPosts;
-  //   });
-  // }
-
-  // void fetchThumbData() async {
-  //   List<DocumentSnapshot> fetchedPosts =
-  //       await userDataProvider.fetchPostData();
-  //   setState(() {
-  //     posts = fetchedPosts;
-  //   });
-  // }
 
   List<DocumentSnapshot> _filteredPosts() {
     DateTime now = DateTime.now();
@@ -90,238 +64,127 @@ class MainWidgetState extends State<MainWidget> {
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth * 0.1;
-    // final userData = Provider.of<UserDataProvider>(context);
-
-    // // fetchThumbData();
-    // if (postListSnapshot == [] || dataChanged == true) {
-    //   userData.fetchPostData();
-    // }
 
     return FutureBuilder(
-        future: userDataProvider.fetchPostData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text('오류가 발생했습니다: ${snapshot.error}'),
-            );
-          } else {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      DropdownButton<String>(
-                        value: selectedCategory,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedCategory = newValue!;
-                          });
-                        },
-                        items: categories
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(width: 10),
-                      DropdownButton<String>(
-                        value: selectedUpdatedTime,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedUpdatedTime = newValue!;
-                          });
-                        },
-                        items: updatedTime
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                      ),
-                      // 검색 필드와 검색 버튼
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            KeyBoardTrigger(
-                              labelText: showAllCategories
-                                  ? '검색할 나무를 입력하세요'
-                                  : '카테고리 선택',
-                              screenWidth: screenWidth,
-                            ),
-                            const SizedBox(height: 10),
-                            IconButton(
-                              onPressed: () {
-                                // 검색 버튼이 눌렸을 때의 동작
-                              },
-                              icon: const Icon(Icons.search),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      future: userDataProvider.fetchPostData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        } else if (snapshot.hasError) {
+          return Center(
+            child: Text('오류가 발생했습니다: ${snapshot.error}'),
+          );
+        } else {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    TextButton(
-                      onPressed: () {
-                        // 최신 버튼이 클릭되었을 때의 동작
+                    DropdownButton<String>(
+                      value: selectedCategory,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedCategory = newValue!;
+                        });
                       },
-                      child: const Row(
-                        children: [
-                          Icon(Icons.noise_aware_sharp),
-                          Text('최신'),
-                        ],
-                      ),
+                      items: categories
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        // 인기 버튼이 클릭되었을 때의 동작
+                    const SizedBox(width: 10),
+                    DropdownButton<String>(
+                      value: selectedUpdatedTime,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedUpdatedTime = newValue!;
+                        });
                       },
-                      child: const Row(
-                        children: [
-                          Icon(Icons.fire_hydrant_alt_sharp),
-                          Text('인기'),
-                        ],
-                      ),
+                      items: updatedTime
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        // 베스트 버튼이 클릭되었을 때의 동작
-                      },
-                      child: const Row(
+                    // 검색 필드와 검색 버튼
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.local_fire_department_sharp),
-                          Text('베스트'),
+                          KeyBoardTrigger(
+                            labelText:
+                                showAllCategories ? '검색할 나무를 입력하세요' : '카테고리 선택',
+                            screenWidth: screenWidth,
+                          ),
+                          const SizedBox(height: 10),
+                          IconButton(
+                            onPressed: () {
+                              // 검색 버튼이 눌렸을 때의 동작
+                            },
+                            icon: const Icon(Icons.search),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                Expanded(
-                  child: _buildPostList(screenWidth, horizontalPadding),
-                ),
-              ],
-            );
-          }
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      // 최신 버튼이 클릭되었을 때의 동작
+                    },
+                    child: const Row(
+                      children: [
+                        Icon(Icons.noise_aware_sharp),
+                        Text('최신'),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // 인기 버튼이 클릭되었을 때의 동작
+                    },
+                    child: const Row(
+                      children: [
+                        Icon(Icons.fire_hydrant_alt_sharp),
+                        Text('인기'),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // 베스트 버튼이 클릭되었을 때의 동작
+                    },
+                    child: const Row(
+                      children: [
+                        Icon(Icons.local_fire_department_sharp),
+                        Text('베스트'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: _buildPostList(screenWidth, horizontalPadding),
+              ),
+            ],
+          );
         }
-        // child: Column(
-        //   crossAxisAlignment: CrossAxisAlignment.stretch,
-        //   children: [
-        //     Padding(
-        //       padding: const EdgeInsets.all(8.0),
-        //       child: Row(
-        //         mainAxisAlignment: MainAxisAlignment.start,
-        //         children: [
-        //           DropdownButton<String>(
-        //             value: selectedCategory,
-        //             onChanged: (String? newValue) {
-        //               setState(() {
-        //                 selectedCategory = newValue!;
-        //               });
-        //             },
-        //             items: categories.map<DropdownMenuItem<String>>((String value) {
-        //               return DropdownMenuItem<String>(
-        //                 value: value,
-        //                 child: Text(value),
-        //               );
-        //             }).toList(),
-        //           ),
-        //           const SizedBox(width: 10),
-        //           DropdownButton<String>(
-        //             value: selectedUpdatedTime,
-        //             onChanged: (String? newValue) {
-        //               setState(() {
-        //                 selectedUpdatedTime = newValue!;
-        //               });
-        //             },
-        //             items:
-        //                 updatedTime.map<DropdownMenuItem<String>>((String value) {
-        //               return DropdownMenuItem<String>(
-        //                 value: value,
-        //                 child: Text(value),
-        //               );
-        //             }).toList(),
-        //           ),
-        //           // 검색 필드와 검색 버튼
-        //           Expanded(
-        //             child: Row(
-        //               mainAxisAlignment: MainAxisAlignment.center,
-        //               children: [
-        //                 KeyBoardTrigger(
-        //                   labelText:
-        //                       showAllCategories ? '검색할 나무를 입력하세요' : '카테고리 선택',
-        //                   screenWidth: screenWidth,
-        //                 ),
-        //                 const SizedBox(height: 10),
-        //                 IconButton(
-        //                   onPressed: () {
-        //                     // 검색 버튼이 눌렸을 때의 동작
-        //                   },
-        //                   icon: const Icon(Icons.search),
-        //                 ),
-        //               ],
-        //             ),
-        //           ),
-        //         ],
-        //       ),
-        //     ),
-        //     Row(
-        //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        //       children: [
-        //         TextButton(
-        //           onPressed: () {
-        //             // 최신 버튼이 클릭되었을 때의 동작
-        //           },
-        //           child: const Row(
-        //             children: [
-        //               Icon(Icons.noise_aware_sharp),
-        //               Text('최신'),
-        //             ],
-        //           ),
-        //         ),
-        //         TextButton(
-        //           onPressed: () {
-        //             // 인기 버튼이 클릭되었을 때의 동작
-        //           },
-        //           child: const Row(
-        //             children: [
-        //               Icon(Icons.fire_hydrant_alt_sharp),
-        //               Text('인기'),
-        //             ],
-        //           ),
-        //         ),
-        //         TextButton(
-        //           onPressed: () {
-        //             // 베스트 버튼이 클릭되었을 때의 동작
-        //           },
-        //           child: const Row(
-        //             children: [
-        //               Icon(Icons.local_fire_department_sharp),
-        //               Text('베스트'),
-        //             ],
-        //           ),
-        //         ),
-        //       ],
-        //     ),
-        //     Expanded(
-        //       child: _buildPostList(screenWidth, horizontalPadding),
-        //     ),
-        //   ],
-        // ),
-        );
+      },
+    );
   }
 
   ListView _buildPostList(double screenWidth, double horizontalPadding) {

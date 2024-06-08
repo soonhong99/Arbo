@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 String nickname = 'null'; // To store the nickname of the user
-
+String userUid = 'null';
 User? currentLoginUser;
 bool dataChanged = false;
 DocumentSnapshot? loginUserData;
+final FirebaseAuth auth = FirebaseAuth.instance;
+
 Map<String, bool> isChangedData = {};
 DocumentSnapshot? dataWithPostIdSnapshot;
 List<DocumentSnapshot> commentsSnapshotDocs = [];

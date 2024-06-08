@@ -1,7 +1,6 @@
 import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class CreatePostScreen extends StatefulWidget {
   static const routeName = '/create-post';
@@ -35,24 +34,24 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     if (isValid) {
       _formKey.currentState!.save();
       if (currentLoginUser != null) {
-        try {
-          _nickName = nickname;
-          // firebase에 post라는 이름으로 저장하고 싶을 떄
-          await FirebaseFirestore.instance.collection('posts').add({
-            'title': _title,
-            'topic': _topic,
-            'scale': _scale,
-            'content': _content,
-            'userId': currentLoginUser!.uid,
-            'timestamp': FieldValue.serverTimestamp(),
-            'nickname': _nickName,
-            'comments': _comments,
-            'hearts': _hearts,
-          });
-          Navigator.pop(context);
-        } catch (e) {
-          print(e);
-        }
+        // try {
+        _nickName = nickname;
+        // firebase에 post라는 이름으로 저장하고 싶을 떄
+        await FirebaseFirestore.instance.collection('posts').add({
+          'title': _title,
+          'topic': _topic,
+          'scale': _scale,
+          'content': _content,
+          'userId': userUid,
+          'timestamp': FieldValue.serverTimestamp(),
+          'nickname': _nickName,
+          'comments': _comments,
+          'hearts': _hearts,
+        });
+        Navigator.pop(context);
+        // } catch (e) {
+        //   print(e);
+        // }
       }
     }
   }
