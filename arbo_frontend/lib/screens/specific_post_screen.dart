@@ -146,12 +146,46 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       'comment': comment,
       'timestamp': Timestamp.now(),
       'userId': currentLoginUser!.uid,
+      // 'isReply': false,
+      // 'parentComment': '',
     };
-
     await postRef.collection('comments').add(newComment);
+    // await postRef.update({
+    //   'comments': FieldValue.arrayUnion([newComment])
+    // });
 
     setState(() {
       commentstoMap[widget.postId]?.insert(0, newComment);
+      // widget.comments.insert(0, newComment);
+    });
+
+    _commentController.clear();
+  }
+
+  Future<void> addReply(String comment, String parentComment) async {
+    if (comment.isEmpty) return;
+
+    if (currentLoginUser == null) {
+      _showLoginPopup();
+      return;
+    }
+
+    final newReply = {
+      'comment': comment,
+      'timestamp': Timestamp.now(),
+      'userId': currentLoginUser!.uid,
+      'isReply': true,
+      'parentComment': parentComment,
+    };
+
+    setState(() {
+      widget.comments.insert(0, newReply);
+    });
+
+    DocumentReference postRef =
+        FirebaseFirestore.instance.collection('posts').doc(widget.postId);
+    await postRef.update({
+      'comments': FieldValue.arrayUnion([newReply])
     });
 
     _commentController.clear();
@@ -199,6 +233,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   @override
   Widget build(BuildContext context) {
     final comments = commentstoMap[widget.postId] ?? widget.comments;
+    // final comments = widget.comments;
 
     return Scaffold(
       appBar: AppBar(
@@ -290,11 +325,63 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                   (comment['timestamp'] as Timestamp).toDate().toString(),
                 ),
               );
+              // if (comment['isReply']) {
+              //   return ListTile(
+              //     title: Text('Reply to ${comment['parentComment']}'),
+              //     subtitle: Text(comment['comment']),
+              //     trailing: Text(
+              //       (comment['timestamp'] as Timestamp).toDate().toString(),
+              //     ),
+              //   );
+              // }
+              // return ListTile(
+              //   title: Text(comment['comment']),
+              //   subtitle: Text(
+              //     (comment['timestamp'] as Timestamp).toDate().toString(),
+              //   ),
+              //   trailing: IconButton(
+              //     icon: const Icon(Icons.reply),
+              //     onPressed: () => _showReplyDialog(comment['commentId']),
+              //   ),
+              // );
             }),
           ],
         ),
       ),
       bottomNavigationBar: const BotNaviWidget(),
+    );
+  }
+
+  void _showReplyDialog(String parentComment) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        TextEditingController replyController = TextEditingController();
+        return AlertDialog(
+          title: const Text('Reply'),
+          content: TextField(
+            controller: replyController,
+            decoration: const InputDecoration(
+              labelText: 'Enter your reply',
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Reply'),
+              onPressed: () {
+                addReply(replyController.text, parentComment);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

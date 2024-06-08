@@ -57,12 +57,11 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
       currentLoginUser = userCredential.user;
       if (currentLoginUser != null) {
         userUid = currentLoginUser!.uid;
-        return;
+        setState(() {
+          isLoginSuccessful = true;
+          isLoading = false;
+        });
       }
-      setState(() {
-        isLoginSuccessful = true;
-        isLoading = false;
-      });
     } on FirebaseAuthException catch (e) {
       setState(() {
         isLoading = false;
