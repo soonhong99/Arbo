@@ -1,5 +1,4 @@
 import 'package:arbo_frontend/resources/user_data_provider.dart';
-import 'package:arbo_frontend/resources/specific_data.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/rootscreen/root_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
@@ -39,10 +38,7 @@ class App extends StatelessWidget {
       home: const RootScreen(),
       routes: {
         // '/': (context) => const RootScreen(),
-        SpecificPostScreen.routeName: (context) {
-          final args = SpecificData.specificData;
-          return SpecificPostScreen.fromMap(args);
-        },
+        SpecificPostScreen.routeName: (context) => const SpecificPostScreen(),
         CreatePostScreen.routeName: (context) => const CreatePostScreen(),
       },
       //when you need to pass arguments to a route,

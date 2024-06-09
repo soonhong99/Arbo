@@ -6,44 +6,8 @@ import 'package:flutter/material.dart';
 
 class SpecificPostScreen extends StatefulWidget {
   static const routeName = '/specific_post';
-  final String postId;
-  final String postTopic;
-  final String nickname;
-  final String title;
-  final String content;
-  final String userId;
-  final int hearts;
-  final List<Map<String, dynamic>> comments;
-  final DateTime timestamp;
-  final VoidCallback? onheartClicked;
 
-  const SpecificPostScreen({
-    super.key,
-    required this.postTopic,
-    required this.nickname,
-    required this.title,
-    required this.content,
-    required this.hearts,
-    required this.comments,
-    required this.timestamp,
-    required this.postId,
-    this.onheartClicked,
-    required this.userId,
-  });
-
-  factory SpecificPostScreen.fromMap(Map<String, dynamic> map) {
-    return SpecificPostScreen(
-      postId: map['postId'],
-      postTopic: map['postTopic'],
-      nickname: map['nickname'],
-      title: map['title'],
-      content: map['content'],
-      hearts: map['hearts'],
-      comments: List<Map<String, dynamic>>.from(map['comments']),
-      timestamp: DateTime.parse(map['timestamp']),
-      userId: map['userId'],
-    );
-  }
+  const SpecificPostScreen({super.key});
 
   @override
   State<SpecificPostScreen> createState() => SpecificPostScreenState();
@@ -51,9 +15,11 @@ class SpecificPostScreen extends StatefulWidget {
 
 class SpecificPostScreenState extends State<SpecificPostScreen> {
   final TextEditingController _commentController = TextEditingController();
-  late int _hearts;
   bool _hasUserLiked = false;
   bool _isPostOwner = false;
+  late Map<String, dynamic> postData;
+  late int _hearts;
+  bool dataInitialized = false;
 
   @override
   void setState(fn) {
@@ -63,11 +29,18 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _hearts = widget.hearts;
-    _checkIfUserLiked();
-    _checkIfPostOwner();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!dataInitialized) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+      postData = args;
+      _hearts = postData['hearts'];
+      // Initialize other states based on postData if needed
+      _checkIfUserLiked();
+      _checkIfPostOwner();
+      dataInitialized = true;
+    }
   }
 
   Future<void> _checkIfUserLiked() async {
@@ -77,7 +50,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       if (loginUserData!.exists) {
         List<dynamic> likedPosts = loginUserData!['하트 누른 게시물'] ?? [];
         setState(() {
-          _hasUserLiked = likedPosts.contains(widget.postId);
+          _hasUserLiked = likedPosts.contains(postData['postId']);
           dataChanged = true;
         });
       }
@@ -92,7 +65,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       if (currentLoginUser == null) return;
 
       setState(() {
-        _isPostOwner = currentLoginUser!.uid == widget.userId;
+        _isPostOwner = currentLoginUser!.uid == postData['postOwnerId'];
       });
     } catch (e) {
       print('error in check if post owner');
@@ -110,7 +83,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
 
     if (_hasUserLiked) {
       await userRef.update({
-        '하트 누른 게시물': FieldValue.arrayRemove([widget.postId])
+        '하트 누른 게시물': FieldValue.arrayRemove([postData['postId']])
       });
 
       setState(() {
@@ -119,7 +92,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       });
     } else {
       await userRef.update({
-        '하트 누른 게시물': FieldValue.arrayUnion([widget.postId])
+        '하트 누른 게시물': FieldValue.arrayUnion([postData['postId']])
       });
 
       setState(() {
@@ -127,8 +100,6 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
         _hasUserLiked = true;
       });
     }
-
-    widget.onheartClicked?.call();
   }
 
   Future<void> _addComment(String comment) async {
@@ -140,29 +111,32 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     }
     dataChanged = true;
     DocumentReference postRef =
-        FirebaseFirestore.instance.collection('posts').doc(widget.postId);
+        FirebaseFirestore.instance.collection('posts').doc(postData['postId']);
 
+    // isreply와 parentComment, parentUserId를 이용해서 답글인지 확인한다.
     final newComment = {
       'comment': comment,
       'timestamp': Timestamp.now(),
       'userId': currentLoginUser!.uid,
-      // 'isReply': false,
-      // 'parentComment': '',
+      'parentId': 'null',
+      'isReply': false,
+      'parentComment': '',
     };
-    await postRef.collection('comments').add(newComment);
-    // await postRef.update({
-    //   'comments': FieldValue.arrayUnion([newComment])
-    // });
+    // await postRef.collection('comments').add(newComment);
+    await postRef.update({
+      'comments': FieldValue.arrayUnion([newComment])
+    });
 
     setState(() {
-      commentstoMap[widget.postId]?.insert(0, newComment);
-      // widget.comments.insert(0, newComment);
+      // commentstoMap[widget.postId]?.insert(0, newComment);
+      postData['comments'].insert(0, newComment);
     });
 
     _commentController.clear();
   }
 
-  Future<void> addReply(String comment, String parentComment) async {
+  Future<void> addReply(
+      String comment, String parentComment, String parentId) async {
     if (comment.isEmpty) return;
 
     if (currentLoginUser == null) {
@@ -174,40 +148,22 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       'comment': comment,
       'timestamp': Timestamp.now(),
       'userId': currentLoginUser!.uid,
+      'parentId': parentId,
       'isReply': true,
       'parentComment': parentComment,
     };
 
     setState(() {
-      widget.comments.insert(0, newReply);
+      postData['comments'].insert(0, newReply);
     });
 
     DocumentReference postRef =
-        FirebaseFirestore.instance.collection('posts').doc(widget.postId);
+        FirebaseFirestore.instance.collection('posts').doc(postData['postId']);
     await postRef.update({
       'comments': FieldValue.arrayUnion([newReply])
     });
 
     _commentController.clear();
-  }
-
-  Future<void> fetchSpecificData() async {
-    setState(() {
-      _hearts = dataWithPostIdSnapshot!['hearts'];
-    });
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'postId': widget.postId,
-      'postTopic': widget.postTopic,
-      'nickname': widget.nickname,
-      'title': widget.title,
-      'content': widget.content,
-      'hearts': widget.hearts,
-      'comments': widget.comments,
-      'timestamp': widget.timestamp.toIso8601String(),
-    };
   }
 
   void _showLoginPopup() {
@@ -232,7 +188,8 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final comments = commentstoMap[widget.postId] ?? widget.comments;
+    final comments = postData['comments'];
+    DateTime postTime = (postData['timestamp'] as Timestamp).toDate();
     // final comments = widget.comments;
 
     return Scaffold(
@@ -257,7 +214,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.postTopic,
+              postData['topic'],
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 24,
@@ -266,9 +223,9 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
             ),
             const SizedBox(height: 20),
             Hero(
-              tag: 'title_${widget.title}',
+              tag: 'title_${postData['title']}',
               child: Text(
-                widget.title,
+                postData['title'],
                 style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
@@ -277,14 +234,14 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
             ),
             const SizedBox(height: 8.0),
             Text(
-              'By ${widget.nickname} - ${widget.timestamp.year}-${widget.timestamp.month}-${widget.timestamp.day}',
+              'By ${postData['nickname']} - ${postTime.year}-${postTime.month}-${postTime.day}',
               style: const TextStyle(
                 color: Colors.grey,
               ),
             ),
             const SizedBox(height: 16.0),
             Text(
-              widget.content,
+              postData['content'],
               style: const TextStyle(
                 fontSize: 18,
               ),
@@ -319,31 +276,26 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
             ),
             const SizedBox(height: 16.0),
             ...comments.map((comment) {
+              if (comment['isReply']) {
+                return ListTile(
+                  title: Text('Reply to ${comment['parentComment']}'),
+                  subtitle: Text(comment['comment']),
+                  trailing: Text(
+                    (comment['timestamp'] as Timestamp).toDate().toString(),
+                  ),
+                );
+              }
               return ListTile(
                 title: Text(comment['comment']),
                 subtitle: Text(
                   (comment['timestamp'] as Timestamp).toDate().toString(),
                 ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.reply),
+                  onPressed: () => _showReplyDialog(
+                      comment['parentId'], comment['parentComment']),
+                ),
               );
-              // if (comment['isReply']) {
-              //   return ListTile(
-              //     title: Text('Reply to ${comment['parentComment']}'),
-              //     subtitle: Text(comment['comment']),
-              //     trailing: Text(
-              //       (comment['timestamp'] as Timestamp).toDate().toString(),
-              //     ),
-              //   );
-              // }
-              // return ListTile(
-              //   title: Text(comment['comment']),
-              //   subtitle: Text(
-              //     (comment['timestamp'] as Timestamp).toDate().toString(),
-              //   ),
-              //   trailing: IconButton(
-              //     icon: const Icon(Icons.reply),
-              //     onPressed: () => _showReplyDialog(comment['commentId']),
-              //   ),
-              // );
             }),
           ],
         ),
@@ -352,7 +304,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     );
   }
 
-  void _showReplyDialog(String parentComment) {
+  void _showReplyDialog(String parentId, String parentComment) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -375,7 +327,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
             TextButton(
               child: const Text('Reply'),
               onPressed: () {
-                addReply(replyController.text, parentComment);
+                addReply(replyController.text, parentComment, parentId);
                 Navigator.of(context).pop();
               },
             ),

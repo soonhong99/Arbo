@@ -197,6 +197,9 @@ class MainWidgetState extends State<MainWidget> {
       itemCount: filteredPosts.length,
       itemBuilder: (context, index) {
         var post = filteredPosts[index];
+
+        userDataProvider.makeAllDataLocal(post);
+
         print(
             "postId: ${post.id}, topic: ${post['topic']}, title: ${post['title']}");
         return Padding(
@@ -205,13 +208,6 @@ class MainWidgetState extends State<MainWidget> {
             children: [
               SimplePostWidget(
                 postId: post.id,
-                postTopic: post['topic'],
-                nickname: post['nickname'],
-                title: post['title'],
-                content: post['content'],
-                hearts: post['hearts'],
-                userId: post['userId'],
-                timestamp: (post['timestamp'] as Timestamp).toDate(),
               ),
               const SizedBox(
                 height: 10,

@@ -6,6 +6,21 @@ import 'package:flutter/material.dart';
 class UserDataProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  void makeAllDataLocal(DocumentSnapshot allDataSnapshot) {
+    allPostDataWithPostId[allDataSnapshot.id] = {
+      'postId': allDataSnapshot.id,
+      'comments': allDataSnapshot['comments'],
+      'content': allDataSnapshot['content'],
+      'hearts': allDataSnapshot['hearts'],
+      'nickname': allDataSnapshot['nickname'],
+      'scale': allDataSnapshot['scale'],
+      'timestamp': allDataSnapshot['timestamp'],
+      'title': allDataSnapshot['title'],
+      'topic': allDataSnapshot['topic'],
+      'postOwnerId': allDataSnapshot['userId'],
+    };
+  }
+
   Future<void> fetchLoginUserData(User? user) async {
     if (user == null) {
       currentLoginUser = null;
@@ -29,25 +44,6 @@ class UserDataProvider with ChangeNotifier {
         .get();
     postListSnapshot = querySnapshot.docs;
     // 바뀐것을 알리고 싶을 때 - Provider.of<UserDataProvider>(context);
-    notifyListeners();
-  }
-
-  Future<void> fetchPostAndCommentsData(String postId) async {
-    DocumentSnapshot withPostIdSnapshot =
-        await _firestore.collection('posts').doc(postId).get();
-    QuerySnapshot commentSnapshot = await _firestore
-        .collection('posts')
-        .doc(postId)
-        .collection('comments')
-        .orderBy('timestamp', descending: true)
-        .get();
-
-    dataWithPostIdSnapshot = withPostIdSnapshot;
-    commentsSnapshotDocs = commentSnapshot.docs;
-    commentstoMap[postId] = commentsSnapshotDocs
-        .map(
-            (commentSnapshot) => commentSnapshot.data() as Map<String, dynamic>)
-        .toList();
     notifyListeners();
   }
 }
