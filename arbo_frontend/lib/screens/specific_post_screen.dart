@@ -18,7 +18,6 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   bool _hasUserLiked = false;
   bool _isPostOwner = false;
   late Map<String, dynamic> postData;
-  late int _hearts;
   bool dataInitialized = false;
 
   @override
@@ -35,7 +34,6 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
       postData = args;
-      _hearts = postData['hearts'];
       // Initialize other states based on postData if needed
       _checkIfUserLiked();
       _checkIfPostOwner();
@@ -81,23 +79,27 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     DocumentReference userRef =
         FirebaseFirestore.instance.collection('users').doc(userUid);
 
+    DocumentReference heartRef =
+        FirebaseFirestore.instance.collection('posts').doc(postData['postId']);
+
     if (_hasUserLiked) {
       await userRef.update({
         '하트 누른 게시물': FieldValue.arrayRemove([postData['postId']])
       });
-
+      await heartRef.update({'hearts': FieldValue.increment(-1)});
       setState(() {
-        _hearts -= 1;
         _hasUserLiked = false;
+        postData['hearts']--;
       });
     } else {
       await userRef.update({
         '하트 누른 게시물': FieldValue.arrayUnion([postData['postId']])
       });
 
+      await heartRef.update({'hearts': FieldValue.increment(1)});
       setState(() {
-        _hearts += 1;
         _hasUserLiked = true;
+        postData['hearts']++;
       });
     }
   }
@@ -122,13 +124,11 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       'isReply': false,
       'parentComment': '',
     };
-    // await postRef.collection('comments').add(newComment);
     await postRef.update({
       'comments': FieldValue.arrayUnion([newComment])
     });
 
     setState(() {
-      // commentstoMap[widget.postId]?.insert(0, newComment);
       postData['comments'].insert(0, newComment);
     });
 
@@ -190,7 +190,6 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   Widget build(BuildContext context) {
     final comments = postData['comments'];
     DateTime postTime = (postData['timestamp'] as Timestamp).toDate();
-    // final comments = widget.comments;
 
     return Scaffold(
       appBar: AppBar(
@@ -256,7 +255,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                   onPressed: _updateHearts,
                 ),
                 const SizedBox(width: 4.0),
-                Text('$_hearts'),
+                Text('${postData['hearts']}'),
                 const SizedBox(width: 10.0),
                 const Icon(Icons.comment),
                 const SizedBox(width: 4.0),
@@ -300,7 +299,9 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: const BotNaviWidget(),
+      bottomNavigationBar: BotNaviWidget(
+        postData: postData,
+      ),
     );
   }
 

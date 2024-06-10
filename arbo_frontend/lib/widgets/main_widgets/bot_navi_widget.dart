@@ -6,8 +6,10 @@ import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:flutter/material.dart';
 
 class BotNaviWidget extends StatefulWidget {
+  final Map<String, dynamic>? postData;
   const BotNaviWidget({
     super.key,
+    required this.postData,
   });
 
   @override
@@ -27,7 +29,7 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
   }
 
   void _previousPage() async {
-    Navigator.pop(context);
+    Navigator.pop(context, widget.postData);
   }
 
   void _nextPage() {

@@ -17,8 +17,6 @@ class SimplePostWidget extends StatefulWidget {
 }
 
 class _SimplePostWidgetState extends State<SimplePostWidget> {
-  // final UserDataProvider userDataProvider = UserDataProvider();
-
   Map<String, dynamic> specificAllPostData = {};
 
   @override
@@ -34,12 +32,24 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
     DateTime postTime =
         (specificAllPostData['timestamp'] as Timestamp).toDate();
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, SpecificPostScreen.routeName,
-            arguments: specificAllPostData);
+      onTap: () async {
         // 방문기록 추가
         page_location++;
         addPageToHistory(specificAllPostData);
+
+        // Navigate to SpecificPostScreen and wait for the result
+        final result = await Navigator.pushNamed(
+          context,
+          SpecificPostScreen.routeName,
+          arguments: specificAllPostData,
+        );
+
+        // Update the local state if result is returned
+        if (result != null && result is Map<String, dynamic>) {
+          setState(() {
+            specificAllPostData = result;
+          });
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(8.0),

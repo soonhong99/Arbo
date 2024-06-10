@@ -36,7 +36,15 @@ class UserDataProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // 이걸로 다 이용가능 할듯, comment만 어떻게 collection 분리된거 다시 합쳐서 해야될듯
+  // 현재 사용 x
+  Future<void> updateHearts(String postId, int hearts) async {
+    // 기존 데이터를 가져와서 hearts 값만 업데이트
+    if (allPostDataWithPostId.containsKey(postId)) {
+      allPostDataWithPostId[postId]!['hearts'] = hearts;
+      notifyListeners();
+    }
+  }
+
   Future<void> fetchPostData() async {
     QuerySnapshot querySnapshot = await _firestore
         .collection('posts')
