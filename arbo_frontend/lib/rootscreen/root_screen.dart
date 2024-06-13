@@ -53,6 +53,7 @@ class RootScreenState extends State<RootScreen> {
                 // 로그아웃 로직
                 auth.signOut();
                 userData.fetchLoginUserData(null);
+                likedPosts = [];
               },
               onLogin: () {
                 // 로그인 로직

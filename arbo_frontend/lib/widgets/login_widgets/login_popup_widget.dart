@@ -77,15 +77,18 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
     }
 
     if (isLoginSuccessful == true && mounted) {
+      final userData = Provider.of<UserDataProvider>(context, listen: false);
+      userData.fetchLoginUserData(currentLoginUser!);
       Future.delayed(const Duration(seconds: 2)).then((_) {
-        final userData = Provider.of<UserDataProvider>(context, listen: false);
-        userData.fetchLoginUserData(currentLoginUser!);
         Navigator.of(context).pop();
+        if (currentLoginUser != null) {
+          widget.onLoginSuccess();
+        }
       });
     }
-    if (currentLoginUser != null) {
-      widget.onLoginSuccess();
-    }
+    // if (currentLoginUser != null) {
+    //   widget.onLoginSuccess();
+    // }
   }
 
   String _handleFirebaseAuthError(String errorCode) {

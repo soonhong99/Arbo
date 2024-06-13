@@ -235,8 +235,6 @@ class MainWidgetState extends State<MainWidget> {
 
         userDataProvider.makeAllDataLocal(post);
 
-        print(
-            "postId: ${post.id}, topic: ${post['topic']}, title: ${post['title']}");
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Column(

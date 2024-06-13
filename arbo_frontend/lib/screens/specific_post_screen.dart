@@ -41,17 +41,18 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     }
   }
 
-  Future<void> _checkIfUserLiked() async {
+  void _checkIfUserLiked() async {
     try {
       if (currentLoginUser == null) return;
-
-      if (loginUserData!.exists) {
-        List<dynamic> likedPosts = loginUserData!['하트 누른 게시물'] ?? [];
-        setState(() {
-          _hasUserLiked = likedPosts.contains(postData['postId']);
-          dataChanged = true;
-        });
+      if (firstSpecificPostTouch) {
+        likedPosts = loginUserData!['하트 누른 게시물'] ?? [];
+        firstSpecificPostTouch = false;
       }
+      setState(() {
+        _hasUserLiked = likedPosts.contains(postData['postId']);
+        print('음 나는 이 게시물을 좋아했어 $_hasUserLiked');
+        dataChanged = true;
+      });
     } catch (e) {
       // unexpected null value error
       print('error in check if user liked: $e');
@@ -99,6 +100,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       await heartRef.update({'hearts': FieldValue.increment(1)});
       setState(() {
         _hasUserLiked = true;
+        likedPosts.add(postData['postId']);
         postData['hearts']++;
       });
     }
