@@ -6,10 +6,12 @@ import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:flutter/material.dart';
 
 class BotNaviWidget extends StatefulWidget {
+  final VoidCallback refreshDataCallback;
   final Map<String, dynamic>? postData;
   const BotNaviWidget({
     super.key,
     required this.postData,
+    required this.refreshDataCallback,
   });
 
   @override
@@ -17,6 +19,8 @@ class BotNaviWidget extends StatefulWidget {
 }
 
 class _BotNaviWidgetState extends State<BotNaviWidget> {
+  DateTime? lastRefreshTime;
+
   @override
   void setState(fn) {
     if (mounted) {
@@ -46,11 +50,33 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
     });
   }
 
-  void _refreshPage() {}
+  void _refreshPage() {
+    DateTime now = DateTime.now();
+    if (lastRefreshTime == null ||
+        now.difference(lastRefreshTime!).inSeconds >= 30) {
+      lastRefreshTime = now;
+      widget.refreshDataCallback();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('새로고침은 30초에 한 번만 가능합니다.'),
+        ),
+      );
+    }
+  }
 
-  Future<void> _checkAndNavigateToCreatePost() async {
+  void _checkAndNavigateToCreatePost() async {
     if (currentLoginUser != null) {
-      _navigateToScreen(CreatePostScreen.routeName);
+      final result = await Navigator.pushNamed(
+        context,
+        CreatePostScreen.routeName,
+      );
+
+      // If the result is true, refresh the posts
+      if (result == true) {
+        widget.refreshDataCallback();
+      }
+      // _navigateToScreen(CreatePostScreen.routeName);
     } else {
       showDialog(
         context: context,

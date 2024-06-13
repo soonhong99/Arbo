@@ -1,6 +1,7 @@
 import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/resources/user_data_provider.dart';
 import 'package:arbo_frontend/rootscreen/simple_post_widget.dart';
+import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:arbo_frontend/widgets/main_widgets/key_board_trigger_widget.dart';
@@ -20,14 +21,19 @@ class MainWidgetState extends State<MainWidget> {
   String selectedCategory = '전체'; // 초기에는 전체 카테고리를 선택합니다.
   String selectedUpdatedTime = '지난 1개월';
   bool showAllCategories = false; // 초기에는 전체 카테고리를 숨깁니다.
-  // List<DocumentSnapshot> posts = [];
   final UserDataProvider userDataProvider = UserDataProvider();
+  late Future<void> _fetchDataFuture; // 데이터 fetch를 위한 Future
 
   @override
-  void setState(fn) {
-    if (mounted) {
-      super.setState(fn);
-    }
+  void initState() {
+    super.initState();
+    _fetchDataFuture = userDataProvider.fetchPostData();
+  }
+
+  void _refreshData() {
+    setState(() {
+      _fetchDataFuture = userDataProvider.fetchPostData();
+    });
   }
 
   List<DocumentSnapshot> _filteredPosts() {
@@ -50,7 +56,7 @@ class MainWidgetState extends State<MainWidget> {
       default:
         cutoff = DateTime(1970);
     }
-    // return posts.where((post) {
+
     return postListSnapshot.where((post) {
       bool matchesCategory =
           selectedCategory == '전체' || post['topic'] == selectedCategory;
@@ -65,125 +71,154 @@ class MainWidgetState extends State<MainWidget> {
     final double screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth * 0.1;
 
-    return FutureBuilder(
-      future: userDataProvider.fetchPostData(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        } else if (snapshot.hasError) {
-          return Center(
-            child: Text('오류가 발생했습니다: ${snapshot.error}'),
-          );
-        } else {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
+    return Scaffold(
+      // appBar: AppBar(
+      //   title: const Text('Main Widget'),
+      //   actions: [
+      //     IconButton(
+      //       icon: const Icon(Icons.add),
+      //       onPressed: () async {
+      //         // Navigate to CreatePostScreen and wait for the result
+      //         final result = await Navigator.pushNamed(
+      //           context,
+      //           CreatePostScreen.routeName,
+      //         );
+
+      //         // If the result is true, refresh the posts
+      //         if (result == true) {
+      //           _refreshData();
+      //         }
+      //       },
+      //     ),
+      //   ],
+      // ),
+      body: FutureBuilder(
+        future: _fetchDataFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text('오류가 발생했습니다: ${snapshot.error}'),
+            );
+          } else {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      DropdownButton<String>(
+                        value: selectedCategory,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedCategory = newValue!;
+                          });
+                        },
+                        items: categories
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(width: 10),
+                      DropdownButton<String>(
+                        value: selectedUpdatedTime,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedUpdatedTime = newValue!;
+                          });
+                        },
+                        items: updatedTime
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                      // 검색 필드와 검색 버튼
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            KeyBoardTrigger(
+                              labelText: showAllCategories
+                                  ? '검색할 나무를 입력하세요'
+                                  : '카테고리 선택',
+                              screenWidth: screenWidth,
+                            ),
+                            const SizedBox(height: 10),
+                            IconButton(
+                              onPressed: () {
+                                // 검색 버튼이 눌렸을 때의 동작
+                              },
+                              icon: const Icon(Icons.search),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    DropdownButton<String>(
-                      value: selectedCategory,
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedCategory = newValue!;
-                        });
+                    TextButton(
+                      onPressed: () {
+                        // 최신 버튼이 클릭되었을 때의 동작
                       },
-                      items: categories
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(width: 10),
-                    DropdownButton<String>(
-                      value: selectedUpdatedTime,
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedUpdatedTime = newValue!;
-                        });
-                      },
-                      items: updatedTime
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                    // 검색 필드와 검색 버튼
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: const Row(
                         children: [
-                          KeyBoardTrigger(
-                            labelText:
-                                showAllCategories ? '검색할 나무를 입력하세요' : '카테고리 선택',
-                            screenWidth: screenWidth,
-                          ),
-                          const SizedBox(height: 10),
-                          IconButton(
-                            onPressed: () {
-                              // 검색 버튼이 눌렸을 때의 동작
-                            },
-                            icon: const Icon(Icons.search),
-                          ),
+                          Icon(Icons.noise_aware_sharp),
+                          Text('최신'),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // 인기 버튼이 클릭되었을 때의 동작
+                      },
+                      child: const Row(
+                        children: [
+                          Icon(Icons.fire_hydrant_alt_sharp),
+                          Text('인기'),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // 베스트 버튼이 클릭되었을 때의 동작
+                      },
+                      child: const Row(
+                        children: [
+                          Icon(Icons.local_fire_department_sharp),
+                          Text('베스트'),
                         ],
                       ),
                     ),
                   ],
                 ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      // 최신 버튼이 클릭되었을 때의 동작
-                    },
-                    child: const Row(
-                      children: [
-                        Icon(Icons.noise_aware_sharp),
-                        Text('최신'),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // 인기 버튼이 클릭되었을 때의 동작
-                    },
-                    child: const Row(
-                      children: [
-                        Icon(Icons.fire_hydrant_alt_sharp),
-                        Text('인기'),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // 베스트 버튼이 클릭되었을 때의 동작
-                    },
-                    child: const Row(
-                      children: [
-                        Icon(Icons.local_fire_department_sharp),
-                        Text('베스트'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              Expanded(
-                child: _buildPostList(screenWidth, horizontalPadding),
-              ),
-            ],
-          );
-        }
-      },
+                Expanded(
+                  child: _buildPostList(screenWidth, horizontalPadding),
+                ),
+              ],
+            );
+          }
+        },
+      ),
+      bottomNavigationBar: BotNaviWidget(
+        postData: null,
+        refreshDataCallback: () {
+          _refreshData();
+        },
+      ),
     );
   }
 

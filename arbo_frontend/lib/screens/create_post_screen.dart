@@ -1,6 +1,8 @@
 import 'package:arbo_frontend/resources/user_data.dart';
+import 'package:arbo_frontend/resources/user_data_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 
 class CreatePostScreen extends StatefulWidget {
   static const routeName = '/create-post';
@@ -20,7 +22,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   String _nickName = 'null';
   final int _hearts = 0;
   final List<Map<String, dynamic>> _comments = [];
-
+  final UserDataProvider userDataProvider = UserDataProvider();
   @override
   void setState(fn) {
     if (mounted) {
@@ -28,7 +30,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
-  Future<void> _savePost() async {
+  void _savePost() async {
     final isValid = _formKey.currentState!.validate();
 
     if (isValid) {
@@ -43,13 +45,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             'scale': _scale,
             'content': _content,
             'userId': userUid,
-            // 'timestamp': FieldValue.serverTimestamp(),
             'timestamp': DateTime.now(),
             'nickname': _nickName,
             'comments': _comments,
             'hearts': _hearts,
           });
-          Navigator.pop(context);
+
+          if (mounted) {
+            Future.delayed(const Duration(seconds: 1)).then((_) {
+              // final userData =
+              //     Provider.of<UserDataProvider>(context, listen: false);
+              // userData.fetchPostData();
+              Navigator.of(context).pop(true);
+            });
+          }
+
+          // Navigator.pop(context);
         } catch (e) {
           print(e);
         }
