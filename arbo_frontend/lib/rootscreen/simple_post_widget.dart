@@ -29,6 +29,7 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
   @override
   Widget build(BuildContext context) {
     specificAllPostData = allPostDataWithPostId[widget.postId] ?? {};
+    specificAllPostData['comments'] = specificAllPostData['comments'] ?? [];
     DateTime postTime =
         (specificAllPostData['timestamp'] as Timestamp).toDate();
     return GestureDetector(

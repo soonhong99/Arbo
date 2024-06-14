@@ -27,6 +27,19 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     }
   }
 
+  // @override
+  // void didChangeDependencies() {
+  //   super.didChangeDependencies();
+  //   if (!dataInitialized) {
+  //     final args =
+  //         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+  //     postData = args;
+  //     // Initialize other states based on postData if needed
+  //     _checkIfUserLiked();
+  //     _checkIfPostOwner();
+  //     dataInitialized = true;
+  //   }
+  // }
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -34,7 +47,8 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
       postData = args;
-      // Initialize other states based on postData if needed
+      postData['comments'] =
+          postData['comments'] ?? []; // Ensure comments is not null
       _checkIfUserLiked();
       _checkIfPostOwner();
       dataInitialized = true;
@@ -50,7 +64,6 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       }
       setState(() {
         _hasUserLiked = likedPosts.contains(postData['postId']);
-        print('음 나는 이 게시물을 좋아했어 $_hasUserLiked');
         dataChanged = true;
       });
     } catch (e) {
@@ -117,15 +130,15 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     DocumentReference postRef =
         FirebaseFirestore.instance.collection('posts').doc(postData['postId']);
 
-    // isreply와 parentComment, parentUserId를 이용해서 답글인지 확인한다.
     final newComment = {
+      'commentId': UniqueKey().toString(),
       'comment': comment,
       'timestamp': Timestamp.now(),
       'userId': currentLoginUser!.uid,
-      'parentId': 'null',
-      'isReply': false,
-      'parentComment': '',
+      'nickname': postData['nickname'], // Include nickname
+      'replies': [],
     };
+
     await postRef.update({
       'comments': FieldValue.arrayUnion([newComment])
     });
@@ -137,8 +150,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     _commentController.clear();
   }
 
-  Future<void> addReply(
-      String comment, String parentComment, String parentId) async {
+  Future<void> addReply(String comment, String parentCommentId) async {
     if (comment.isEmpty) return;
 
     if (currentLoginUser == null) {
@@ -147,23 +159,25 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     }
 
     final newReply = {
+      'commentId': UniqueKey().toString(),
       'comment': comment,
       'timestamp': Timestamp.now(),
       'userId': currentLoginUser!.uid,
-      'parentId': parentId,
-      'isReply': true,
-      'parentComment': parentComment,
+      'nickname': postData['nickname'], // Include nickname
     };
 
     setState(() {
-      postData['comments'].insert(0, newReply);
+      for (var c in postData['comments']) {
+        if (c['commentId'] == parentCommentId) {
+          c['replies'].insert(0, newReply);
+          break;
+        }
+      }
     });
 
     DocumentReference postRef =
         FirebaseFirestore.instance.collection('posts').doc(postData['postId']);
-    await postRef.update({
-      'comments': FieldValue.arrayUnion([newReply])
-    });
+    await postRef.update({'comments': postData['comments']});
 
     _commentController.clear();
   }
@@ -276,28 +290,36 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
               ),
             ),
             const SizedBox(height: 16.0),
-            ...comments.map((comment) {
-              if (comment['isReply']) {
-                return ListTile(
-                  title: Text('Reply to ${comment['parentComment']}'),
-                  subtitle: Text(comment['comment']),
-                  trailing: Text(
-                    (comment['timestamp'] as Timestamp).toDate().toString(),
+            ...comments.map<Widget>((comment) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ListTile(
+                    title:
+                        Text('${comment['nickname']} - ${comment['comment']}'),
+                    subtitle: Text(
+                      (comment['timestamp'] as Timestamp).toDate().toString(),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.reply),
+                      onPressed: () => _showReplyDialog(comment['commentId']),
+                    ),
                   ),
-                );
-              }
-              return ListTile(
-                title: Text(comment['comment']),
-                subtitle: Text(
-                  (comment['timestamp'] as Timestamp).toDate().toString(),
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.reply),
-                  onPressed: () => _showReplyDialog(
-                      comment['parentId'], comment['parentComment']),
-                ),
+                  ...comment['replies'].map<Widget>((reply) {
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 16.0),
+                      child: ListTile(
+                        title:
+                            Text('${reply['nickname']} - ${reply['comment']}'),
+                        subtitle: Text(
+                          (reply['timestamp'] as Timestamp).toDate().toString(),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ],
               );
-            }),
+            }).toList(),
           ],
         ),
       ),
@@ -308,7 +330,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     );
   }
 
-  void _showReplyDialog(String parentId, String parentComment) {
+  void _showReplyDialog(String parentId) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -331,7 +353,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
             TextButton(
               child: const Text('Reply'),
               onPressed: () {
-                addReply(replyController.text, parentComment, parentId);
+                addReply(replyController.text, parentId);
                 Navigator.of(context).pop();
               },
             ),
