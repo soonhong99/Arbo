@@ -111,7 +111,8 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
                       const SizedBox(width: 10.0),
                       const Icon(Icons.comment),
                       const SizedBox(width: 4.0),
-                      Text('${specificAllPostData['comments'].length}'),
+                      Text(
+                          '${countTotalComments(specificAllPostData['comments'])}'),
                     ],
                   ),
                 ],

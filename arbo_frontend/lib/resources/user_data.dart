@@ -15,3 +15,15 @@ Map<String, Map<String, dynamic>> allPostDataWithPostId = {};
 
 // post id, 클릭했다면 true, 아니면 false
 Map<String, bool> postClickHeart = {};
+
+int countTotalComments(List<dynamic>? comments) {
+  if (comments == null) {
+    return 0;
+  } else {
+    int count = comments.length;
+    for (var comment in comments) {
+      count += countTotalComments(comment['replies']);
+    }
+    return count;
+  }
+}

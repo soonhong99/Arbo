@@ -27,19 +27,6 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     }
   }
 
-  // @override
-  // void didChangeDependencies() {
-  //   super.didChangeDependencies();
-  //   if (!dataInitialized) {
-  //     final args =
-  //         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
-  //     postData = args;
-  //     // Initialize other states based on postData if needed
-  //     _checkIfUserLiked();
-  //     _checkIfPostOwner();
-  //     dataInitialized = true;
-  //   }
-  // }
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -135,7 +122,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       'comment': comment,
       'timestamp': Timestamp.now(),
       'userId': currentLoginUser!.uid,
-      'nickname': postData['nickname'], // Include nickname
+      'nickname': nickname, // Include nickname
       'replies': [],
     };
 
@@ -163,7 +150,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       'comment': comment,
       'timestamp': Timestamp.now(),
       'userId': currentLoginUser!.uid,
-      'nickname': postData['nickname'], // Include nickname
+      'nickname': nickname, // Include nickname
     };
 
     setState(() {
@@ -204,7 +191,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final comments = postData['comments'];
+    final comments = postData['comments'] ?? [];
     DateTime postTime = (postData['timestamp'] as Timestamp).toDate();
 
     return Scaffold(
@@ -249,7 +236,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
             ),
             const SizedBox(height: 8.0),
             Text(
-              'By ${postData['nickname']} - ${postTime.year}-${postTime.month}-${postTime.day}',
+              'By $nickname - ${postTime.year}-${postTime.month}-${postTime.day}',
               style: const TextStyle(
                 color: Colors.grey,
               ),
@@ -275,7 +262,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                 const SizedBox(width: 10.0),
                 const Icon(Icons.comment),
                 const SizedBox(width: 4.0),
-                Text('${comments.length}'),
+                Text('${countTotalComments(comments)}'),
               ],
             ),
             const SizedBox(height: 16.0),
@@ -290,7 +277,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
               ),
             ),
             const SizedBox(height: 16.0),
-            ...comments.map<Widget>((comment) {
+            ...comments.map((comment) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -305,7 +292,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                       onPressed: () => _showReplyDialog(comment['commentId']),
                     ),
                   ),
-                  ...comment['replies'].map<Widget>((reply) {
+                  ...comment['replies'].map((reply) {
                     return Padding(
                       padding: const EdgeInsets.only(left: 16.0),
                       child: ListTile(
