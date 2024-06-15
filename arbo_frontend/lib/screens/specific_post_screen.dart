@@ -19,6 +19,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   bool _isPostOwner = false;
   late Map<String, dynamic> postData;
   bool dataInitialized = false;
+  bool _areCommentsVisible = false;
 
   @override
   void setState(fn) {
@@ -62,7 +63,6 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   Future<void> _checkIfPostOwner() async {
     try {
       if (currentLoginUser == null) return;
-
       setState(() {
         _isPostOwner = currentLoginUser!.uid == postData['postOwnerId'];
       });
@@ -79,7 +79,6 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
 
     DocumentReference userRef =
         FirebaseFirestore.instance.collection('users').doc(userUid);
-
     DocumentReference heartRef =
         FirebaseFirestore.instance.collection('posts').doc(postData['postId']);
 
@@ -96,7 +95,6 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       await userRef.update({
         '하트 누른 게시물': FieldValue.arrayUnion([postData['postId']])
       });
-
       await heartRef.update({'hearts': FieldValue.increment(1)});
       setState(() {
         _hasUserLiked = true;
@@ -236,7 +234,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
             ),
             const SizedBox(height: 8.0),
             Text(
-              'By $nickname - ${postTime.year}-${postTime.month}-${postTime.day}',
+              'By ${postData['nickname']} - ${postTime.year}-${postTime.month}-${postTime.day}',
               style: const TextStyle(
                 color: Colors.grey,
               ),
@@ -277,36 +275,56 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
               ),
             ),
             const SizedBox(height: 16.0),
-            ...comments.map((comment) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ListTile(
-                    title:
-                        Text('${comment['nickname']} - ${comment['comment']}'),
-                    subtitle: Text(
-                      (comment['timestamp'] as Timestamp).toDate().toString(),
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.reply),
-                      onPressed: () => _showReplyDialog(comment['commentId']),
-                    ),
+            // 댓글 토글 버튼 추가
+            if (dataInitialized) ...[
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _areCommentsVisible = !_areCommentsVisible; // 토글
+                    });
+                  },
+                  child: Text(
+                    _areCommentsVisible
+                        ? '댓글 ${countTotalComments(comments)}개 접기'
+                        : '댓글 ${countTotalComments(comments)}개 보기',
                   ),
-                  ...comment['replies'].map((reply) {
-                    return Padding(
-                      padding: const EdgeInsets.only(left: 16.0),
-                      child: ListTile(
-                        title:
-                            Text('${reply['nickname']} - ${reply['comment']}'),
-                        subtitle: Text(
-                          (reply['timestamp'] as Timestamp).toDate().toString(),
-                        ),
+                ),
+              ),
+            ],
+
+            // 댓글과 답글을 토글하여 표시하는 부분
+            if (_areCommentsVisible)
+              ...comments.map((comment) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ListTile(
+                      title: Text(
+                          '${comment['nickname']} - ${comment['comment']}'),
+                      subtitle: Text((comment['timestamp'] as Timestamp)
+                          .toDate()
+                          .toString()),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.reply),
+                        onPressed: () => _showReplyDialog(comment['commentId']),
                       ),
-                    );
-                  }).toList(),
-                ],
-              );
-            }).toList(),
+                    ),
+                    ...comment['replies'].map((reply) {
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 16.0),
+                        child: ListTile(
+                          title: Text(
+                              '${reply['nickname']} - ${reply['comment']}'),
+                          subtitle: Text((reply['timestamp'] as Timestamp)
+                              .toDate()
+                              .toString()),
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                );
+              }).toList(),
           ],
         ),
       ),

@@ -44,10 +44,10 @@ class CustomSliverAppBar extends StatelessWidget {
             onPressed: () {
               user == null ? onLogin?.call() : onUserInfo?.call();
             },
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.person),
-                Text('마이페이지'),
+                Icon(user == null ? Icons.login : Icons.person),
+                Text(user == null ? '로그인' : '마이페이지'),
               ],
             ),
           ),
