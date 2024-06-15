@@ -1,3 +1,4 @@
+import 'package:arbo_frontend/widgets/main_widgets/key_board_trigger_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -19,6 +20,8 @@ class CustomSliverAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+
     return SliverAppBar(
       floating: true,
       snap: true,
@@ -26,6 +29,19 @@ class CustomSliverAppBar extends StatelessWidget {
       title: Row(
         children: [
           const Text('자보'),
+          const SizedBox(
+            width: 60,
+          ),
+          KeyBoardTrigger(
+            screenWidth: screenWidth / 2,
+          ),
+          const SizedBox(height: 10),
+          IconButton(
+            onPressed: () {
+              // 검색 버튼이 눌렸을 때의 동작
+            },
+            icon: const Icon(Icons.search),
+          ),
           const Spacer(),
           if (user != null) ...[
             Padding(

@@ -5,11 +5,9 @@ import 'package:flutter/services.dart';
 class KeyBoardTrigger extends StatelessWidget {
   const KeyBoardTrigger({
     super.key,
-    required this.labelText,
     required this.screenWidth,
   });
 
-  final String labelText;
   final double screenWidth;
   final double formalScreenWidth = 600;
   // focus node to capture keyboard events

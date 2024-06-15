@@ -105,9 +105,6 @@ class RootScreenState extends State<RootScreen> {
           ],
         ),
       ),
-      // bottomNavigationBar: const BotNaviWidget(
-      //   postData: null,
-      // ),
     );
   }
 

@@ -72,26 +72,6 @@ class MainWidgetState extends State<MainWidget> {
     final horizontalPadding = screenWidth * 0.1;
 
     return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text('Main Widget'),
-      //   actions: [
-      //     IconButton(
-      //       icon: const Icon(Icons.add),
-      //       onPressed: () async {
-      //         // Navigate to CreatePostScreen and wait for the result
-      //         final result = await Navigator.pushNamed(
-      //           context,
-      //           CreatePostScreen.routeName,
-      //         );
-
-      //         // If the result is true, refresh the posts
-      //         if (result == true) {
-      //           _refreshData();
-      //         }
-      //       },
-      //     ),
-      //   ],
-      // ),
       body: FutureBuilder(
         future: _fetchDataFuture,
         builder: (context, snapshot) {
@@ -143,67 +123,49 @@ class MainWidgetState extends State<MainWidget> {
                           );
                         }).toList(),
                       ),
-                      // 검색 필드와 검색 버튼
+                      const SizedBox(width: 10), // Adjust as needed for spacing
                       Expanded(
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            KeyBoardTrigger(
-                              labelText: showAllCategories
-                                  ? '검색할 나무를 입력하세요'
-                                  : '카테고리 선택',
-                              screenWidth: screenWidth,
-                            ),
-                            const SizedBox(height: 10),
-                            IconButton(
+                            TextButton(
                               onPressed: () {
-                                // 검색 버튼이 눌렸을 때의 동작
+// 최신 버튼이 클릭되었을 때의 동작
                               },
-                              icon: const Icon(Icons.search),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.noise_aware_sharp),
+                                  Text('최신'),
+                                ],
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+// 인기 버튼이 클릭되었을 때의 동작
+                              },
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.fire_hydrant_alt_sharp),
+                                  Text('인기'),
+                                ],
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+// 베스트 버튼이 클릭되었을 때의 동작
+                              },
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.local_fire_department_sharp),
+                                  Text('베스트'),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        // 최신 버튼이 클릭되었을 때의 동작
-                      },
-                      child: const Row(
-                        children: [
-                          Icon(Icons.noise_aware_sharp),
-                          Text('최신'),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        // 인기 버튼이 클릭되었을 때의 동작
-                      },
-                      child: const Row(
-                        children: [
-                          Icon(Icons.fire_hydrant_alt_sharp),
-                          Text('인기'),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        // 베스트 버튼이 클릭되었을 때의 동작
-                      },
-                      child: const Row(
-                        children: [
-                          Icon(Icons.local_fire_department_sharp),
-                          Text('베스트'),
-                        ],
-                      ),
-                    ),
-                  ],
                 ),
                 Expanded(
                   child: _buildPostList(screenWidth, horizontalPadding),
