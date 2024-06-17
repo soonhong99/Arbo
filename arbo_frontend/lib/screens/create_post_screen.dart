@@ -2,7 +2,6 @@ import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/resources/user_data_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:provider/provider.dart';
 
 class CreatePostScreen extends StatefulWidget {
   static const routeName = '/create-post';

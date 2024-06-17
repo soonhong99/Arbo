@@ -1,5 +1,4 @@
 import 'package:arbo_frontend/resources/user_data_provider.dart';
-import 'package:arbo_frontend/categorized/categorized_screen.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/roots/root_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';

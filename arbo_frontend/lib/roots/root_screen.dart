@@ -123,6 +123,7 @@ class RootScreenState extends State<RootScreen> {
                       },
                     ),
                   ),
+                  const Text('화면에 있는 UI들 간격 조정'),
                   const Text('아래에 핫한 디자인, 최근 디자인 simple widget 넣을 것'),
                   const Text('가구 종류를 클릭하면 해당 종류에 맞는 디자인만 선별해서 보여줄 것'),
                 ],
