@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 String nickname = 'null'; // To store the nickname of the user
 String userUid = 'null';
+int selectedIndex = -1;
+
 User? currentLoginUser;
 bool dataChanged = false;
 bool firstSpecificPostTouch = true;

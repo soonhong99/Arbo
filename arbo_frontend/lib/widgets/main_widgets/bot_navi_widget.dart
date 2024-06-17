@@ -1,5 +1,6 @@
 import 'package:arbo_frontend/resources/history_data.dart';
 import 'package:arbo_frontend/resources/user_data.dart';
+import 'package:arbo_frontend/roots/root_screen.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
@@ -8,10 +9,13 @@ import 'package:flutter/material.dart';
 class BotNaviWidget extends StatefulWidget {
   final VoidCallback refreshDataCallback;
   final Map<String, dynamic>? postData;
+  final VoidCallback onPreviousPage; // Add this parameter
+
   const BotNaviWidget({
     super.key,
     required this.postData,
     required this.refreshDataCallback,
+    required this.onPreviousPage,
   });
 
   @override
@@ -129,6 +133,13 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
             if (page_location != 0) {
               page_location--;
               _previousPage();
+            } else if (page_location == 0) {
+              // widget.onPreviousPage;
+              selectedIndex = -1;
+              Navigator.pushNamed(
+                context,
+                '/',
+              );
             }
             break;
           case 1:

@@ -1,6 +1,7 @@
 import 'package:arbo_frontend/resources/user_data_provider.dart';
+import 'package:arbo_frontend/categorized/categorized_screen.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
-import 'package:arbo_frontend/rootscreen/root_screen.dart';
+import 'package:arbo_frontend/roots/root_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:arbo_frontend/screens/user_info_screen.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +38,7 @@ class App extends StatelessWidget {
       // initialRoute: '/',
       home: const RootScreen(),
       routes: {
-        // '/': (context) => const RootScreen(),
+        // CategorizedScreen.routeName: (context) => const CategorizedScreen(),
         SpecificPostScreen.routeName: (context) => const SpecificPostScreen(),
         CreatePostScreen.routeName: (context) => const CreatePostScreen(),
       },

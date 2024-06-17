@@ -331,6 +331,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       bottomNavigationBar: BotNaviWidget(
         postData: postData,
         refreshDataCallback: () {},
+        onPreviousPage: () {},
       ),
     );
   }

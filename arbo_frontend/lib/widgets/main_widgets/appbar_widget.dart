@@ -1,3 +1,4 @@
+import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/widgets/main_widgets/key_board_trigger_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +29,16 @@ class CustomSliverAppBar extends StatelessWidget {
       foregroundColor: Colors.green,
       title: Row(
         children: [
-          const Text('자보'),
+          TextButton(
+              onPressed: () {
+                selectedIndex = -1;
+                Navigator.pushNamed(
+                  context,
+                  '/',
+                );
+              },
+              child: const Text('SelfmadeDeco')),
+          // const Text('자보'),
           const SizedBox(
             width: 60,
           ),

@@ -1,14 +1,16 @@
 import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/resources/user_data_provider.dart';
-import 'package:arbo_frontend/rootscreen/simple_post_widget.dart';
+import 'package:arbo_frontend/roots/simple_post_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:arbo_frontend/widgets/main_widgets/key_board_trigger_widget.dart';
 
 class MainWidget extends StatefulWidget {
+  final VoidCallback onPreviousPage;
+
   const MainWidget({
     super.key,
+    required this.onPreviousPage,
   });
 
   @override
@@ -180,6 +182,7 @@ class MainWidgetState extends State<MainWidget> {
         refreshDataCallback: () {
           _refreshData();
         },
+        onPreviousPage: widget.onPreviousPage, // Pass the callback
       ),
     );
   }
