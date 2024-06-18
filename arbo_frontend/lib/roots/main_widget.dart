@@ -18,7 +18,7 @@ class MainWidget extends StatefulWidget {
 }
 
 class MainWidgetState extends State<MainWidget> {
-  List<String> categories = ['전체', '자유', '정치', '경제', '사회', '정보', '호소'];
+  List<String> categories = ['전체', '의자', '테이블', '소파', '침대', '수납장', 'NoLimit'];
   List<String> updatedTime = ['지난 1일', '지난 1주', '지난 1개월', '지난 1년', '전체'];
   String selectedCategory = '전체'; // 초기에는 전체 카테고리를 선택합니다.
   String selectedUpdatedTime = '지난 1개월';

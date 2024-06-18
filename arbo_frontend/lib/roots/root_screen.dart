@@ -1,11 +1,11 @@
 import 'package:arbo_frontend/resources/user_data.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:arbo_frontend/resources/user_data_provider.dart';
 import 'package:arbo_frontend/screens/user_info_screen.dart';
 import 'package:arbo_frontend/widgets/main_widgets/appbar_widget.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/roots/main_widget.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class RootScreen extends StatefulWidget {
   const RootScreen({super.key});
@@ -16,6 +16,8 @@ class RootScreen extends StatefulWidget {
 
 class RootScreenState extends State<RootScreen> {
   NavigationState _currentNavigationState = NavigationState.initial;
+  int selectedIndex = -1; // Added to fix selectedIndex reference
+  final ScrollController _scrollController = ScrollController();
 
   void _onCategoryTapped(int index) {
     setState(() {
@@ -101,26 +103,36 @@ class RootScreenState extends State<RootScreen> {
                   const SizedBox(height: 10),
                   SizedBox(
                     height: 300,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: furnitureCategories.length,
-                      itemBuilder: (context, index) {
-                        return GestureDetector(
-                          onTap: () {
-                            _onCategoryTapped(index);
-                          },
-                          child: Column(
-                            children: [
-                              Image.asset(
-                                furnitureCategories[index]['image']!,
-                                width: 200,
-                                height: 200,
-                              ),
-                              Text(furnitureCategories[index]['name']!),
-                            ],
-                          ),
-                        );
+                    child: GestureDetector(
+                      onHorizontalDragUpdate: (details) {
+                        _scrollController.jumpTo(
+                            _scrollController.offset - details.delta.dx);
                       },
+                      child: ListView.separated(
+                        controller: _scrollController,
+                        scrollDirection: Axis.horizontal,
+                        itemCount: furnitureCategories.length,
+                        separatorBuilder: (context, index) => const SizedBox(
+                          width: 40,
+                        ),
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () {
+                              _onCategoryTapped(index);
+                            },
+                            child: Column(
+                              children: [
+                                Image.asset(
+                                  furnitureCategories[index]['image']!,
+                                  width: 200,
+                                  height: 200,
+                                ),
+                                Text(furnitureCategories[index]['name']!),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                   const Text('화면에 있는 UI들 간격 조정'),

@@ -2,6 +2,8 @@ import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/resources/user_data_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:html' as html;
 
 class CreatePostScreen extends StatefulWidget {
   static const routeName = '/create-post';
@@ -15,17 +17,61 @@ class CreatePostScreen extends StatefulWidget {
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final _formKey = GlobalKey<FormState>();
   String _title = 'null';
-  String _topic = '자유';
+  String _topic = 'NoLimit';
   String _scale = '대자보';
   String _content = 'null';
   String _nickName = 'null';
   final int _hearts = 0;
   final List<Map<String, dynamic>> _comments = [];
+  final List<String> _imageUrls = [];
   final UserDataProvider userDataProvider = UserDataProvider();
+
   @override
   void setState(fn) {
     if (mounted) {
       super.setState(fn);
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final html.FileUploadInputElement uploadInput =
+        html.FileUploadInputElement();
+    uploadInput.accept = 'image/*';
+    uploadInput.click();
+
+    uploadInput.onChange.listen((e) async {
+      final files = uploadInput.files;
+      if (files!.isEmpty) return;
+
+      final file = files[0];
+      final reader = html.FileReader();
+
+      reader.readAsDataUrl(file);
+      reader.onLoadEnd.listen((e) async {
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('posts/${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+        final uploadTask = storageRef.putBlob(file);
+        final snapshot = await uploadTask.whenComplete(() {});
+
+        final imageUrl = await snapshot.ref.getDownloadURL();
+
+        setState(() {
+          _imageUrls.add(imageUrl);
+        });
+      });
+    });
+  }
+
+  void _deleteImages() async {
+    for (var imageUrl in _imageUrls) {
+      try {
+        final ref = FirebaseStorage.instance.refFromURL(imageUrl);
+        await ref.delete();
+      } catch (e) {
+        print('Error deleting image: $e');
+      }
     }
   }
 
@@ -37,7 +83,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       if (currentLoginUser != null) {
         try {
           _nickName = nickname;
-          // firebase에 post라는 이름으로 저장하고 싶을 떄
+          // firebase에 post라는 이름으로 저장하고 싶을 때
           await FirebaseFirestore.instance.collection('posts').add({
             'title': _title,
             'topic': _topic,
@@ -48,18 +94,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             'nickname': _nickName,
             'comments': _comments,
             'hearts': _hearts,
+            'designedPicture': _imageUrls,
+            'visitedUser': [], // 방문한 사용자 닉네임 리스트 초기화
           });
 
           if (mounted) {
             Future.delayed(const Duration(seconds: 1)).then((_) {
-              // final userData =
-              //     Provider.of<UserDataProvider>(context, listen: false);
-              // userData.fetchPostData();
               Navigator.of(context).pop(true);
             });
           }
-
-          // Navigator.pop(context);
         } catch (e) {
           print(e);
         }
@@ -67,84 +110,134 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
+  Future<bool> _onWillPop() async {
+    if (_imageUrls.isNotEmpty) {
+      () {
+        _deleteImages();
+      };
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Post'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _savePost,
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Create Post'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () async {
+              final shouldPop = await _onWillPop();
+              if (shouldPop) {
+                Navigator.of(context).pop();
+              }
+            },
           ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: <Widget>[
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Title'),
-                validator: (value) {
-                  return value!.isEmpty ? 'Please enter a title' : null;
-                },
-                onSaved: (value) => _title = value!,
-              ),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Scale'),
-                value: _scale,
-                items: <String>['대자보', '소자보']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _scale = newValue!;
-                  });
-                },
-                validator: (value) {
-                  return value == null || value.isEmpty
-                      ? 'Please select a scale'
-                      : null;
-                },
-                onSaved: (value) => _scale = value!,
-              ),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Topic'),
-                value: _topic,
-                items: <String>['정치', '경제', '사회', '정보', '호소', '자유']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _topic = newValue!;
-                  });
-                },
-                validator: (value) {
-                  return value == null || value.isEmpty
-                      ? 'Please select a topic'
-                      : null;
-                },
-                onSaved: (value) => _topic = value!,
-              ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Content'),
-                maxLines: 8,
-                validator: (value) {
-                  return value!.isEmpty ? 'Please enter some content' : null;
-                },
-                onSaved: (value) => _content = value!,
-              ),
-            ],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.save),
+              onPressed: _savePost,
+            ),
+          ],
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: <Widget>[
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Title'),
+                  validator: (value) {
+                    return value!.isEmpty ? 'Please enter a title' : null;
+                  },
+                  onSaved: (value) => _title = value!,
+                ),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(labelText: 'Scale'),
+                  value: _scale,
+                  items: <String>['대자보', '소자보']
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _scale = newValue!;
+                    });
+                  },
+                  validator: (value) {
+                    return value == null || value.isEmpty
+                        ? 'Please select a scale'
+                        : null;
+                  },
+                  onSaved: (value) => _scale = value!,
+                ),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(labelText: 'Topic'),
+                  value: _topic,
+                  items: <String>['의자', '테이블', '소파', '침대', '수납장', 'NoLimit']
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _topic = newValue!;
+                    });
+                  },
+                  validator: (value) {
+                    return value == null || value.isEmpty
+                        ? 'Please select a topic'
+                        : null;
+                  },
+                  onSaved: (value) => _topic = value!,
+                ),
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Content'),
+                  maxLines: 8,
+                  validator: (value) {
+                    return value!.isEmpty ? 'Please enter some content' : null;
+                  },
+                  onSaved: (value) => _content = value!,
+                ),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: _imageUrls.length < 3 ? _pickImage : null,
+                  child: const Text('Upload Image'),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 10,
+                  children: _imageUrls
+                      .map((url) => Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              border: Border.all(),
+                            ),
+                            child: Image.network(
+                              url,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                print(error);
+                                return const Icon(
+                                  Icons.error,
+                                  color: Colors.red,
+                                );
+                              },
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ],
+            ),
           ),
         ),
       ),
