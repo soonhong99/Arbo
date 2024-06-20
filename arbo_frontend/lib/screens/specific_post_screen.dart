@@ -1,6 +1,7 @@
 import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
+import 'package:arbo_frontend/widgets/main_widgets/heart_animation_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -20,6 +21,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   late Map<String, dynamic> postData;
   bool dataInitialized = false;
   bool _areCommentsVisible = false;
+  bool animationCompleted = false;
 
   @override
   void setState(fn) {
@@ -273,46 +275,86 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                 spacing: 10.0,
                 runSpacing: 10.0,
                 children: postData['designedPicture']
-                    .map<Widget>((imageUrl) => Container(
-                          width: imageSize,
-                          height: imageSize,
-                          color: Colors.grey[300], // Placeholder color
-                          child: Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              print(error);
-                              return const Icon(
-                                Icons.error,
-                                color: Colors.red,
-                              );
-                            },
+                    .map<Widget>((imageUrl) => GestureDetector(
+                          onDoubleTap: () {
+                            _updateHearts();
+                            if (_hasUserLiked == false &&
+                                currentLoginUser != null) {
+                              animationCompleted = true;
+                            }
+                          },
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Container(
+                                width: imageSize,
+                                height: imageSize,
+                                color: Colors.grey[300], // Placeholder color
+                                child: Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    print(error);
+                                    return const Icon(
+                                      Icons.error,
+                                      color: Colors.red,
+                                    );
+                                  },
+                                ),
+                              ),
+                              Opacity(
+                                opacity: animationCompleted ? 1 : 0,
+                                child: HeartAnimationWidget(
+                                    isAnimating: animationCompleted,
+                                    duration: const Duration(milliseconds: 700),
+                                    onEnd: () => setState(
+                                          () => animationCompleted = false,
+                                        ),
+                                    child: const Icon(
+                                      Icons.favorite,
+                                      color: Colors.red,
+                                      size: 100.0,
+                                    )),
+                              ),
+                            ],
                           ),
                         ))
                     .toList(),
               ),
             ),
             const SizedBox(height: 20),
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    _hasUserLiked ? Icons.favorite : Icons.favorite_border,
+                  ),
+                  onPressed: _updateHearts,
+                ),
+                const SizedBox(width: 4.0),
+                Text('${postData['hearts']}'),
+                const SizedBox(width: 10.0),
+                const Icon(Icons.comment),
+                const SizedBox(width: 4.0),
+                Text('${countTotalComments(comments)}'),
+              ],
+            ),
             Text(
               postData['content'],
               style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 30,
                   fontWeight: FontWeight.normal,
                   color: Colors.black),
-            ),
-            const Divider(thickness: 1, color: Colors.black54),
-            const Text(
-              '댓글',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 8.0),
             TextField(
               controller: _commentController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: '댓글을 입력하세요.',
                 suffixIcon: IconButton(
-                  icon: Icon(Icons.send),
-                  onPressed: null, // Updated below
+                  icon: const Icon(Icons.send),
+                  onPressed: () =>
+                      _addComment(_commentController.text), // Add this line
                 ),
               ),
             ),
