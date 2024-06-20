@@ -24,7 +24,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final int _hearts = 0;
   final List<Map<String, dynamic>> _comments = [];
   final List<String> _imageUrls = [];
+  final int _visitedUsers = 0;
   final UserDataProvider userDataProvider = UserDataProvider();
+  bool _isPostSaved = false;
 
   @override
   void setState(fn) {
@@ -83,7 +85,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       if (currentLoginUser != null) {
         try {
           _nickName = nickname;
-          // firebase에 post라는 이름으로 저장하고 싶을 때
+          // Save post to Firestore
           await FirebaseFirestore.instance.collection('posts').add({
             'title': _title,
             'topic': _topic,
@@ -95,7 +97,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             'comments': _comments,
             'hearts': _hearts,
             'designedPicture': _imageUrls,
-            'visitedUser': [], // 방문한 사용자 닉네임 리스트 초기화
+            'visitedUser': _visitedUsers, // 방문한 사용자 닉네임 리스트 초기화
+          });
+
+          setState(() {
+            _isPostSaved = true;
           });
 
           if (mounted) {
@@ -111,12 +117,20 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   Future<bool> _onWillPop() async {
-    if (_imageUrls.isNotEmpty) {
+    if (!_isPostSaved && _imageUrls.isNotEmpty) {
       () {
         _deleteImages();
       };
     }
     return true;
+  }
+
+  @override
+  void dispose() {
+    if (!_isPostSaved && _imageUrls.isNotEmpty) {
+      _deleteImages();
+    }
+    super.dispose();
   }
 
   @override

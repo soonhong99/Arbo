@@ -18,6 +18,8 @@ class UserDataProvider with ChangeNotifier {
       'title': allDataSnapshot['title'],
       'topic': allDataSnapshot['topic'],
       'postOwnerId': allDataSnapshot['userId'],
+      'designedPicture': allDataSnapshot['designedPicture'],
+      'visitedUser': allDataSnapshot['visitedUser'],
     };
   }
 

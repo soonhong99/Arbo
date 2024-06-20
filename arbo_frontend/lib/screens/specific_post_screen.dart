@@ -37,9 +37,24 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       postData = args;
       postData['comments'] =
           postData['comments'] ?? []; // Ensure comments is not null
+      _incrementViewCount(); // Increment view count when the screen is accessed
       _checkIfUserLiked();
       _checkIfPostOwner();
       dataInitialized = true;
+    }
+  }
+
+  Future<void> _incrementViewCount() async {
+    try {
+      final postRef = FirebaseFirestore.instance
+          .collection('posts')
+          .doc(postData['postId']);
+      await postRef.update({'visitedUser': FieldValue.increment(1)});
+      setState(() {
+        postData['visitedUser'] = postData['visitedUser'] + 1;
+      });
+    } catch (e) {
+      print('Error incrementing view count: $e');
     }
   }
 
@@ -191,6 +206,8 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   Widget build(BuildContext context) {
     final comments = postData['comments'] ?? [];
     DateTime postTime = (postData['timestamp'] as Timestamp).toDate();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final imageSize = screenWidth * 0.7; // 70% of the screen width
 
     return Scaffold(
       appBar: AppBar(
@@ -233,67 +250,89 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
               ),
             ),
             const SizedBox(height: 8.0),
-            Text(
-              'By ${postData['nickname']} - ${postTime.year}-${postTime.month}-${postTime.day}',
-              style: const TextStyle(
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 16.0),
-            Text(
-              postData['content'],
-              style: const TextStyle(
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 16.0),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(
-                  icon: Icon(
-                    _hasUserLiked ? Icons.favorite : Icons.favorite_border,
+                Text(
+                  'By ${postData['nickname']} - ${postTime.year}-${postTime.month}-${postTime.day}',
+                  style: const TextStyle(
+                    color: Colors.grey,
                   ),
-                  onPressed: _updateHearts,
                 ),
-                const SizedBox(width: 4.0),
-                Text('${postData['hearts']}'),
-                const SizedBox(width: 10.0),
-                const Icon(Icons.comment),
-                const SizedBox(width: 4.0),
-                Text('${countTotalComments(comments)}'),
+                Text(
+                  'Views: ${postData['visitedUser']}',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16.0),
+            Center(
+              child: Wrap(
+                spacing: 10.0,
+                runSpacing: 10.0,
+                children: postData['designedPicture']
+                    .map<Widget>((imageUrl) => Container(
+                          width: imageSize,
+                          height: imageSize,
+                          color: Colors.grey[300], // Placeholder color
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              print(error);
+                              return const Icon(
+                                Icons.error,
+                                color: Colors.red,
+                              );
+                            },
+                          ),
+                        ))
+                    .toList(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              postData['content'],
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.normal,
+                  color: Colors.black),
+            ),
+            const Divider(thickness: 1, color: Colors.black54),
+            const Text(
+              '댓글',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 8.0),
             TextField(
               controller: _commentController,
-              decoration: InputDecoration(
-                labelText: 'Add a comment',
+              decoration: const InputDecoration(
+                hintText: '댓글을 입력하세요.',
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: () => _addComment(_commentController.text),
+                  icon: Icon(Icons.send),
+                  onPressed: null, // Updated below
                 ),
               ),
             ),
             const SizedBox(height: 16.0),
-            // 댓글 토글 버튼 추가
             if (dataInitialized) ...[
               Center(
                 child: TextButton(
                   onPressed: () {
                     setState(() {
-                      _areCommentsVisible = !_areCommentsVisible; // 토글
+                      _areCommentsVisible = !_areCommentsVisible; // Toggle
                     });
                   },
                   child: Text(
                     _areCommentsVisible
-                        ? '댓글 ${countTotalComments(comments)}개 접기'
-                        : '댓글 ${countTotalComments(comments)}개 보기',
+                        ? '댓글 ${comments.length}개 접기'
+                        : '댓글 ${comments.length}개 보기',
                   ),
                 ),
               ),
             ],
-
-            // 댓글과 답글을 토글하여 표시하는 부분
             if (_areCommentsVisible)
               ...comments.map((comment) {
                 return Column(
@@ -310,7 +349,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                         onPressed: () => _showReplyDialog(comment['commentId']),
                       ),
                     ),
-                    ...comment['replies'].map((reply) {
+                    ...comment['replies'].map<Widget>((reply) {
                       return Padding(
                         padding: const EdgeInsets.only(left: 16.0),
                         child: ListTile(

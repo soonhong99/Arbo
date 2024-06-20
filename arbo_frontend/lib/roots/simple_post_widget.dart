@@ -32,6 +32,11 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
     specificAllPostData['comments'] = specificAllPostData['comments'] ?? [];
     DateTime postTime =
         (specificAllPostData['timestamp'] as Timestamp).toDate();
+
+    // Get the designedPicture list
+    List<String> imageUrls =
+        List<String>.from(specificAllPostData['designedPicture'] ?? []);
+
     return GestureDetector(
       onTap: () async {
         // 방문기록 추가
@@ -120,11 +125,19 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
             ),
             const SizedBox(width: 8.0),
             Container(
-              width:
-                  100, // Adjust the width of the thumbnail container as needed
+              width: 100,
               height: 100,
-              color: Colors.grey, // Placeholder color for thumbnail
-              // Add your thumbnail widget or image here
+              color: Colors.grey,
+              child: imageUrls.isNotEmpty
+                  ? Image.network(
+                      imageUrls[0],
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        print(error);
+                        return Container(color: Colors.grey);
+                      },
+                    )
+                  : Container(color: Colors.grey),
             ),
           ],
         ),
