@@ -7,10 +7,12 @@ import 'package:flutter/material.dart';
 
 class MainWidget extends StatefulWidget {
   final VoidCallback onPreviousPage;
+  final String initialCategory;
 
   const MainWidget({
     super.key,
     required this.onPreviousPage,
+    required this.initialCategory,
   });
 
   @override
@@ -18,18 +20,19 @@ class MainWidget extends StatefulWidget {
 }
 
 class MainWidgetState extends State<MainWidget> {
-  List<String> categories = ['전체', '의자', '테이블', '소파', '침대', '수납장', 'NoLimit'];
+  List<String> categories = ['전체', 'NoLimit', '의자', '테이블', '소파', '침대', '수납장'];
   List<String> updatedTime = ['지난 1일', '지난 1주', '지난 1개월', '지난 1년', '전체'];
-  String selectedCategory = '전체'; // 초기에는 전체 카테고리를 선택합니다.
   String selectedUpdatedTime = '지난 1개월';
-  bool showAllCategories = false; // 초기에는 전체 카테고리를 숨깁니다.
+  bool showAllCategories = false;
   final UserDataProvider userDataProvider = UserDataProvider();
-  late Future<void> _fetchDataFuture; // 데이터 fetch를 위한 Future
+  late Future<void> _fetchDataFuture;
+  late String selectedCategory;
 
   @override
   void initState() {
     super.initState();
     _fetchDataFuture = userDataProvider.fetchPostData();
+    selectedCategory = widget.initialCategory;
   }
 
   void _refreshData() {
@@ -125,15 +128,13 @@ class MainWidgetState extends State<MainWidget> {
                           );
                         }).toList(),
                       ),
-                      const SizedBox(width: 10), // Adjust as needed for spacing
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             TextButton(
-                              onPressed: () {
-// 최신 버튼이 클릭되었을 때의 동작
-                              },
+                              onPressed: () {},
                               child: const Row(
                                 children: [
                                   Icon(Icons.noise_aware_sharp),
@@ -142,9 +143,7 @@ class MainWidgetState extends State<MainWidget> {
                               ),
                             ),
                             TextButton(
-                              onPressed: () {
-// 인기 버튼이 클릭되었을 때의 동작
-                              },
+                              onPressed: () {},
                               child: const Row(
                                 children: [
                                   Icon(Icons.fire_hydrant_alt_sharp),
@@ -153,9 +152,7 @@ class MainWidgetState extends State<MainWidget> {
                               ),
                             ),
                             TextButton(
-                              onPressed: () {
-// 베스트 버튼이 클릭되었을 때의 동작
-                              },
+                              onPressed: () {},
                               child: const Row(
                                 children: [
                                   Icon(Icons.local_fire_department_sharp),
@@ -182,7 +179,7 @@ class MainWidgetState extends State<MainWidget> {
         refreshDataCallback: () {
           _refreshData();
         },
-        onPreviousPage: widget.onPreviousPage, // Pass the callback
+        onPreviousPage: widget.onPreviousPage,
       ),
     );
   }

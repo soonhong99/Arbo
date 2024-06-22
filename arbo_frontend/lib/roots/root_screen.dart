@@ -38,6 +38,8 @@ class RootScreenState extends State<RootScreen> {
     final userData = Provider.of<UserDataProvider>(context);
 
     final List<Map<String, String>> furnitureCategories = [
+      {'name': '전체', 'image': 'images/categorized/all.png'},
+      {'name': 'NoLimit', 'image': 'images/categorized/nolimit.png'},
       {'name': '의자', 'image': 'images/categorized/chair.png'},
       {'name': '테이블', 'image': 'images/categorized/table.png'},
       {'name': '소파', 'image': 'images/categorized/sofa.png'},
@@ -142,6 +144,8 @@ class RootScreenState extends State<RootScreen> {
               )
             : MainWidget(
                 onPreviousPage: _navigateBackToInitial,
+                initialCategory: furnitureCategories[selectedIndex]
+                    ['name']!, // Pass the selected category
               ),
       ),
       drawer: Drawer(
