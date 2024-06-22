@@ -45,13 +45,13 @@ class CustomSliverAppBar extends StatelessWidget {
           KeyBoardTrigger(
             screenWidth: screenWidth / 2,
           ),
-          const SizedBox(height: 10),
-          IconButton(
-            onPressed: () {
-              // 검색 버튼이 눌렸을 때의 동작
-            },
-            icon: const Icon(Icons.search),
-          ),
+          // const SizedBox(height: 10),
+          // IconButton(
+          //   onPressed: () {
+          //     // 검색 버튼이 눌렸을 때의 동작
+          //   },
+          //   icon: const Icon(Icons.search),
+          // ),
           const Spacer(),
           if (user != null) ...[
             Padding(
