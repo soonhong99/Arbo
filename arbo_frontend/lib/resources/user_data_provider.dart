@@ -29,13 +29,13 @@ class UserDataProvider with ChangeNotifier {
       notifyListeners();
       return;
     }
+    // print(user);
     DocumentSnapshot userDoc = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .get();
     loginUserData = userDoc;
     nickname = loginUserData!['닉네임'];
-    promptSearchHistory = loginUserData!['프롬프트 기록'];
 
     notifyListeners();
   }

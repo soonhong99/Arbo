@@ -23,6 +23,7 @@ class RootScreenState extends State<RootScreen> {
   int selectedIndex = -1; // Added to fix selectedIndex reference
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _promptController = TextEditingController();
+  bool firstClickedPrompt = true;
 
   void _onCategoryTapped(int index) {
     setState(() {
@@ -39,6 +40,11 @@ class RootScreenState extends State<RootScreen> {
   }
 
   void _showPromptDialog() {
+    if (firstClickedPrompt) {
+      promptSearchHistory = loginUserData!['프롬프트 기록'] ?? [];
+      firstClickedPrompt = false;
+    }
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -65,7 +71,7 @@ class RootScreenState extends State<RootScreen> {
     );
   }
 
-  Future<void> saveSearchHistoryToFirebase(List<String> searchHistory) async {
+  Future<void> saveSearchHistoryToFirebase(List<dynamic> searchHistory) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId != null) {
       await FirebaseFirestore.instance
