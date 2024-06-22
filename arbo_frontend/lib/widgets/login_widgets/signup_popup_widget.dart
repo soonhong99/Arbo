@@ -19,6 +19,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   List<String> postClickedHeart = [];
+  List<String> promptSearchHistory = [];
   bool isLoading = false;
   String? errorMessage;
 
@@ -124,6 +125,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         '닉네임': _nicknameController.text,
         '이메일 주소': _emailController.text,
         '하트 누른 게시물': postClickedHeart,
+        '프롬프트 기록': promptSearchHistory,
       });
 
       setState(() {

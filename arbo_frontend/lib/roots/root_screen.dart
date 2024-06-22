@@ -1,4 +1,8 @@
 import 'package:arbo_frontend/resources/user_data.dart';
+import 'package:arbo_frontend/widgets/main_widgets/design_prompt_dialog_widget.dart';
+import 'package:arbo_frontend/widgets/main_widgets/design_prompt_widget.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:arbo_frontend/resources/user_data_provider.dart';
@@ -18,6 +22,7 @@ class RootScreenState extends State<RootScreen> {
   NavigationState _currentNavigationState = NavigationState.initial;
   int selectedIndex = -1; // Added to fix selectedIndex reference
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _promptController = TextEditingController();
 
   void _onCategoryTapped(int index) {
     setState(() {
@@ -31,6 +36,43 @@ class RootScreenState extends State<RootScreen> {
       selectedIndex = -1;
       _currentNavigationState = NavigationState.initial;
     });
+  }
+
+  void _showPromptDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return DesignPromptDialog(
+          promptController: _promptController,
+          searchHistory: promptSearchHistory,
+          onSearch: (searchTerm) async {
+            if (searchTerm.isNotEmpty) {
+              // Add to search history
+              if (promptSearchHistory.length >= 3) {
+                promptSearchHistory.removeAt(0);
+              }
+              promptSearchHistory.add(searchTerm);
+
+              // Save to Firebase
+              await saveSearchHistoryToFirebase(promptSearchHistory);
+
+              // Perform search logic here
+              // performSearch(searchTerm);
+            }
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> saveSearchHistoryToFirebase(List<String> searchHistory) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .update({'프롬프트 기록': searchHistory});
+    }
   }
 
   @override
@@ -91,14 +133,21 @@ class RootScreenState extends State<RootScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: TextField(
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: '디자인 프롬프트 입력',
-                      ),
-                      onSubmitted: (String value) {
-                        // 사용자가 프롬프트를 입력하고 제출했을 때의 동작
-                        print('User entered prompt: $value');
+                    child: DesignPromptWidget(
+                      onPromptTap: () {
+                        if (currentLoginUser != null) {
+                          _showPromptDialog();
+                        } else {
+                          // 로그인 유도
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return LoginPopupWidget(
+                                onLoginSuccess: () {},
+                              );
+                            },
+                          );
+                        }
                       },
                     ),
                   ),
@@ -174,6 +223,7 @@ class RootScreenState extends State<RootScreen> {
     );
   }
 
+  // 현재 안쓰는중.
   ExpansionTile navigationToggle(BuildContext context, String postSize) {
     return ExpansionTile(
       title: Text(postSize),
