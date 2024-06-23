@@ -60,6 +60,7 @@ exports.onPostUpdated = functions
     .document("posts/{postId}")
     .onUpdate(async (change, context) => {
       const postData = change.after.data();
+      const prevpostData = change.before.data();
       postData.objectID = context.params.postId;
 
       await index.saveObject(postData);

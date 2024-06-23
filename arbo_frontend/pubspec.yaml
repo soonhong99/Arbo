@@ -42,12 +42,13 @@ dependencies:
   # ui auth 14에서 7로 변경 - algolia 와 버전 충돌
   firebase_ui_auth: ^1.7.0
   flutter_animate: ^4.0.0
-  infinite_scroll_pagination: ^3.1.0
+  infinite_scroll_pagination: ^4.0.0
   flutter_dotenv: ^5.0.2
   image_picker: ^0.8.4+4
   firebase_storage: ^11.7.5
   universal_io: ^2.0.4
   algolia: ^1.0.0
+  algolia_helper_flutter: ^1.0.0
 
 
 dev_dependencies:

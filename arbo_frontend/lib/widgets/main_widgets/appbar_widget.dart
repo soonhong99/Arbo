@@ -30,14 +30,15 @@ class CustomSliverAppBar extends StatelessWidget {
       title: Row(
         children: [
           TextButton(
-              onPressed: () {
-                selectedIndex = -1;
-                Navigator.pushNamed(
-                  context,
-                  '/',
-                );
-              },
-              child: const Text('SelfmadeDeco')),
+            onPressed: () {
+              selectedIndex = -1;
+              Navigator.pushNamed(
+                context,
+                '/',
+              );
+            },
+            child: const Text('SelfmadeDeco'),
+          ),
           // const Text('자보'),
           const SizedBox(
             width: 60,
