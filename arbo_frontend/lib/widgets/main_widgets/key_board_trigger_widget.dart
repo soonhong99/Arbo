@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:algolia_helper_flutter/algolia_helper_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 class Product {
@@ -84,9 +85,9 @@ class _SearchDialogState extends State<SearchDialog> {
   void initState() {
     super.initState();
     _productsSearcher = HitsSearcher(
-      applicationID: 'I0P4IGRC4K',
-      apiKey: 'a71066c56d91d321692fda801e2bc0c2',
-      indexName: 'posts',
+      applicationID: dotenv.env['ALGOLIA_APPLICATION_ID']!,
+      apiKey: dotenv.env['ALGOLIA_API_KEY']!,
+      indexName: dotenv.env['ALGOLIA_INDEX_NAME']!,
     );
 
     _searchTextController.addListener(
