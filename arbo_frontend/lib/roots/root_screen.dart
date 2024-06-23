@@ -1,13 +1,13 @@
 import 'package:arbo_frontend/resources/user_data.dart';
-import 'package:arbo_frontend/widgets/main_widgets/design_prompt_dialog_widget.dart';
-import 'package:arbo_frontend/widgets/main_widgets/design_prompt_widget.dart';
+import 'package:arbo_frontend/widgets/prompt_widgets/design_prompt_dialog_widget.dart';
+import 'package:arbo_frontend/widgets/prompt_widgets/design_prompt_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:arbo_frontend/resources/user_data_provider.dart';
 import 'package:arbo_frontend/screens/user_info_screen.dart';
-import 'package:arbo_frontend/widgets/main_widgets/appbar_widget.dart';
+import 'package:arbo_frontend/roots/appbar_widget.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/roots/main_widget.dart';
 

@@ -1,5 +1,5 @@
 import 'package:arbo_frontend/resources/user_data.dart';
-import 'package:arbo_frontend/widgets/main_widgets/key_board_trigger_widget.dart';
+import 'package:arbo_frontend/widgets/search_widgets/search_design_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -43,16 +43,9 @@ class CustomSliverAppBar extends StatelessWidget {
           const SizedBox(
             width: 60,
           ),
-          KeyBoardTrigger(
+          SearchDesignBar(
             screenWidth: screenWidth / 2,
           ),
-          // const SizedBox(height: 10),
-          // IconButton(
-          //   onPressed: () {
-          //     // 검색 버튼이 눌렸을 때의 동작
-          //   },
-          //   icon: const Icon(Icons.search),
-          // ),
           const Spacer(),
           if (user != null) ...[
             Padding(
