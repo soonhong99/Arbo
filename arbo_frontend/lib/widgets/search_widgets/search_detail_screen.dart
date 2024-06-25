@@ -91,7 +91,7 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
     try {
       if (currentLoginUser == null) return;
       setState(() {
-        _isPostOwner = currentLoginUser!.uid == postData['postOwnerId'];
+        _isPostOwner = currentLoginUser!.uid == postData['userId'];
       });
     } catch (e) {
       print('error in check if post owner');
@@ -230,28 +230,29 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
         shadowColor: Colors.black,
         elevation: 2,
         foregroundColor: Colors.black,
-        automaticallyImplyLeading: false,
-        actions: _isPostOwner
-            ? [
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: _navigateToEditPost,
-                ),
-              ]
-            : null,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              postData['topic'],
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-                color: Colors.red,
-              ),
+            Row(
+              children: [
+                Text(
+                  postData['topic'],
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                    color: Colors.red,
+                  ),
+                ),
+                const Spacer(), // This will push the IconButton to the right
+                if (_isPostOwner)
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: _navigateToEditPost,
+                  ),
+              ],
             ),
             const SizedBox(height: 20),
             Hero(
@@ -421,11 +422,6 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
               }).toList(),
           ],
         ),
-      ),
-      bottomNavigationBar: BotNaviWidget(
-        postData: postData,
-        refreshDataCallback: () {},
-        onPreviousPage: () {},
       ),
     );
   }
