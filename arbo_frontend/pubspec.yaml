@@ -50,7 +50,7 @@ dependencies:
   universal_io: ^2.0.4
   algolia: ^1.0.0
   algolia_helper_flutter: ^1.0.0
-
+  http: ^0.13.3
 
 dev_dependencies:
   flutter_test:
