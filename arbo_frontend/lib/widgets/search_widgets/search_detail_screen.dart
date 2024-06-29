@@ -48,16 +48,14 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
   }
 
   Future<Map<String, dynamic>> _fetchPostDetails() async {
-    final doc = await FirebaseFirestore.instance
-        .collection('posts')
-        .doc(widget.postId)
-        .get();
+    final doc =
+        await firestore_instance.collection('posts').doc(widget.postId).get();
     return doc.data()!;
   }
 
   Future<void> _incrementViewCount() async {
     try {
-      final postRef = FirebaseFirestore.instance
+      final postRef = firestore_instance
           .collection('posts')
           // .doc(widget.postId);
           .doc(widget.postId);
@@ -105,9 +103,9 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
     }
 
     DocumentReference userRef =
-        FirebaseFirestore.instance.collection('users').doc(userUid);
+        firestore_instance.collection('users').doc(userUid);
     DocumentReference heartRef =
-        FirebaseFirestore.instance.collection('posts').doc(widget.postId);
+        firestore_instance.collection('posts').doc(widget.postId);
 
     if (_hasUserLiked) {
       await userRef.update({
@@ -140,7 +138,7 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
     }
     dataChanged = true;
     DocumentReference postRef =
-        FirebaseFirestore.instance.collection('posts').doc(widget.postId);
+        firestore_instance.collection('posts').doc(widget.postId);
 
     final newComment = {
       'commentId': UniqueKey().toString(),
@@ -188,7 +186,7 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
     });
 
     DocumentReference postRef =
-        FirebaseFirestore.instance.collection('posts').doc(widget.postId);
+        firestore_instance.collection('posts').doc(widget.postId);
     await postRef.update({'comments': postData['comments']});
 
     _commentController.clear();

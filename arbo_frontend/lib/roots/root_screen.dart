@@ -1,8 +1,11 @@
 import 'package:arbo_frontend/resources/user_data.dart';
+import 'package:arbo_frontend/widgets/gemini_widgets/gemini_chandler_chat.dart';
+import 'package:arbo_frontend/widgets/gemini_widgets/gemini_coco_chat.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/design_prompt_dialog_widget.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/design_prompt_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:arbo_frontend/resources/user_data_provider.dart';
@@ -45,26 +48,64 @@ class RootScreenState extends State<RootScreen> {
       firstClickedPrompt = false;
     }
 
+    final vertexAI = FirebaseVertexAI.instanceFor(
+        location: 'asia-northeast3', appCheck: firebase_appcheck_instance);
+
+    final generationConfig = GenerationConfig(
+        maxOutputTokens: 200,
+        stopSequences: ["red"],
+        temperature: 1,
+        topP: 0.95,
+        topK: 40,
+        responseMimeType: "text/plain");
+
+    final model = vertexAI.generativeModel(
+      model: 'gemini-1.5-flash',
+      generationConfig: generationConfig,
+      systemInstruction: Content.system(chandler_instructions),
+    );
+
+    ChatSession chatSession = model.startChat(history: chandler_initialHistory);
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        // return DesignPromptDialog(
+        //   promptController: _promptController,
+        //   searchHistory: promptSearchHistory,
+        //   onSearch: (searchTerm) async {
+        //     if (searchTerm.isNotEmpty) {
+        //       // Add to search history
+        //       if (promptSearchHistory.length >= 3) {
+        //         promptSearchHistory.removeAt(0);
+        //       }
+        //       promptSearchHistory.add(searchTerm);
+
+        //       // Save to Firebase
+        //       await saveSearchHistoryToFirebase(promptSearchHistory);
+
+        //       // Perform search logic here
+        //       // performSearch(searchTerm);
+        //     }
+        //   },
+        // );
         return DesignPromptDialog(
-          promptController: _promptController,
-          searchHistory: promptSearchHistory,
-          onSearch: (searchTerm) async {
-            if (searchTerm.isNotEmpty) {
-              // Add to search history
-              if (promptSearchHistory.length >= 3) {
-                promptSearchHistory.removeAt(0);
-              }
-              promptSearchHistory.add(searchTerm);
-
-              // Save to Firebase
-              await saveSearchHistoryToFirebase(promptSearchHistory);
-
-              // Perform search logic here
-              // performSearch(searchTerm);
+          promptController: TextEditingController(),
+          onSendMessage: (String message) async {
+            // VertexAI 모델을 사용하여 응답 생성
+            var content = Content.text(message);
+            try {
+              var response = await chatSession.sendMessage(content);
+              return response.text;
+            } catch (e) {
+              print(e);
+              return "Sorry, I couldn't process that. Can you try again?";
             }
+          },
+          initializeChat: () async {
+            // 여기에 필요한 초기화 작업을 수행합니다.
+            // 예: VertexAI 모델 초기화, 채팅 세션 시작 등
+            await Future.delayed(const Duration(seconds: 2)); // 예시용 지연
           },
         );
       },
@@ -74,7 +115,7 @@ class RootScreenState extends State<RootScreen> {
   Future<void> saveSearchHistoryToFirebase(List<dynamic> searchHistory) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId != null) {
-      await FirebaseFirestore.instance
+      await firestore_instance
           .collection('users')
           .doc(userId)
           .update({'프롬프트 기록': searchHistory});

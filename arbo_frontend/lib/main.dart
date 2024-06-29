@@ -1,8 +1,13 @@
+import 'package:arbo_frontend/resources/user_data.dart';
 import 'package:arbo_frontend/resources/user_data_provider.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/roots/root_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:arbo_frontend/screens/user_info_screen.dart';
+import 'package:arbo_frontend/widgets/gemini_widgets/gemini_coco_chat.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_vertexai/firebase_vertexai.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -13,10 +18,26 @@ import 'firebase/firebase_options.dart';
 void main() async {
   await dotenv.load(fileName: ".env");
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  // runApp(const App());
+
+  await firebase_appcheck_instance.activate(
+    // Set appleProvider to `AppleProvider.debug`
+    appleProvider: AppleProvider.debug,
+    androidProvider: AndroidProvider.debug,
+    // debug 환경에서만 쓸 수있는 환경
+    webProvider:
+        ReCaptchaEnterpriseProvider('6LfsmAIqAAAAANCx1F7lQmzFF6_Yc68jRMz9nqg4'),
+  );
+
+  print('firebase app check: $firebase_appcheck_instance');
+  firebase_appcheck_instance.setTokenAutoRefreshEnabled(true);
+  firebase_appcheck_instance.onTokenChange.listen((token) {
+    print('Received a new App Check token: $token');
+  });
+
   runApp(
     ChangeNotifierProvider(
       create: (context) => UserDataProvider(),

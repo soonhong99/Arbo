@@ -86,7 +86,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         try {
           _nickName = nickname;
           // Save post to Firestore
-          await FirebaseFirestore.instance.collection('posts').add({
+          await firestore_instance.collection('posts').add({
             'title': _title,
             'topic': _topic,
             'scale': _scale,

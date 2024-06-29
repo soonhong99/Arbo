@@ -41,7 +41,7 @@ class _UserInfoWidgetState extends State<UserInfoScreen> {
     setState(() {
       _isLoading = true;
     });
-    await FirebaseFirestore.instance
+    await firestore_instance
         .collection('users')
         .doc(widget.user!.uid)
         .update({'닉네임': _nicknameController.text});
@@ -119,7 +119,7 @@ class _UserInfoWidgetState extends State<UserInfoScreen> {
                   ),
                   const SizedBox(height: 10),
                   FutureBuilder<QuerySnapshot>(
-                    future: FirebaseFirestore.instance
+                    future: firestore_instance
                         .collection('posts')
                         .where('userId', isEqualTo: widget.user!.uid)
                         .get(),

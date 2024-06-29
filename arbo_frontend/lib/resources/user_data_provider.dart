@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class UserDataProvider with ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = firestore_instance;
 
   void makeAllDataLocal(DocumentSnapshot allDataSnapshot) {
     allPostDataWithPostId[allDataSnapshot.id] = {
@@ -30,10 +30,8 @@ class UserDataProvider with ChangeNotifier {
       return;
     }
     // print(user);
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
+    DocumentSnapshot userDoc =
+        await firestore_instance.collection('users').doc(user.uid).get();
     loginUserData = userDoc;
     nickname = loginUserData!['닉네임'];
 

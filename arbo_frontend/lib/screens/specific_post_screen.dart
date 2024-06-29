@@ -1,8 +1,12 @@
 import 'package:arbo_frontend/resources/user_data.dart';
+import 'package:arbo_frontend/widgets/gemini_widgets/gemini_chandler_chat.dart';
+import 'package:arbo_frontend/widgets/gemini_widgets/gemini_coco_chat.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/heart_animation_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:flutter/material.dart';
 
 class SpecificPostScreen extends StatefulWidget {
@@ -48,9 +52,8 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
 
   Future<void> _incrementViewCount() async {
     try {
-      final postRef = FirebaseFirestore.instance
-          .collection('posts')
-          .doc(postData['postId']);
+      final postRef =
+          firestore_instance.collection('posts').doc(postData['postId']);
       await postRef.update({'visitedUser': FieldValue.increment(1)});
       setState(() {
         postData['visitedUser'] = postData['visitedUser'] + 1;
@@ -95,9 +98,9 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     }
 
     DocumentReference userRef =
-        FirebaseFirestore.instance.collection('users').doc(userUid);
+        firestore_instance.collection('users').doc(userUid);
     DocumentReference heartRef =
-        FirebaseFirestore.instance.collection('posts').doc(postData['postId']);
+        firestore_instance.collection('posts').doc(postData['postId']);
 
     if (_hasUserLiked) {
       await userRef.update({
@@ -130,7 +133,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     }
     dataChanged = true;
     DocumentReference postRef =
-        FirebaseFirestore.instance.collection('posts').doc(postData['postId']);
+        firestore_instance.collection('posts').doc(postData['postId']);
 
     final newComment = {
       'commentId': UniqueKey().toString(),
@@ -178,7 +181,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     });
 
     DocumentReference postRef =
-        FirebaseFirestore.instance.collection('posts').doc(postData['postId']);
+        firestore_instance.collection('posts').doc(postData['postId']);
     await postRef.update({'comments': postData['comments']});
 
     _commentController.clear();
@@ -200,8 +203,33 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     );
   }
 
-  void _navigateToEditPost() {
-    // Implement navigation to the post edit screen
+  void _navigateToEditPost() async {
+    final vertexAI = FirebaseVertexAI.instanceFor(
+        location: 'asia-northeast3', appCheck: firebase_appcheck_instance);
+
+    final generationConfig = GenerationConfig(
+        maxOutputTokens: 200,
+        stopSequences: ["red"],
+        temperature: 1,
+        topP: 0.95,
+        topK: 40,
+        responseMimeType: "text/plain");
+
+    final model = vertexAI.generativeModel(
+      model: 'gemini-1.5-flash',
+      generationConfig: generationConfig,
+      systemInstruction: Content.system(chandler_instructions),
+    );
+
+    ChatSession chatSession = model.startChat(history: chandler_initialHistory);
+
+    var content = Content.text('how are you Chandler?');
+    try {
+      var response = await chatSession.sendMessage(content);
+      print(response.text);
+    } catch (e) {
+      print(e);
+    }
   }
 
   @override

@@ -115,7 +115,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
           email: _emailController.text.trim(),
           password: _passwordController.text.trim());
 
-      await FirebaseFirestore.instance
+      await firestore_instance
           .collection('users')
           .doc(userCredential.user?.uid)
           .set({
