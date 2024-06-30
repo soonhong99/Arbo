@@ -73,10 +73,6 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
     DateTime postTime =
         (specificAllPostData['timestamp'] as Timestamp).toDate();
 
-    // Get the designedPicture list
-    List<String> imageUrls =
-        List<String>.from(specificAllPostData['designedPicture'] ?? []);
-
     return GestureDetector(
         onTap: () async {
           // 방문기록 추가
@@ -97,91 +93,6 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
             });
           }
         },
-        // child: Container(
-        //   padding: const EdgeInsets.all(8.0),
-        //   color: Colors.yellow[100],
-        //   child: Row(
-        //     crossAxisAlignment: CrossAxisAlignment.start,
-        //     children: [
-        //       Expanded(
-        //         child: Column(
-        //           crossAxisAlignment: CrossAxisAlignment.start,
-        //           children: [
-        //             Row(
-        //               children: [
-        //                 Text(
-        //                   specificAllPostData['nickname'],
-        //                   style: const TextStyle(
-        //                       fontWeight: FontWeight.bold, fontSize: 18),
-        //                 ),
-        //                 const SizedBox(
-        //                   width: 20,
-        //                 ),
-        //                 Text(
-        //                   specificAllPostData['topic'],
-        //                   style: const TextStyle(
-        //                       fontWeight: FontWeight.bold,
-        //                       color: Colors.red,
-        //                       fontSize: 18),
-        //                 ),
-        //               ],
-        //             ),
-        //             Text(
-        //               '${postTime.year}-${postTime.month}-${postTime.day}',
-        //               style: const TextStyle(color: Colors.grey),
-        //             ),
-        //             const SizedBox(height: 8.0),
-        //             Hero(
-        //               tag: 'title_${specificAllPostData['title']}',
-        //               child: Text(
-        //                 specificAllPostData['title'],
-        //                 style: const TextStyle(
-        //                     fontSize: 16, fontWeight: FontWeight.bold),
-        //                 maxLines: 1,
-        //                 overflow: TextOverflow.ellipsis,
-        //               ),
-        //             ),
-        //             const SizedBox(height: 8.0),
-        //             Text(
-        //               '세줄요약: ${specificAllPostData['content']}',
-        //               maxLines: 2,
-        //               overflow: TextOverflow.ellipsis,
-        //             ),
-        //             const SizedBox(height: 8.0),
-        //             Row(
-        //               children: [
-        //                 const Icon(Icons.favorite_border),
-        //                 const SizedBox(width: 4.0),
-        //                 Text('${specificAllPostData['hearts']}'),
-        //                 const SizedBox(width: 10.0),
-        //                 const Icon(Icons.comment),
-        //                 const SizedBox(width: 4.0),
-        //                 Text(
-        //                     '${countTotalComments(specificAllPostData['comments'])}'),
-        //               ],
-        //             ),
-        //           ],
-        //         ),
-        //       ),
-        //       const SizedBox(width: 8.0),
-        //       Container(
-        //         width: 100,
-        //         height: 100,
-        //         color: Colors.grey,
-        //         child: imageUrls.isNotEmpty
-        //             ? Image.network(
-        //                 imageUrls[0],
-        //                 fit: BoxFit.cover,
-        //                 errorBuilder: (context, error, stackTrace) {
-        //                   print(error);
-        //                   return Container(color: Colors.grey);
-        //                 },
-        //               )
-        //             : Container(color: Colors.grey),
-        //       ),
-        //     ],
-        //   ),
-        // ),
         child: Container(
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
