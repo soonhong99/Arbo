@@ -1,6 +1,5 @@
-import 'package:arbo_frontend/resources/user_data.dart';
+import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
-import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/heart_animation_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';

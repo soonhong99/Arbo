@@ -1,5 +1,5 @@
-import 'package:arbo_frontend/resources/history_data.dart';
-import 'package:arbo_frontend/resources/user_data.dart';
+import 'package:arbo_frontend/data/history_data.dart';
+import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';

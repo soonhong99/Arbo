@@ -1,11 +1,9 @@
-import 'package:arbo_frontend/resources/user_data.dart';
+import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/widgets/gemini_widgets/gemini_chandler_chat.dart';
-import 'package:arbo_frontend/widgets/gemini_widgets/gemini_coco_chat.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/heart_animation_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:flutter/material.dart';
 

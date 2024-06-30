@@ -1,13 +1,10 @@
-import 'package:arbo_frontend/resources/user_data.dart';
-import 'package:arbo_frontend/resources/user_data_provider.dart';
+import 'package:arbo_frontend/data/user_data.dart';
+import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/roots/root_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:arbo_frontend/screens/user_info_screen.dart';
-import 'package:arbo_frontend/widgets/gemini_widgets/gemini_coco_chat.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
-import 'package:firebase_vertexai/firebase_vertexai.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';

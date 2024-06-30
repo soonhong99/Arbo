@@ -1,7 +1,6 @@
-import 'package:arbo_frontend/resources/user_data.dart';
-import 'package:arbo_frontend/resources/user_data_provider.dart';
+import 'package:arbo_frontend/data/user_data.dart';
+import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:html' as html;
 

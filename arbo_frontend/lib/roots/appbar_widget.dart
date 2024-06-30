@@ -1,4 +1,4 @@
-import 'package:arbo_frontend/resources/user_data.dart';
+import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/widgets/search_widgets/search_design_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
