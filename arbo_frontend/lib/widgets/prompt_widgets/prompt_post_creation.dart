@@ -1,42 +1,73 @@
 import 'package:arbo_frontend/data/prompt_history.dart';
+import 'package:firebase_vertexai/firebase_vertexai.dart';
 
 class PostCreationHelper {
   final ChatHistory chatHistory;
-  final Function(String) onSendMessage;
+  final GenerativeModel vertexAIModel;
 
-  PostCreationHelper({required this.chatHistory, required this.onSendMessage});
+  PostCreationHelper({required this.chatHistory, required this.vertexAIModel});
 
   Future<Map<String, String>> getSuggestions() async {
     final conversation = chatHistory.getFullConversation();
-    final prompt =
-        '''Based on the following conversations, suggest topics and titles for civic engagement posts in the community.
-Examples include.\n
-"AI: Hi there! I'm Chandler. How can I help you today?\n
-User: i'm too thristy.. but I cant drink water anytime of it. I want to drink it a lot in every moment!\n
-AI: I understand. Sometimes I feel the same way about things, like how I really want to go to the movies. But then I think, "Well, maybe I can do that tomorrow."\n
-User: what? but I think that I want to this one, that can be great when I can take all of water in the park!\n
-AI: That sounds amazing! A big refreshing gulp of water in the park. I can see why you'd want that. I think maybe if you just take a few sips right now, you'll feel less thirsty for a while and you can save that big gulp for later.\n
-When the above format comes, we answer as follows.\n
-topic: Establishment of public facilities\n
-title: Install more drinking fountains\n
-Below are the actual conversations between user and ai.:\n\n$conversation''';
+    List<Part> parts = [
+      TextPart(
+          '''You are the person in charge of writing down your local issue board so that you can start with a personal issue and progressively participate in a larger local issue. 
+          \nPlease give the subject and title of the local issue regarding the content in one sentence appropriately.
+          \nSentences must not be too long.
+          \nTopic is limited to the following seven.
+          \n1. Education and Youth Development 
+          \n2. Improving school facilities 
+          \n3. Recycling and waste management 
+          \n4. Expanding local hospitals and medical facilities 
+          \n5. Crime Prevention Program 
+          \n6. Revitalizing local commercial districts 
+          \n7. Local festivals and cultural events'''),
+      TextPart(
+          "Conversations with prompts about the problem: 'user' : \"hi. i'm fighting with my friend.\"\n'model' : \"I'm sorry to hear that you're fighting with your friend.      It can be really tough when you feel like you're drifting apart.      It's happened to me before, and it's hard not to feel upset.      Have you considered talking to them about what's bothering you?      It might help to clear the air and see if you can work things out.\n\"\n'user' : \"no they don't want to listen my voice\"\n'model' : \"I understand how frustrating it can be when someone doesn't want to listen to you.     It feels like they're not taking you seriously, and that can be really hurtful.      Have you tried writing them a letter or sending them a message expressing your feelings?      Sometimes seeing things in writing can help people understand better.      It can also give them space to process their thoughts before replying.\n\""),
+      TextPart(
+          "topic, title and reason: topic: Education and Youth Development\ntitle:I need a counselor that's easy for the kids to get to\nreason: fight my friend because they hate me no reason"),
+      TextPart("Conversations with prompts about the problem: $conversation"),
+      TextPart("topic, title and reason: ")
+    ];
 
-    final response = await onSendMessage(prompt);
+    try {
+      final result =
+          await vertexAIModel.generateContent([Content("user", parts)]);
+      final response = result.text;
 
-    // 응답을 파싱하여 주제와 제목을 추출합니다.
-    // 실제 구현에서는 AI의 응답 형식에 따라 파싱 로직을 조정해야 합니다.
-    final lines = response.split('\n');
-    String topic = '';
-    String title = '';
-
-    for (var line in lines) {
-      if (line.startsWith('Topic:')) {
-        topic = line.substring(6).trim();
-      } else if (line.startsWith('Title:')) {
-        title = line.substring(6).trim();
+      if (response == null || response.isEmpty) {
+        throw Exception('Response is null or empty');
       }
-    }
 
-    return {'topic': topic, 'title': title};
+      // 응답을 파싱하여 주제와 제목을 추출합니다.
+      final lines = response.split('\n');
+      String topic = '';
+      String title = '';
+      String reason = '';
+
+      for (var line in lines) {
+        if (line.startsWith('Topic:')) {
+          topic = line.substring(6).trim();
+        } else if (line.startsWith('Title:')) {
+          title = line.substring(6).trim();
+        } else if (line.startsWith('Reason:')) {
+          reason = line.substring(7).trim();
+        }
+      }
+
+      if (topic.isEmpty || title.isEmpty || reason.isEmpty) {
+        throw Exception(
+            'Failed to extract topic or title or reason from response');
+      }
+
+      return {'topic': topic, 'title': title, 'reason': reason};
+    } catch (e) {
+      print('Error in getSuggestions: $e');
+      return {
+        'topic': 'Error occurred',
+        'title': 'Please try again',
+        'reason': 'So sorry'
+      };
+    }
   }
 }

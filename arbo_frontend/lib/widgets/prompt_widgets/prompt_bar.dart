@@ -28,21 +28,26 @@ class PromptBar extends StatelessWidget {
               ),
             ],
           ),
-          child: TextField(
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
+          child: TextButton(
+            onPressed: onPromptTap,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 30),
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide.none,
               ),
-              labelText: '당신의 고민을 지역사회와 함께 해결해보세요!',
-              labelStyle: const TextStyle(color: Colors.white),
-              suffixIcon: const Icon(Icons.arrow_forward, color: Colors.white),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 9, vertical: 30),
             ),
-            style: const TextStyle(color: Colors.white),
-            readOnly: true,
-            onTap: onPromptTap,
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    '당신의 고민을 지역사회와 함께 해결해보세요!',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+                Icon(Icons.arrow_forward, color: Colors.white),
+              ],
+            ),
           ),
         ),
       ),

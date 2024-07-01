@@ -52,6 +52,7 @@ dependencies:
   algolia_helper_flutter: ^1.0.0
   firebase_vertexai: ^0.1.1
   firebase_app_check: 0.2.2+7
+  speech_to_text: ^6.1.1
   
 dependency_overrides:
   http: ^1.1.0

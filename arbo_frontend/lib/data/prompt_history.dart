@@ -4,7 +4,7 @@ class ChatHistory {
   final List<ChatMessage> messages = [];
 
   void addMessage(ChatMessage message) {
-    messages.add(message);
+    messages.insert(0, message);
   }
 
   String getFullConversation() {

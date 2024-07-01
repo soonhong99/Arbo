@@ -1,4 +1,5 @@
 import 'package:arbo_frontend/data/user_data.dart';
+import 'package:arbo_frontend/widgets/gemini_widgets/gemini_advisor_chat.dart';
 import 'package:arbo_frontend/widgets/gemini_widgets/gemini_chandler_chat.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_dialog_widget.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_bar.dart';
@@ -58,17 +59,20 @@ class RootScreenState extends State<RootScreen> {
         responseMimeType: "text/plain");
 
     final model = vertexAI.generativeModel(
-      model: 'gemini-1.5-flash',
+      // model: 'gemini-1.5-flash',
+      model: 'gemini-1.5-pro',
       generationConfig: generationConfig,
-      systemInstruction: Content.system(chandler_instructions),
+      systemInstruction: Content.system(community_advisor_instructions),
     );
 
-    ChatSession chatSession = model.startChat(history: chandler_initialHistory);
+    ChatSession chatSession =
+        model.startChat(history: community_advisor_initialHistory);
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return PromptDialog(
+          vertexAIModel: model,
           promptController: TextEditingController(),
           onSendMessage: (String message) async {
             // VertexAI 모델을 사용하여 응답 생성

@@ -1,18 +1,22 @@
 import 'package:arbo_frontend/data/prompt_history.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_post_creation.dart';
+import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class PromptDialog extends StatefulWidget {
   final TextEditingController promptController;
   final Function(String) onSendMessage;
   final Future<void> Function() initializeChat;
+  final GenerativeModel vertexAIModel;
 
   const PromptDialog({
     super.key,
     required this.promptController,
     required this.onSendMessage,
     required this.initializeChat,
+    required this.vertexAIModel,
   });
 
   @override
@@ -24,17 +28,52 @@ class _PromptDialogState extends State<PromptDialog> {
   late PostCreationHelper _postCreationHelper;
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = true;
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
 
   @override
   void initState() {
     super.initState();
+    _speech.initialize();
     _postCreationHelper = PostCreationHelper(
       chatHistory: _chatHistory,
-      onSendMessage: widget.onSendMessage,
+      vertexAIModel: widget.vertexAIModel,
     );
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _initializeChat();
     });
+  }
+
+  void _listen() async {
+    if (!_isListening) {
+      bool available = await _speech.initialize(
+        onStatus: (status) {
+          if (status == 'done') {
+            setState(() => _isListening = false);
+          }
+        },
+        onError: (errorNotification) => print('onError: $errorNotification'),
+      );
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(
+          onResult: (result) {
+            setState(() {
+              widget.promptController.text = result.recognizedWords;
+            });
+          },
+        );
+      }
+    } else {
+      _stopListening();
+    }
+  }
+
+  void _stopListening() {
+    if (_isListening) {
+      _speech.stop();
+      setState(() => _isListening = false);
+    }
   }
 
   Future<void> _initializeChat() async {
@@ -42,7 +81,7 @@ class _PromptDialogState extends State<PromptDialog> {
     setState(() {
       _isLoading = false;
       _addMessage(const ChatMessage(
-        text: "Hi there! I'm Chandler. How can I help you today?",
+        text: "Hello my friend! What happened today?",
         isUser: false,
       ));
     });
@@ -54,6 +93,7 @@ class _PromptDialogState extends State<PromptDialog> {
     widget.onSendMessage(text).then((response) {
       _addMessage(ChatMessage(text: response, isUser: false));
     });
+    _stopListening(); // 메시지를 보낼 때 마이크 끄기
   }
 
   void _addMessage(ChatMessage message) {
@@ -96,6 +136,8 @@ class _PromptDialogState extends State<PromptDialog> {
               Text('Suggested Topic: ${suggestions['topic']}'),
               const SizedBox(height: 8),
               Text('Suggested Title: ${suggestions['title']}'),
+              const SizedBox(height: 8),
+              Text('Suggested reason: ${suggestions['reason']}'),
             ],
           ),
           actions: [
@@ -122,7 +164,7 @@ class _PromptDialogState extends State<PromptDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       contentPadding: const EdgeInsets.all(16.0),
-      title: const Text('Chat with Chandler'),
+      title: const Text('Chat with Social community'),
       content: SizedBox(
         width: MediaQuery.of(context).size.width * 0.7,
         height: MediaQuery.of(context).size.height * 0.7,
@@ -161,6 +203,12 @@ class _PromptDialogState extends State<PromptDialog> {
             itemBuilder: (_, int index) => _chatHistory.messages[index],
           ),
         ),
+        if (_isListening)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8.0),
+            child: Text("Listening...",
+                style: TextStyle(fontStyle: FontStyle.italic)),
+          ),
         const Divider(height: 1.0),
         Container(
           decoration: BoxDecoration(color: Theme.of(context).cardColor),
@@ -177,12 +225,17 @@ class _PromptDialogState extends State<PromptDialog> {
         margin: const EdgeInsets.symmetric(horizontal: 8.0),
         child: Row(
           children: <Widget>[
+            IconButton(
+              icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
+              onPressed: _listen,
+              color: _isListening ? Colors.red : null,
+            ),
             Flexible(
               child: TextField(
                 controller: widget.promptController,
                 onSubmitted: _handleSubmitted,
-                decoration: const InputDecoration.collapsed(
-                  hintText: 'Send a message',
+                decoration: InputDecoration.collapsed(
+                  hintText: _isListening ? 'Listening...' : 'Send a message',
                 ),
               ),
             ),
@@ -200,8 +253,6 @@ class _PromptDialogState extends State<PromptDialog> {
   }
 }
 
-// ChatMessage 클래스는 이전과 동일합니다.
-
 class ChatMessage extends StatelessWidget {
   final String text;
   final bool isUser;
@@ -213,27 +264,37 @@ class ChatMessage extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10.0),
       child: Row(
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Container(
-            margin: const EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              child: Text(isUser ? 'You' : 'C'),
-            ),
-          ),
-          Expanded(
+          if (!isUser) ...[
+            const CircleAvatar(child: Text('C')),
+            const SizedBox(width: 8.0),
+          ],
+          Flexible(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: <Widget>[
-                Text(isUser ? 'You' : 'Chandler',
+                Text(isUser ? 'You' : 'MinJi',
                     style: Theme.of(context).textTheme.titleMedium),
                 Container(
                   margin: const EdgeInsets.only(top: 5.0),
+                  padding: const EdgeInsets.all(10.0),
+                  decoration: BoxDecoration(
+                    color: isUser ? Colors.blue[100] : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
                   child: Text(text),
                 ),
               ],
             ),
           ),
+          if (isUser) ...[
+            const SizedBox(width: 8.0),
+            const CircleAvatar(child: Text('You')),
+          ],
         ],
       ),
     );
