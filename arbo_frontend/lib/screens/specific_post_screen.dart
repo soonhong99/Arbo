@@ -42,7 +42,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       postData['comments'] =
           postData['comments'] ?? []; // Ensure comments is not null
       _incrementViewCount(); // Increment view count when the screen is accessed
-      _checkIfUserLiked();
+      checkIfUserLiked();
       _checkIfPostOwner();
       dataInitialized = true;
     }
@@ -61,7 +61,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     }
   }
 
-  void _checkIfUserLiked() async {
+  void checkIfUserLiked() async {
     try {
       if (currentLoginUser == null) return;
       if (firstSpecificPostTouch) {
@@ -192,7 +192,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
         return LoginPopupWidget(
           onLoginSuccess: () {
             setState(() {
-              _checkIfUserLiked();
+              checkIfUserLiked();
               _checkIfPostOwner();
             });
           },

@@ -20,7 +20,15 @@ class MainWidget extends StatefulWidget {
 }
 
 class MainWidgetState extends State<MainWidget> {
-  List<String> categories = ['전체', 'NoLimit', '의자', '테이블', '소파', '침대', '수납장'];
+  List<String> categories = [
+    'All posts',
+    'Education and Development',
+    'Improving Facilites',
+    'Recycling Management',
+    'Crime Prevention',
+    'Local Commercial',
+    'Local Events'
+  ];
   List<String> updatedTime = ['지난 1일', '지난 1주', '지난 1개월', '지난 1년', '전체'];
   String selectedUpdatedTime = '지난 1개월';
   bool showAllCategories = false;
@@ -64,7 +72,7 @@ class MainWidgetState extends State<MainWidget> {
 
     return postListSnapshot.where((post) {
       bool matchesCategory =
-          selectedCategory == '전체' || post['topic'] == selectedCategory;
+          selectedCategory == 'All posts' || post['topic'] == selectedCategory;
       bool matchesTime =
           (post['timestamp'] as Timestamp).toDate().isAfter(cutoff);
       return matchesCategory && matchesTime;

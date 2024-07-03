@@ -1,6 +1,5 @@
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/widgets/gemini_widgets/gemini_advisor_chat.dart';
-import 'package:arbo_frontend/widgets/gemini_widgets/gemini_chandler_chat.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_dialog_widget.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -110,13 +109,33 @@ class RootScreenState extends State<RootScreen> {
     final userData = Provider.of<UserDataProvider>(context);
 
     final List<Map<String, String>> furnitureCategories = [
-      {'name': '전체', 'image': 'images/categorized/all.png'},
-      {'name': 'NoLimit', 'image': 'images/categorized/nolimit.png'},
-      {'name': '의자', 'image': 'images/categorized/chair.png'},
-      {'name': '테이블', 'image': 'images/categorized/table.png'},
-      {'name': '소파', 'image': 'images/categorized/sofa.png'},
-      {'name': '침대', 'image': 'images/categorized/bed.png'},
-      {'name': '수납장', 'image': 'images/categorized/storage.png'},
+      {'name': 'All posts', 'image': 'images/categorized/all.png'},
+      {
+        'name': 'Education and Development',
+        'image': 'images/categorized/Education_and_Youth_Development.png'
+      },
+      {
+        'name': 'Improving Facilites',
+        'image':
+            'images/categorized/Expanding_local_hospitals_and_medical_facilities.png'
+      },
+      {
+        'name': 'Recycling Management',
+        'image': 'images/categorized/Recycling_and_waste_management.png'
+      },
+      {
+        'name': 'Crime Prevention',
+        'image': 'images/categorized/Crime_Prevention_Program.png'
+      },
+      {
+        'name': 'Local Commercial',
+        'image':
+            'images/categorized/Revitalizing_local_commercial_districts.JPG'
+      },
+      {
+        'name': 'Local Events',
+        'image': 'images/categorized/Local festivals and cultural events.JPG'
+      },
     ];
 
     return Scaffold(

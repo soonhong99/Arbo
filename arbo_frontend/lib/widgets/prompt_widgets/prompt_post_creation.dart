@@ -12,16 +12,16 @@ class PostCreationHelper {
     List<Part> parts = [
       TextPart(
           '''You are the person in charge of writing down your local issue board so that you can start with a personal issue and progressively participate in a larger local issue. 
+          \nYou should be able to imply in the title what user want specifically based on what the user has said.
           \nPlease give the subject and title of the local issue regarding the content in one sentence appropriately.
           \nSentences must not be too long.
           \nTopic is limited to the following seven.
-          \n1. Education and Youth Development 
-          \n2. Improving school facilities 
-          \n3. Recycling and waste management 
-          \n4. Expanding local hospitals and medical facilities 
-          \n5. Crime Prevention Program 
-          \n6. Revitalizing local commercial districts 
-          \n7. Local festivals and cultural events'''),
+          \n1. Education and Development 
+          \n2. Improving Facilities 
+          \n3. Recycling Management 
+          \n5. Crime Prevention 
+          \n6. Local Commercial
+          \n7. Local Events'''),
       TextPart(
           "Conversations with prompts about the problem: 'user' : \"hi. i'm fighting with my friend.\"\n'model' : \"I'm sorry to hear that you're fighting with your friend.      It can be really tough when you feel like you're drifting apart.      It's happened to me before, and it's hard not to feel upset.      Have you considered talking to them about what's bothering you?      It might help to clear the air and see if you can work things out.\n\"\n'user' : \"no they don't want to listen my voice\"\n'model' : \"I understand how frustrating it can be when someone doesn't want to listen to you.     It feels like they're not taking you seriously, and that can be really hurtful.      Have you tried writing them a letter or sending them a message expressing your feelings?      Sometimes seeing things in writing can help people understand better.      It can also give them space to process their thoughts before replying.\n\""),
       TextPart(

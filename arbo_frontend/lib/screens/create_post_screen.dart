@@ -4,6 +4,28 @@ import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:html' as html;
 
+Future<void> createNewPost(String title, String content, String topic) async {
+  try {
+    await firestore_instance.collection('posts').add({
+      'title': title,
+      'topic': topic,
+      'scale': '대자보', // 기본값 설정
+      'content': content,
+      'userId': currentLoginUser?.uid ?? 'anonymous',
+      'timestamp': DateTime.now(),
+      'nickname': currentLoginUser?.displayName ?? 'Anonymous',
+      'comments': [],
+      'hearts': 0,
+      'designedPicture': [],
+      'visitedUser': 0,
+    });
+    print('Post created successfully');
+  } catch (e) {
+    print('Error creating post: $e');
+    rethrow;
+  }
+}
+
 class CreatePostScreen extends StatefulWidget {
   static const routeName = '/create-post';
 
@@ -16,7 +38,7 @@ class CreatePostScreen extends StatefulWidget {
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final _formKey = GlobalKey<FormState>();
   String _title = 'null';
-  String _topic = 'NoLimit';
+  String _topic = 'Education and Development';
   String _scale = '대자보';
   String _content = 'null';
   String _nickName = 'null';
@@ -193,8 +215,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: 'Topic'),
                   value: _topic,
-                  items: <String>['의자', '테이블', '소파', '침대', '수납장', 'NoLimit']
-                      .map<DropdownMenuItem<String>>((String value) {
+                  items: <String>[
+                    'Education and Development',
+                    'Improving Facilites',
+                    'Recycling Management',
+                    'Crime Prevention',
+                    'Local Commercial',
+                    'Local Events'
+                  ].map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
                       child: Text(value),
