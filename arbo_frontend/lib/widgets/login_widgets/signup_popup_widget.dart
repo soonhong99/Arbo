@@ -2,6 +2,8 @@
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 
 class SignupPopupWidget extends StatefulWidget {
   const SignupPopupWidget({super.key});
@@ -22,6 +24,46 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   bool isLoading = false;
   String? errorMessage;
 
+  String? _country;
+  String? _adminArea;
+  String? _locality;
+
+  bool showIntro = true;
+  bool showLocationConfirmation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      LocationPermission permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // 위치 권한이 거부된 경우 처리
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(position.latitude, position.longitude);
+
+      if (placemarks.isNotEmpty) {
+        Placemark placemark = placemarks[0];
+        setState(() {
+          _country = placemark.country;
+          _adminArea = placemark.administrativeArea;
+          _locality = placemark.locality;
+        });
+      }
+    } catch (e) {
+      print("Error getting location: $e");
+    }
+  }
+
   @override
   void setState(fn) {
     if (mounted) {
@@ -31,12 +73,78 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (showIntro) {
+      return _buildIntroDialog();
+    } else if (showLocationConfirmation) {
+      return _buildLocationConfirmationDialog();
+    } else {
+      return _buildSignupDialog();
+    }
+  }
+
+  Widget _buildIntroDialog() {
+    return AlertDialog(
+      title: const Text('앱 소개'),
+      content: const Text(
+          '이 앱은 local 사회를 우리가 직접 paint를 해서 pain을 없애자! 라는 취지로 만들었습니다.'),
+      actions: <Widget>[
+        TextButton(
+          child: const Text('그렇군요!'),
+          onPressed: () {
+            setState(() {
+              showIntro = false;
+              showLocationConfirmation = true;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLocationConfirmationDialog() {
+    return AlertDialog(
+      title: const Text('위치 확인'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          const Text('감지된 위치:'),
+          Text('국가: $_country'),
+          Text('시/도: $_adminArea'),
+          Text('군/구: $_locality'),
+          const Text('이 정보가 맞습니까?'),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          child: const Text('예'),
+          onPressed: () {
+            setState(() {
+              showLocationConfirmation = false;
+            });
+          },
+        ),
+        TextButton(
+          child: const Text('아니오'),
+          onPressed: () {
+            // 수동으로 위치를 입력할 수 있는 다이얼로그를 표시하거나
+            // 다시 위치를 감지하는 로직을 구현할 수 있습니다.
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSignupDialog() {
+    // 기존의 회원가입 다이얼로그 코드
     return AlertDialog(
       title: const Text('회원가입'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
+            Text('국가: $_country'),
+            Text('시/도: $_adminArea'),
+            Text('군/구: $_locality'),
             _buildTextField(
                 controller: _idController,
                 label: '아이디',
@@ -109,10 +217,10 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
       errorMessage = null;
     });
     try {
-      // 회원가입
-      UserCredential userCredential = await auth.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim());
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+              email: _emailController.text.trim(),
+              password: _passwordController.text.trim());
 
       await firestore_instance
           .collection('users')
@@ -123,8 +231,11 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         '이름': _nameController.text,
         '닉네임': _nicknameController.text,
         '이메일 주소': _emailController.text,
-        '하트 누른 게시물': postClickedHeart,
-        '프롬프트 기록': promptSearchHistory,
+        '국가': _country,
+        '시/도': _adminArea,
+        '군/구': _locality,
+        '하트 누른 게시물': [],
+        '프롬프트 기록': [],
       });
 
       setState(() {

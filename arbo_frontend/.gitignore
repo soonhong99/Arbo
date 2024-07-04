@@ -9,7 +9,7 @@
 .history
 .svn/
 migrate_working_dir/
-
+myvenv
 # IntelliJ related
 *.iml
 *.ipr
@@ -21,6 +21,7 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 *.env
+
 
 # Flutter/Dart/Pub related
 **/doc/api/

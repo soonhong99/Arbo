@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-Future<String> extractNounsWithPython(String text) async {
+Future<List<String>> extractNounsWithPython(String text) async {
   try {
     final response = await http.post(
       Uri.parse('http://127.0.0.1:5000/extract_nouns'),
@@ -11,8 +11,7 @@ Future<String> extractNounsWithPython(String text) async {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      final textInNoun = List<String>.from(data['nouns']);
-      return textInNoun.join(' ');
+      return List<String>.from(data['nouns']);
     } else {
       throw Exception('Failed to extract nouns');
     }

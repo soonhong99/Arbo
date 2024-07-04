@@ -2,6 +2,7 @@ import 'package:algolia/algolia.dart';
 import 'package:arbo_frontend/data/prompt_history.dart';
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/extractNoun/responseServer.dart';
+import 'package:arbo_frontend/widgets/prompt_widgets/chat_message.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_post_creation.dart';
 import 'package:arbo_frontend/widgets/search_widgets/search_detail_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -39,11 +40,12 @@ class PromptDialog extends StatefulWidget {
 
 class _PromptDialogState extends State<PromptDialog> {
   final ChatHistory _chatHistory = ChatHistory();
-  late PostCreationHelper _postCreationHelper;
   final ScrollController _scrollController = ScrollController();
-  bool _isLoading = true;
   final stt.SpeechToText _speech = stt.SpeechToText();
+  final FocusNode _textFieldFocusNode = FocusNode();
   bool _isListening = false;
+  bool _isLoading = true;
+  late PostCreationHelper _postCreationHelper;
 
   @override
   void initState() {
@@ -56,6 +58,12 @@ class _PromptDialogState extends State<PromptDialog> {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _initializeChat();
     });
+  }
+
+  @override
+  void dispose() {
+    _textFieldFocusNode.dispose();
+    super.dispose();
   }
 
   void _listen() async {
@@ -137,15 +145,111 @@ class _PromptDialogState extends State<PromptDialog> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text("Searching for similar boards..."),
+              Text("키워드를 추출하는 중..."),
             ],
           ),
         );
       },
     );
 
-    final results =
-        await _searchSimilarBoardsAlgolia(suggestions['title'] ?? '');
+    List<String> nounQuery =
+        await extractNounsWithPython(suggestions['title'] ?? '');
+
+    Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+
+    if (nounQuery.isEmpty) {
+      _showNoKeywordsDialog(suggestions);
+    } else {
+      _showKeywordsDialog(nounQuery, suggestions);
+    }
+  }
+
+  void _showKeywordsDialog(
+      List<String> keywords, Map<String, String> suggestions) {
+    List<String> selectedKeywords = [];
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('추출된 키워드'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('검색에 사용할 키워드를 선택해주세요. (중복 선택 가능)'),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: keywords
+                      .map((keyword) => ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  selectedKeywords.contains(keyword)
+                                      ? Colors.blue
+                                      : null,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                if (selectedKeywords.contains(keyword)) {
+                                  selectedKeywords.remove(keyword);
+                                } else {
+                                  selectedKeywords.add(keyword);
+                                }
+                              });
+                            },
+                            child: Text(keyword),
+                          ))
+                      .toList(),
+                ),
+                const SizedBox(height: 20),
+                Text('선택된 키워드: ${selectedKeywords.join(", ")}'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                child: const Text('취소'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              ElevatedButton(
+                onPressed: selectedKeywords.isNotEmpty
+                    ? () {
+                        Navigator.of(context).pop();
+                        _searchWithKeywords(selectedKeywords, suggestions);
+                      }
+                    : null,
+                child: const Text('검색하기'),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+  void _searchWithKeywords(
+      List<String> keywords, Map<String, String> suggestions) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text("유사한 게시물을 검색 중..."),
+            ],
+          ),
+        );
+      },
+    );
+
+    final results = await _searchSimilarBoardsAlgolia(keywords.join(" "));
 
     Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
 
@@ -159,16 +263,15 @@ class _PromptDialogState extends State<PromptDialog> {
   Future<List<AlgoliaObjectSnapshot>> _searchSimilarBoardsAlgolia(
       String query) async {
     try {
-      String nounQuery = await extractNounsWithPython(query);
       AlgoliaQuery algoliaQuery = AlgoliaService.algolia.instance
           .index(dotenv.env['ALGOLIA_INDEX_NAME']!);
-      algoliaQuery = algoliaQuery.query(nounQuery);
+      algoliaQuery = algoliaQuery.query(query);
       algoliaQuery = algoliaQuery.setHitsPerPage(3);
 
       AlgoliaQuerySnapshot querySnap = await algoliaQuery.getObjects();
       return querySnap.hits;
     } catch (e) {
-      print('extract noun error: $e');
+      print('Algolia search error: $e');
       return [];
     }
   }
@@ -185,6 +288,33 @@ class _PromptDialogState extends State<PromptDialog> {
               onPressed: () {
                 Navigator.of(context).pop();
                 // 여기에 새 게시물 작성 로직 추가
+                _createNewPost(suggestions);
+              },
+              child: const Text('새로운 게시물 만들기'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('취소'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showNoKeywordsDialog(Map<String, String> suggestions) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('키워드 없음'),
+          content: const Text('추출된 키워드가 없습니다. 새로운 게시물을 작성하시겠습니까?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
                 _createNewPost(suggestions);
               },
               child: const Text('새로운 게시물 만들기'),
@@ -295,6 +425,8 @@ class _PromptDialogState extends State<PromptDialog> {
               actions: [
                 TextButton(
                   onPressed: () {
+                    Navigator.of(context).pop();
+                    // 프롬프트 창도 끄기
                     Navigator.of(context).pop();
                     // 여기에 게시물 상세 페이지로 이동하는 로직을 추가할 수 있습니다.
                     Navigator.of(context).push(MaterialPageRoute(
@@ -432,20 +564,32 @@ class _PromptDialogState extends State<PromptDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      contentPadding: const EdgeInsets.all(16.0),
-      title: const Text('Chat with Social community'),
-      content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.7,
-        height: MediaQuery.of(context).size.height * 0.7,
-        child: _isLoading ? _buildLoadingIndicator() : _buildChatUI(),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _createPost,
-          child: const Text('Create Post'),
+    return WillPopScope(
+      onWillPop: () async => false, // 뒤로 가기 버튼 비활성화
+      child: AlertDialog(
+        contentPadding: const EdgeInsets.all(16.0),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Chat with Social community'),
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
         ),
-      ],
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.7,
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: _isLoading ? _buildLoadingIndicator() : _buildChatUI(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _createPost,
+            child: const Text('Create Post'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -503,7 +647,11 @@ class _PromptDialogState extends State<PromptDialog> {
             Flexible(
               child: TextField(
                 controller: widget.promptController,
-                onSubmitted: _handleSubmitted,
+                focusNode: _textFieldFocusNode,
+                onSubmitted: (text) {
+                  _handleSubmitted(text);
+                  _textFieldFocusNode.requestFocus(); // 제출 후 다시 포커스
+                },
                 decoration: InputDecoration.collapsed(
                   hintText: _isListening ? 'Listening...' : 'Send a message',
                 ),
@@ -513,59 +661,14 @@ class _PromptDialogState extends State<PromptDialog> {
               margin: const EdgeInsets.symmetric(horizontal: 4.0),
               child: IconButton(
                 icon: const Icon(Icons.send),
-                onPressed: () => _handleSubmitted(widget.promptController.text),
+                onPressed: () {
+                  _handleSubmitted(widget.promptController.text);
+                  _textFieldFocusNode.requestFocus(); // 제출 후 다시 포커스
+                },
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class ChatMessage extends StatelessWidget {
-  final String text;
-  final bool isUser;
-
-  const ChatMessage({super.key, required this.text, required this.isUser});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          if (!isUser) ...[
-            const CircleAvatar(child: Text('C')),
-            const SizedBox(width: 8.0),
-          ],
-          Flexible(
-            child: Column(
-              crossAxisAlignment:
-                  isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(isUser ? 'You' : 'MinJi',
-                    style: Theme.of(context).textTheme.titleMedium),
-                Container(
-                  margin: const EdgeInsets.only(top: 5.0),
-                  padding: const EdgeInsets.all(10.0),
-                  decoration: BoxDecoration(
-                    color: isUser ? Colors.blue[100] : Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: Text(text),
-                ),
-              ],
-            ),
-          ),
-          if (isUser) ...[
-            const SizedBox(width: 8.0),
-            const CircleAvatar(child: Text('You')),
-          ],
-        ],
       ),
     );
   }

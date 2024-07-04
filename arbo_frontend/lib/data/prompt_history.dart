@@ -1,4 +1,4 @@
-import 'package:arbo_frontend/widgets/prompt_widgets/prompt_dialog_widget.dart';
+import 'package:arbo_frontend/widgets/prompt_widgets/chat_message.dart';
 
 class ChatHistory {
   final List<ChatMessage> messages = [];

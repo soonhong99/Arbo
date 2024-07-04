@@ -1,4 +1,5 @@
 import 'package:arbo_frontend/data/user_data.dart';
+import 'package:arbo_frontend/roots/root_screen.dart';
 import 'package:arbo_frontend/widgets/search_widgets/search_design_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -27,18 +28,23 @@ class CustomSliverAppBar extends StatelessWidget {
       floating: true,
       snap: true,
       foregroundColor: Colors.green,
+      automaticallyImplyLeading: false,
       title: Row(
         children: [
           TextButton(
             onPressed: () {
               selectedIndex = -1;
-              Navigator.pushNamed(
-                context,
-                '/',
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => RootScreen(
+                    locationMessage: address,
+                  ),
+                ),
               );
             },
-            child: const Text('SelfmadeDeco'),
+            child: const Text('CommPain\'t'),
           ),
+
           // const Text('자보'),
           const SizedBox(
             width: 60,

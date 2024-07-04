@@ -1,7 +1,7 @@
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:arbo_frontend/screens/create_post_screen.dart';
-import 'package:arbo_frontend/roots/root_screen.dart';
+import 'package:arbo_frontend/screens/ready_screen.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:arbo_frontend/screens/user_info_screen.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
@@ -25,8 +25,8 @@ void main() async {
     appleProvider: AppleProvider.debug,
     androidProvider: AndroidProvider.debug,
     // debug 환경에서만 쓸 수있는 환경
-    webProvider:
-        ReCaptchaEnterpriseProvider('6LfsmAIqAAAAANCx1F7lQmzFF6_Yc68jRMz9nqg4'),
+    webProvider: ReCaptchaEnterpriseProvider(
+        dotenv.env['RECAPCHA_ENTERPRISE_PROVIDER_KEY']!),
   );
 
   print('firebase app check: $firebase_appcheck_instance');
@@ -55,9 +55,9 @@ class App extends StatelessWidget {
           LogicalKeySet(LogicalKeyboardKey.space): const ActivateIntent(),
         }),
       // initialRoute: '/',
-      home: const RootScreen(),
+      home: const ReadyScreen(),
+
       routes: {
-        // CategorizedScreen.routeName: (context) => const CategorizedScreen(),
         SpecificPostScreen.routeName: (context) => const SpecificPostScreen(),
         CreatePostScreen.routeName: (context) => const CreatePostScreen(),
       },
