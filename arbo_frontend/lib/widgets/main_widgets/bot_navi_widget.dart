@@ -136,10 +136,8 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
             } else if (page_location == 0) {
               // widget.onPreviousPage;
               selectedIndex = -1;
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => RootScreen(
-                        locationMessage: address,
-                      )));
+              Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const RootScreen()));
             }
             break;
           case 1:

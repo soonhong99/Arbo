@@ -1,5 +1,6 @@
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/design/paint_stroke.dart';
+import 'package:arbo_frontend/roots/my_post_in_root.dart';
 import 'package:arbo_frontend/widgets/gemini_widgets/gemini_advisor_chat.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_dialog_widget.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_bar.dart';
@@ -7,6 +8,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_geocoding/google_geocoding.dart';
 import 'package:provider/provider.dart';
 import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:arbo_frontend/screens/user_info_screen.dart';
@@ -15,19 +18,70 @@ import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/roots/main_widget.dart';
 
 class RootScreen extends StatefulWidget {
-  final String locationMessage;
-
-  const RootScreen({super.key, required this.locationMessage});
+  const RootScreen({super.key});
 
   @override
   State<RootScreen> createState() => RootScreenState();
 }
 
 class RootScreenState extends State<RootScreen> {
+  String _locationMessage = '당신이 속한 community 위치를 알고싶어요!';
+  bool _isLoading = false;
+
   NavigationState _currentNavigationState = NavigationState.initial;
   int selectedIndex = -1; // Added to fix selectedIndex reference
   final ScrollController _scrollController = ScrollController();
   bool firstClickedPrompt = true;
+
+  Future<void> _getLocationPermission() async {
+    setState(() {
+      _isLoading = true;
+      _locationMessage = '위치 정보를 가져오는 중...';
+    });
+
+    LocationPermission permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      setState(() {
+        _isLoading = false;
+        _locationMessage = '위치 권한이 거부되었습니다.';
+      });
+      return;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      setState(() {
+        _isLoading = false;
+        _locationMessage = '위치 권한이 영구적으로 거부되었습니다.';
+      });
+      return;
+    }
+
+    _getLocation();
+  }
+
+  Future<void> _getLocation() async {
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+
+    var response = await googleGeocoding.geocoding
+        .getReverse(LatLon(position.latitude, position.longitude));
+
+    if (response != null && response.results != null) {
+      final geocodingResponse = response.results;
+      if (geocodingResponse != null) {
+        address = geocodingResponse[0].formattedAddress!;
+        setState(() {
+          _isLoading = false;
+          _locationMessage = address;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+          _locationMessage = '지명 정보를 가져오지 못했습니다.';
+        });
+      }
+    }
+  }
 
   void _onCategoryTapped(int index) {
     setState(() {
@@ -180,30 +234,32 @@ class RootScreenState extends State<RootScreen> {
             ),
           ];
         },
-        body: Stack(
-          children: [
-            // 배경으로 _strokes 그리기
-            CustomPaint(
-              painter: StrokePainter(userPaintBackGround),
-              size: Size.infinite,
-            ),
-            _currentNavigationState == NavigationState.initial
-                ? Column(
+        body: _currentNavigationState == NavigationState.initial
+            ? Stack(
+                children: [
+                  // 배경으로 _strokes 그리기
+                  CustomPaint(
+                    painter: StrokePainter(userPaintBackGround),
+                    size: Size.infinite,
+                  ),
+                  SingleChildScrollView(
+                      child: Column(
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(16.0),
-                        child: Container(
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade100,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            widget.locationMessage,
-                            style: const TextStyle(fontSize: 16),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
+                        child: _isLoading
+                            ? const CircularProgressIndicator()
+                            : ElevatedButton(
+                                onPressed: _getLocationPermission,
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.all(16.0),
+                                  backgroundColor: Colors.blue.shade100,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: Text(_locationMessage),
+                              ),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -315,140 +371,26 @@ class RootScreenState extends State<RootScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: currentLoginUser != null
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Padding(
-                                      padding: EdgeInsets.all(16.0),
-                                      child: Text(
-                                        '내 게시판',
-                                        style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    FutureBuilder<QuerySnapshot>(
-                                      future: firestore_instance
-                                          .collection('posts')
-                                          .where('userId',
-                                              isEqualTo: currentLoginUser!.uid)
-                                          .limit(3)
-                                          .get(),
-                                      builder: (context, snapshot) {
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.waiting) {
-                                          return const Center(
-                                              child:
-                                                  CircularProgressIndicator());
-                                        } else if (snapshot.hasError) {
-                                          return const Text('오류가 발생했습니다.');
-                                        } else if (!snapshot.hasData ||
-                                            snapshot.data!.docs.isEmpty) {
-                                          return const Text('작성한 글이 없습니다.');
-                                        } else {
-                                          return ListView.builder(
-                                            shrinkWrap: true,
-                                            physics:
-                                                const NeverScrollableScrollPhysics(),
-                                            itemCount:
-                                                snapshot.data!.docs.length,
-                                            itemBuilder: (context, index) {
-                                              var doc =
-                                                  snapshot.data!.docs[index];
-                                              return ListTile(
-                                                title: Text(doc['title']),
-                                                subtitle: Text(doc['content']),
-                                                trailing: const Icon(
-                                                    Icons.arrow_forward_ios),
-                                                onTap: () {
-                                                  // 게시물 상세 페이지로 이동
-                                                },
-                                              );
-                                            },
-                                          );
-                                        }
-                                      },
-                                    ),
-                                    FutureBuilder<QuerySnapshot>(
-                                      future: firestore_instance
-                                          .collection('posts')
-                                          .where('userId',
-                                              isEqualTo: currentLoginUser!.uid)
-                                          .get(),
-                                      builder: (context, snapshot) {
-                                        if (snapshot.connectionState ==
-                                                ConnectionState.waiting ||
-                                            snapshot.hasError ||
-                                            !snapshot.hasData) {
-                                          return const SizedBox.shrink();
-                                        }
-                                        if (snapshot.data!.docs.length > 3) {
-                                          return Padding(
-                                            padding: const EdgeInsets.all(16.0),
-                                            child: Center(
-                                              child: TextButton(
-                                                onPressed: () {
-                                                  // 전체 게시물 목록 페이지로 이동
-                                                },
-                                                child: const Text('더 보기'),
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                        return const SizedBox.shrink();
-                                      },
-                                    ),
-                                  ],
-                                )
-                              : Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    children: [
-                                      const Text('로그인하여 나만의 게시판을 확인하세요.'),
-                                      const SizedBox(height: 10),
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (BuildContext context) {
-                                              return LoginPopupWidget(
-                                                onLoginSuccess: () {},
-                                              );
-                                            },
-                                          );
-                                        },
-                                        child: const Text('로그인'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                        ),
-                      )
+                      const MyPostsInRoot(
+                        postsTitle: '내 게시판',
+                        notLoginInfo: '로그인하여 나만의 게시판을 확인하세요.',
+                        mypost: true,
+                      ),
+                      const SizedBox(height: 50),
+                      const MyPostsInRoot(
+                        postsTitle: '참여하는 게시판',
+                        notLoginInfo: '로그인하여 내가 참여한 게시판을 확인하세요.',
+                        mypost: false,
+                      ),
                     ],
-                  )
-                : MainWidget(
-                    onPreviousPage: _navigateBackToInitial,
-                    initialCategory: furnitureCategories[selectedIndex]
-                        ['name']!, // Pass the selected category
-                  ),
-          ],
-        ),
+                  )),
+                ],
+              )
+            : MainWidget(
+                onPreviousPage: _navigateBackToInitial,
+                initialCategory: furnitureCategories[selectedIndex]
+                    ['name']!, // Pass the selected category
+              ),
       ),
     );
   }

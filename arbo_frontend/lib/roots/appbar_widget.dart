@@ -36,16 +36,12 @@ class CustomSliverAppBar extends StatelessWidget {
               selectedIndex = -1;
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
-                  builder: (context) => RootScreen(
-                    locationMessage: address,
-                  ),
+                  builder: (context) => const RootScreen(),
                 ),
               );
             },
             child: const Text('CommPain\'t'),
           ),
-
-          // const Text('자보'),
           const SizedBox(
             width: 60,
           ),

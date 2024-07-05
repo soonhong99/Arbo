@@ -1,4 +1,6 @@
 import 'package:algolia_helper_flutter/algolia_helper_flutter.dart';
+import 'package:arbo_frontend/data/user_data.dart';
+import 'package:arbo_frontend/design/paint_stroke.dart';
 import 'package:arbo_frontend/widgets/search_widgets/search_detail_screen.dart';
 import 'package:arbo_frontend/widgets/search_widgets/search_response_widget.dart';
 import 'package:flutter/material.dart';
@@ -101,25 +103,31 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
       appBar: AppBar(
         title: Text('Search Results for "${widget.query}"'),
       ),
-      body: Column(
-        children: [
-          StreamBuilder<SearchMetadata>(
-            stream: _searchMetadata,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return const SizedBox.shrink();
-              }
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text('${snapshot.data!.nbHits} hits'),
-              );
-            },
-          ),
-          Expanded(
-            child: _hits(context),
-          ),
-        ],
-      ),
+      body: Stack(children: [
+        CustomPaint(
+          painter: StrokePainter(userPaintBackGround),
+          size: Size.infinite,
+        ),
+        Column(
+          children: [
+            StreamBuilder<SearchMetadata>(
+              stream: _searchMetadata,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text('${snapshot.data!.nbHits} hits'),
+                );
+              },
+            ),
+            Expanded(
+              child: _hits(context),
+            ),
+          ],
+        ),
+      ]),
     );
   }
 }

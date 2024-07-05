@@ -1,4 +1,5 @@
 import 'package:arbo_frontend/data/user_data.dart';
+import 'package:arbo_frontend/design/paint_stroke.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/heart_animation_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -228,198 +229,206 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
         elevation: 2,
         foregroundColor: Colors.black,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  postData['topic'],
+      body: Stack(children: [
+        CustomPaint(
+          painter: StrokePainter(userPaintBackGround),
+          size: Size.infinite,
+        ),
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    postData['topic'],
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                      color: Colors.red,
+                    ),
+                  ),
+                  const Spacer(), // This will push the IconButton to the right
+                  if (_isPostOwner)
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: _navigateToEditPost,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Hero(
+                tag: 'title_${postData['title']}',
+                child: Text(
+                  postData['title'],
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                    color: Colors.red,
-                  ),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      color: Colors.black),
                 ),
-                const Spacer(), // This will push the IconButton to the right
-                if (_isPostOwner)
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: _navigateToEditPost,
+              ),
+              const SizedBox(height: 8.0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'By ${postData['nickname']} - ${postTime.year}-${postTime.month}-${postTime.day}',
+                    style: const TextStyle(
+                      color: Colors.grey,
+                    ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Hero(
-              tag: 'title_${postData['title']}',
-              child: Text(
-                postData['title'],
+                  Text(
+                    'Views: ${postData['visitedUser']}',
+                    style: const TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16.0),
+              Center(
+                child: Wrap(
+                  spacing: 10.0,
+                  runSpacing: 10.0,
+                  children: postData['designedPicture']
+                      .map<Widget>((imageUrl) => GestureDetector(
+                            onDoubleTap: () {
+                              _updateHearts();
+                              if (_hasUserLiked == false &&
+                                  currentLoginUser != null) {
+                                animationCompleted = true;
+                              }
+                            },
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  width: imageSize,
+                                  height: imageSize,
+                                  color: Colors.grey[300], // Placeholder color
+                                  child: Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      print(error);
+                                      return const Icon(
+                                        Icons.error,
+                                        color: Colors.red,
+                                      );
+                                    },
+                                  ),
+                                ),
+                                Opacity(
+                                  opacity: animationCompleted ? 1 : 0,
+                                  child: HeartAnimationWidget(
+                                      isAnimating: animationCompleted,
+                                      duration:
+                                          const Duration(milliseconds: 700),
+                                      onEnd: () => setState(
+                                            () => animationCompleted = false,
+                                          ),
+                                      child: const Icon(
+                                        Icons.favorite,
+                                        color: Colors.red,
+                                        size: 100.0,
+                                      )),
+                                ),
+                              ],
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      _hasUserLiked ? Icons.favorite : Icons.favorite_border,
+                    ),
+                    onPressed: _updateHearts,
+                  ),
+                  const SizedBox(width: 4.0),
+                  Text('${postData['hearts']}'),
+                  const SizedBox(width: 10.0),
+                  const Icon(Icons.comment),
+                  const SizedBox(width: 4.0),
+                  Text('${countTotalComments(comments)}'),
+                ],
+              ),
+              Text(
+                postData['content'],
                 style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
+                    fontSize: 30,
+                    fontWeight: FontWeight.normal,
                     color: Colors.black),
               ),
-            ),
-            const SizedBox(height: 8.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'By ${postData['nickname']} - ${postTime.year}-${postTime.month}-${postTime.day}',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                ),
-                Text(
-                  'Views: ${postData['visitedUser']}',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16.0),
-            Center(
-              child: Wrap(
-                spacing: 10.0,
-                runSpacing: 10.0,
-                children: postData['designedPicture']
-                    .map<Widget>((imageUrl) => GestureDetector(
-                          onDoubleTap: () {
-                            _updateHearts();
-                            if (_hasUserLiked == false &&
-                                currentLoginUser != null) {
-                              animationCompleted = true;
-                            }
-                          },
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                width: imageSize,
-                                height: imageSize,
-                                color: Colors.grey[300], // Placeholder color
-                                child: Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    print(error);
-                                    return const Icon(
-                                      Icons.error,
-                                      color: Colors.red,
-                                    );
-                                  },
-                                ),
-                              ),
-                              Opacity(
-                                opacity: animationCompleted ? 1 : 0,
-                                child: HeartAnimationWidget(
-                                    isAnimating: animationCompleted,
-                                    duration: const Duration(milliseconds: 700),
-                                    onEnd: () => setState(
-                                          () => animationCompleted = false,
-                                        ),
-                                    child: const Icon(
-                                      Icons.favorite,
-                                      color: Colors.red,
-                                      size: 100.0,
-                                    )),
-                              ),
-                            ],
-                          ),
-                        ))
-                    .toList(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    _hasUserLiked ? Icons.favorite : Icons.favorite_border,
-                  ),
-                  onPressed: _updateHearts,
-                ),
-                const SizedBox(width: 4.0),
-                Text('${postData['hearts']}'),
-                const SizedBox(width: 10.0),
-                const Icon(Icons.comment),
-                const SizedBox(width: 4.0),
-                Text('${countTotalComments(comments)}'),
-              ],
-            ),
-            Text(
-              postData['content'],
-              style: const TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.normal,
-                  color: Colors.black),
-            ),
-            const SizedBox(height: 8.0),
-            TextField(
-              controller: _commentController,
-              decoration: InputDecoration(
-                hintText: '댓글을 입력하세요.',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: () =>
-                      _addComment(_commentController.text), // Add this line
-                ),
-              ),
-            ),
-            const SizedBox(height: 16.0),
-            if (dataInitialized) ...[
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _areCommentsVisible = !_areCommentsVisible; // Toggle
-                    });
-                  },
-                  child: Text(
-                    _areCommentsVisible
-                        ? '댓글 ${comments.length}개 접기'
-                        : '댓글 ${comments.length}개 보기',
+              const SizedBox(height: 8.0),
+              TextField(
+                controller: _commentController,
+                decoration: InputDecoration(
+                  hintText: '댓글을 입력하세요.',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.send),
+                    onPressed: () =>
+                        _addComment(_commentController.text), // Add this line
                   ),
                 ),
               ),
-            ],
-            if (_areCommentsVisible)
-              ...comments.map((comment) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ListTile(
-                      title: Text(
-                          '${comment['nickname']} - ${comment['comment']}'),
-                      subtitle: Text((comment['timestamp'] as Timestamp)
-                          .toDate()
-                          .toString()),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.reply),
-                        onPressed: () => _showReplyDialog(comment['commentId']),
-                      ),
+              const SizedBox(height: 16.0),
+              if (dataInitialized) ...[
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _areCommentsVisible = !_areCommentsVisible; // Toggle
+                      });
+                    },
+                    child: Text(
+                      _areCommentsVisible
+                          ? '댓글 ${comments.length}개 접기'
+                          : '댓글 ${comments.length}개 보기',
                     ),
-                    ...comment['replies'].map<Widget>((reply) {
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 16.0),
-                        child: ListTile(
-                          title: Text(
-                              '${reply['nickname']} - ${reply['comment']}'),
-                          subtitle: Text((reply['timestamp'] as Timestamp)
-                              .toDate()
-                              .toString()),
+                  ),
+                ),
+              ],
+              if (_areCommentsVisible)
+                ...comments.map((comment) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ListTile(
+                        title: Text(
+                            '${comment['nickname']} - ${comment['comment']}'),
+                        subtitle: Text((comment['timestamp'] as Timestamp)
+                            .toDate()
+                            .toString()),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.reply),
+                          onPressed: () =>
+                              _showReplyDialog(comment['commentId']),
                         ),
-                      );
-                    }).toList(),
-                  ],
-                );
-              }).toList(),
-          ],
+                      ),
+                      ...comment['replies'].map<Widget>((reply) {
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 16.0),
+                          child: ListTile(
+                            title: Text(
+                                '${reply['nickname']} - ${reply['comment']}'),
+                            subtitle: Text((reply['timestamp'] as Timestamp)
+                                .toDate()
+                                .toString()),
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  );
+                }).toList(),
+            ],
+          ),
         ),
-      ),
+      ]),
     );
   }
 

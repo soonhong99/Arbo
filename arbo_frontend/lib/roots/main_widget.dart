@@ -1,5 +1,6 @@
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/data/user_data_provider.dart';
+import 'package:arbo_frontend/design/paint_stroke.dart';
 import 'package:arbo_frontend/roots/simple_post_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -85,103 +86,111 @@ class MainWidgetState extends State<MainWidget> {
     final horizontalPadding = screenWidth * 0.1;
 
     return Scaffold(
-      body: FutureBuilder(
-        future: _fetchDataFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text('오류가 발생했습니다: ${snapshot.error}'),
-            );
-          } else {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      DropdownButton<String>(
-                        value: selectedCategory,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedCategory = newValue!;
-                          });
-                        },
-                        items: categories
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(width: 10),
-                      DropdownButton<String>(
-                        value: selectedUpdatedTime,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedUpdatedTime = newValue!;
-                          });
-                        },
-                        items: updatedTime
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            TextButton(
-                              onPressed: () {},
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.noise_aware_sharp),
-                                  Text('최신'),
-                                ],
-                              ),
+      body: Stack(children: [
+        CustomPaint(
+          painter: StrokePainter(userPaintBackGround),
+          size: Size.infinite,
+        ),
+        SafeArea(
+          child: FutureBuilder(
+            future: _fetchDataFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Text('오류가 발생했습니다: ${snapshot.error}'),
+                );
+              } else {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          DropdownButton<String>(
+                            value: selectedCategory,
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                selectedCategory = newValue!;
+                              });
+                            },
+                            items: categories
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(width: 10),
+                          DropdownButton<String>(
+                            value: selectedUpdatedTime,
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                selectedUpdatedTime = newValue!;
+                              });
+                            },
+                            items: updatedTime
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                TextButton(
+                                  onPressed: () {},
+                                  child: const Row(
+                                    children: [
+                                      Icon(Icons.noise_aware_sharp),
+                                      Text('최신'),
+                                    ],
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {},
+                                  child: const Row(
+                                    children: [
+                                      Icon(Icons.fire_hydrant_alt_sharp),
+                                      Text('인기'),
+                                    ],
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {},
+                                  child: const Row(
+                                    children: [
+                                      Icon(Icons.local_fire_department_sharp),
+                                      Text('베스트'),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            TextButton(
-                              onPressed: () {},
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.fire_hydrant_alt_sharp),
-                                  Text('인기'),
-                                ],
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {},
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.local_fire_department_sharp),
-                                  Text('베스트'),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: _buildPostList(screenWidth, horizontalPadding),
-                ),
-              ],
-            );
-          }
-        },
-      ),
+                    ),
+                    Expanded(
+                      child: _buildPostList(screenWidth, horizontalPadding),
+                    ),
+                  ],
+                );
+              }
+            },
+          ),
+        ),
+      ]),
       bottomNavigationBar: BotNaviWidget(
         postData: null,
         refreshDataCallback: () {
