@@ -32,6 +32,19 @@ String address = 'Cannot find location';
 
 List<PaintStroke> userPaintBackGround = [];
 
+bool firstLocationTouch = true;
+
+String country = 'Pacific Ocean';
+String city = 'Bikini';
+String district = 'Shell';
+
+String locationMessage = '당신이 속한 community 위치를 알고싶어요!';
+
+List<Map<String, dynamic>> likedPostsInRoot = [];
+List<Map<String, dynamic>> myPostsInRoot = [];
+
+bool loginInRoot = false;
+
 int countTotalComments(List<dynamic>? comments) {
   if (comments == null) {
     return 0;

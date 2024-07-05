@@ -151,7 +151,7 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
               ),
               const SizedBox(height: 16),
               Text(
-                '세줄요약: ${specificAllPostData['content']}',
+                '필요한이유는요... ${specificAllPostData['content']}',
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),

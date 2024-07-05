@@ -2,6 +2,7 @@ import 'package:algolia/algolia.dart';
 import 'package:arbo_frontend/data/prompt_history.dart';
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/extractNoun/responseServer.dart';
+import 'package:arbo_frontend/widgets/main_widgets/loading_screen.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/chat_message.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_post_creation.dart';
 import 'package:arbo_frontend/widgets/search_widgets/search_detail_screen.dart';
@@ -452,7 +453,7 @@ class _PromptDialogState extends State<PromptDialog> {
     });
 
     try {
-      await createNewPost(
+      String postId = await createNewPost(
           suggestions['title'] ?? 'Untitled',
           suggestions['reason'] ?? 'No content',
           suggestions['topic'] ?? 'Uncategorized');
@@ -473,6 +474,12 @@ class _PromptDialogState extends State<PromptDialog> {
                 onPressed: () {
                   Navigator.of(context).pop();
                   Navigator.of(context).pop(); // PromptDialog도 닫기
+
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => LoadingScreen(postId: postId),
+                    ),
+                  );
                 },
                 child: const Text('OK'),
               ),

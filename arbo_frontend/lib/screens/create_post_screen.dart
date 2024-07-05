@@ -1,12 +1,14 @@
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/data/user_data_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:html' as html;
 
-Future<void> createNewPost(String title, String content, String topic) async {
+Future<String> createNewPost(String title, String content, String topic) async {
   try {
-    await firestore_instance.collection('posts').add({
+    DocumentReference docRef =
+        await firestore_instance.collection('posts').add({
       'title': title,
       'topic': topic,
       'scale': '대자보', // 기본값 설정
@@ -20,6 +22,7 @@ Future<void> createNewPost(String title, String content, String topic) async {
       'visitedUser': 0,
     });
     print('Post created successfully');
+    return docRef.id;
   } catch (e) {
     print('Error creating post: $e');
     rethrow;

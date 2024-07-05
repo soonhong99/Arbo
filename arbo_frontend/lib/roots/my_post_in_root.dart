@@ -1,11 +1,13 @@
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
+import 'package:arbo_frontend/widgets/main_widgets/loading_screen.dart';
+import 'package:arbo_frontend/widgets/search_widgets/search_detail_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class MyPostsInRoot extends StatelessWidget {
+class MyPostsInRoot extends StatefulWidget {
   final String postsTitle;
   final String notLoginInfo;
   final bool mypost;
@@ -15,6 +17,14 @@ class MyPostsInRoot extends StatelessWidget {
     required this.notLoginInfo,
     required this.mypost,
   });
+
+  @override
+  _MyPostsInRootState createState() => _MyPostsInRootState();
+}
+
+class _MyPostsInRootState extends State<MyPostsInRoot> {
+  bool _isExpanded = false;
+  List<Map<String, dynamic>> _localPosts = [];
 
   @override
   Widget build(BuildContext context) {
@@ -42,22 +52,22 @@ class MyPostsInRoot extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Text(
-                      postsTitle,
+                      widget.postsTitle,
                       style: const TextStyle(
                           fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                   ),
-                  if (mypost)
-                    ..._buildFutureBuilders(context)
+                  if (widget.mypost)
+                    _buildPostsList(context)
                   else
-                    _buildOtherContent(),
+                    _buildHeartsList(),
                 ],
               )
             : Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    Text(notLoginInfo),
+                    Text(widget.notLoginInfo),
                     const SizedBox(height: 10),
                     ElevatedButton(
                       onPressed: () {
@@ -79,75 +89,134 @@ class MyPostsInRoot extends StatelessWidget {
     );
   }
 
-  Widget _buildOtherContent() {
-    return const Padding(
-      padding: EdgeInsets.all(16.0),
-      child: Text('기타 컨텐츠를 여기에 표시할 수 있습니다.'),
-    );
-  }
+  Widget _buildLocalPostsList(String category) {
+    if (category == 'liked') {
+      _localPosts = likedPostsInRoot;
+    } else if (category == 'mypost') {
+      _localPosts = myPostsInRoot;
+    }
+    final displayPosts =
+        _isExpanded ? _localPosts : _localPosts.take(3).toList();
 
-  List<Widget> _buildFutureBuilders(BuildContext context) {
-    return [
-      FutureBuilder<QuerySnapshot>(
-        future: firestore_instance
-            .collection('posts')
-            .where('userId', isEqualTo: currentLoginUser!.uid)
-            .limit(3)
-            .get(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return const Text('오류가 발생했습니다.');
-          } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Text('작성한 글이 없습니다.');
-          } else {
-            return ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: snapshot.data!.docs.length,
-              itemBuilder: (context, index) {
-                var doc = snapshot.data!.docs[index];
-                return ListTile(
-                  title: Text(doc['title']),
-                  subtitle: Text(doc['content']),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: () {
-                    // 게시물 상세 페이지로 이동
-                  },
+    return Column(
+      children: [
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: displayPosts.length,
+          itemBuilder: (context, index) {
+            var post = displayPosts[index];
+            return ListTile(
+              title: Text(post['title']),
+              subtitle: Text(post['content']),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => LoadingScreen(postId: post['id']),
+                    //SearchDetailScreen(postId: post['id']),
+                  ),
                 );
               },
             );
-          }
-        },
-      ),
-      FutureBuilder<QuerySnapshot>(
-        future: firestore_instance
-            .collection('posts')
-            .where('userId', isEqualTo: currentLoginUser!.uid)
-            .get(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting ||
-              snapshot.hasError ||
-              !snapshot.hasData) {
-            return const SizedBox.shrink();
-          }
-          if (snapshot.data!.docs.length > 3) {
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Center(
-                child: TextButton(
-                  onPressed: () {
-                    // 전체 게시물 목록 페이지로 이동
-                  },
-                  child: const Text('더 보기'),
-                ),
+          },
+        ),
+        if (_localPosts.length > 3)
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child: TextButton(
+                onPressed: () {
+                  setState(() {
+                    _isExpanded = !_isExpanded;
+                  });
+                },
+                child: Text(_isExpanded ? '접기' : '더 보기'),
               ),
-            );
-          }
-          return const SizedBox.shrink();
-        },
-      ),
-    ];
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildHeartsList() {
+    if (loginInRoot && likedPostsInRoot.isNotEmpty) {
+      return _buildLocalPostsList('liked');
+    }
+    return FutureBuilder<List<DocumentSnapshot>>(
+      future: _getLikedPosts(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return const Text('오류가 발생했습니다.');
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Text('좋아한 글이 없습니다.');
+        } else {
+          final docs = snapshot.data!;
+          likedPostsInRoot = docs
+              .map((doc) => {
+                    'id': doc.id,
+                    'title': doc['title'],
+                    'content': doc['content'],
+                  })
+              .toList();
+          loginInRoot = true;
+          return _buildLocalPostsList('liked');
+        }
+      },
+    );
+  }
+
+  Future<List<DocumentSnapshot>> _getLikedPosts() async {
+    List<DocumentSnapshot> likedPostDocs = [];
+
+    // loginUserData에서 좋아한 게시물 ID 목록을 가져옵니다.
+    List<String> likedPostIds =
+        List<String>.from(loginUserData!['하트 누른 게시물'] ?? []);
+
+    // 각 게시물 ID에 대해 Firestore에서 데이터를 가져옵니다.
+    for (String postId in likedPostIds) {
+      DocumentSnapshot doc =
+          await firestore_instance.collection('posts').doc(postId).get();
+      if (doc.exists) {
+        likedPostDocs.add(doc);
+      }
+    }
+
+    return likedPostDocs;
+  }
+
+  Widget _buildPostsList(BuildContext context) {
+    if (loginInRoot && myPostsInRoot.isNotEmpty) {
+      return _buildLocalPostsList('mypost');
+    }
+    return FutureBuilder<QuerySnapshot>(
+      future: firestore_instance
+          .collection('posts')
+          .where('userId', isEqualTo: currentLoginUser!.uid)
+          .get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return const Text('오류가 발생했습니다.');
+        } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Text('작성한 글이 없습니다.');
+        } else {
+          final docs = snapshot.data!.docs;
+
+          myPostsInRoot = docs
+              .map((doc) => {
+                    'id': doc.id,
+                    'title': doc['title'],
+                    'content': doc['content'],
+                  })
+              .toList();
+          loginInRoot = true;
+          return _buildLocalPostsList('mypost');
+        }
+      },
+    );
   }
 }

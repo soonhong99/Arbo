@@ -4,7 +4,6 @@ import 'package:arbo_frontend/roots/my_post_in_root.dart';
 import 'package:arbo_frontend/widgets/gemini_widgets/gemini_advisor_chat.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_dialog_widget.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_bar.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +24,6 @@ class RootScreen extends StatefulWidget {
 }
 
 class RootScreenState extends State<RootScreen> {
-  String _locationMessage = '당신이 속한 community 위치를 알고싶어요!';
   bool _isLoading = false;
 
   NavigationState _currentNavigationState = NavigationState.initial;
@@ -36,14 +34,14 @@ class RootScreenState extends State<RootScreen> {
   Future<void> _getLocationPermission() async {
     setState(() {
       _isLoading = true;
-      _locationMessage = '위치 정보를 가져오는 중...';
+      locationMessage = '위치 정보를 가져오는 중...';
     });
 
     LocationPermission permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.denied) {
       setState(() {
         _isLoading = false;
-        _locationMessage = '위치 권한이 거부되었습니다.';
+        locationMessage = '위치 권한이 거부되었습니다.';
       });
       return;
     }
@@ -51,7 +49,7 @@ class RootScreenState extends State<RootScreen> {
     if (permission == LocationPermission.deniedForever) {
       setState(() {
         _isLoading = false;
-        _locationMessage = '위치 권한이 영구적으로 거부되었습니다.';
+        locationMessage = '위치 권한이 영구적으로 거부되었습니다.';
       });
       return;
     }
@@ -70,14 +68,25 @@ class RootScreenState extends State<RootScreen> {
       final geocodingResponse = response.results;
       if (geocodingResponse != null) {
         address = geocodingResponse[0].formattedAddress!;
-        setState(() {
-          _isLoading = false;
-          _locationMessage = address;
-        });
+        setState(
+          () {
+            _isLoading = false;
+            // locationMessage = address;
+            List<String> addressComponents = address.split(' ');
+            if (addressComponents.length >= 3) {
+              country = addressComponents[0];
+              city = addressComponents[1];
+              district = addressComponents[2];
+
+              // Combine the components for the location message
+              locationMessage = '$country, $city, $district';
+            }
+          },
+        );
       } else {
         setState(() {
           _isLoading = false;
-          _locationMessage = '지명 정보를 가져오지 못했습니다.';
+          locationMessage = '지명 정보를 가져오지 못했습니다.';
         });
       }
     }
@@ -166,7 +175,7 @@ class RootScreenState extends State<RootScreen> {
     final userData = Provider.of<UserDataProvider>(context);
 
     final List<Map<String, String>> furnitureCategories = [
-      {'name': 'All posts', 'image': 'images/categorized/all.png'},
+      {'name': 'All posts', 'image': 'images/categorized/all_posts.png'},
       {
         'name': 'Education and Development',
         'image': 'images/categorized/Education_and_Youth_Development.png'
@@ -246,20 +255,36 @@ class RootScreenState extends State<RootScreen> {
                       child: Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(50.0),
                         child: _isLoading
                             ? const CircularProgressIndicator()
-                            : ElevatedButton(
-                                onPressed: _getLocationPermission,
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.all(16.0),
-                                  backgroundColor: Colors.blue.shade100,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                            : locationMessage == '위치 정보를 가져오는 중...' ||
+                                    locationMessage == '위치 권한이 거부되었습니다.' ||
+                                    locationMessage ==
+                                        '위치 권한이 영구적으로 거부되었습니다.' ||
+                                    locationMessage == '지명 정보를 가져오지 못했습니다.' ||
+                                    firstLocationTouch
+                                ? ElevatedButton(
+                                    onPressed: () {
+                                      _getLocationPermission();
+                                      firstLocationTouch = false;
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.all(16.0),
+                                      backgroundColor: Colors.blue.shade100,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    child: Text(locationMessage),
+                                  )
+                                : Text(
+                                    'You live in $locationMessage! Let\'s paint your community!',
+                                    style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.green[800]),
                                   ),
-                                ),
-                                child: Text(_locationMessage),
-                              ),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -382,6 +407,7 @@ class RootScreenState extends State<RootScreen> {
                         notLoginInfo: '로그인하여 내가 참여한 게시판을 확인하세요.',
                         mypost: false,
                       ),
+                      const SizedBox(height: 200),
                     ],
                   )),
                 ],
