@@ -1,5 +1,6 @@
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/design/paint_stroke.dart';
+import 'package:arbo_frontend/screens/edit_post_screen.dart';
 import 'package:arbo_frontend/widgets/gemini_widgets/gemini_chandler_chat.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
@@ -203,31 +204,29 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   }
 
   void _navigateToEditPost() async {
-    final vertexAI = FirebaseVertexAI.instanceFor(
-        location: 'asia-northeast3', appCheck: firebase_appcheck_instance);
-
-    final generationConfig = GenerationConfig(
-        maxOutputTokens: 200,
-        stopSequences: ["red"],
-        temperature: 1,
-        topP: 0.95,
-        topK: 40,
-        responseMimeType: "text/plain");
-
-    final model = vertexAI.generativeModel(
-      model: 'gemini-1.5-flash',
-      generationConfig: generationConfig,
-      systemInstruction: Content.system(chandler_instructions),
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditPostScreen(postData: postData),
+      ),
     );
 
-    ChatSession chatSession = model.startChat(history: chandler_initialHistory);
+    if (result != null && result is Map<String, dynamic>) {
+      setState(() {
+        postData['topic'] = result['topic'];
+        postData['title'] = result['title'];
+        postData['content'] = result['content'];
+      });
 
-    var content = Content.text('how are you Chandler?');
-    try {
-      var response = await chatSession.sendMessage(content);
-      print(response.text);
-    } catch (e) {
-      print(e);
+      // Firestore 업데이트
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(postData['postId'])
+          .update({
+        'topic': result['topic'],
+        'title': result['title'],
+        'content': result['content'],
+      });
     }
   }
 

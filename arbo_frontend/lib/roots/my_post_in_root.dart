@@ -2,7 +2,6 @@ import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/loading_screen.dart';
-import 'package:arbo_frontend/widgets/search_widgets/search_detail_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

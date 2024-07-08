@@ -15,7 +15,7 @@ Future<String> createNewPost(String title, String content, String topic) async {
       'content': content,
       'userId': currentLoginUser?.uid ?? 'anonymous',
       'timestamp': DateTime.now(),
-      'nickname': currentLoginUser?.displayName ?? 'Anonymous',
+      'nickname': loginUserData!['닉네임'] ?? 'Anonymous',
       'comments': [],
       'hearts': 0,
       'designedPicture': [],

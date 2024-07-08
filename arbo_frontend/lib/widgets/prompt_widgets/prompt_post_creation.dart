@@ -55,6 +55,10 @@ class PostCreationHelper {
         }
       }
 
+      topic = topic.replaceAll('*', '');
+      title = title.replaceAll('*', '');
+      reason = reason.replaceAll('*', '');
+
       if (topic.isEmpty || title.isEmpty || reason.isEmpty) {
         throw Exception(
             'Failed to extract topic or title or reason from response');

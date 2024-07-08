@@ -19,7 +19,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
   Future<void> _loadPostData() async {
     // 데이터가 Firestore에 완전히 저장되도록 잠시 대기
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 1));
 
     // 컨텍스트가 여전히 유효한지 확인
     if (!mounted) return;
