@@ -10,6 +10,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:arbo_frontend/screens/create_post_screen.dart';
@@ -43,10 +44,12 @@ class _PromptDialogState extends State<PromptDialog> {
   final ChatHistory _chatHistory = ChatHistory();
   final ScrollController _scrollController = ScrollController();
   final stt.SpeechToText _speech = stt.SpeechToText();
-  final FocusNode _textFieldFocusNode = FocusNode();
   bool _isListening = false;
   bool _isLoading = true;
+  TextSelection? _lastSelection;
+  late final FocusNode _focusNode;
   late PostCreationHelper _postCreationHelper;
+  late TextEditingController textInPrompt;
 
   @override
   void initState() {
@@ -59,12 +62,38 @@ class _PromptDialogState extends State<PromptDialog> {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _initializeChat();
     });
+    _focusNode = FocusNode(
+      onKey: (FocusNode node, RawKeyEvent evt) {
+        if (evt is RawKeyDownEvent) {
+          if (evt.isShiftPressed &&
+              evt.logicalKey == LogicalKeyboardKey.enter) {
+            _insertNewLine();
+            return KeyEventResult.handled;
+          } else if (!evt.isShiftPressed &&
+              evt.logicalKey == LogicalKeyboardKey.enter) {
+            _handleSubmitted(widget.promptController.text);
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+    );
   }
 
   @override
   void dispose() {
-    _textFieldFocusNode.dispose();
+    _focusNode.dispose();
     super.dispose();
+  }
+
+  void _insertNewLine() {
+    final text = widget.promptController.text;
+    final selection = widget.promptController.selection;
+    final newText = text.replaceRange(selection.start, selection.end, '\n');
+    widget.promptController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: selection.start + 1),
+    );
   }
 
   void _listen() async {
@@ -99,6 +128,11 @@ class _PromptDialogState extends State<PromptDialog> {
     }
   }
 
+  void _clearAndStopListening() {
+    _stopListening();
+    widget.promptController.clear();
+  }
+
   Future<void> _initializeChat() async {
     await widget.initializeChat();
     setState(() {
@@ -110,13 +144,28 @@ class _PromptDialogState extends State<PromptDialog> {
     });
   }
 
-  void _handleSubmitted(String text) {
-    widget.promptController.clear();
-    _addMessage(ChatMessage(text: text, isUser: true));
-    widget.onSendMessage(text).then((response) {
-      _addMessage(ChatMessage(text: response, isUser: false));
-    });
-    _stopListening(); // 메시지를 보낼 때 마이크 끄기
+  Future<void> _handleSubmitted(String text) async {
+    if (text.trim().isNotEmpty) {
+      widget.promptController.clear();
+
+      if (_isListening == true) {
+        _focusNode.unfocus();
+        _stopListening();
+      } else {
+        _focusNode.requestFocus();
+      }
+
+      _addMessage(ChatMessage(text: text, isUser: true));
+
+      try {
+        String response = await widget.onSendMessage(text);
+        _addMessage(ChatMessage(text: response, isUser: false));
+      } catch (e) {
+        print('Error getting response: $e');
+        _addMessage(const ChatMessage(
+            text: "Sorry, an error occurred.", isUser: false));
+      }
+    }
   }
 
   void _addMessage(ChatMessage message) {
@@ -645,38 +694,101 @@ class _PromptDialogState extends State<PromptDialog> {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8.0),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: <Widget>[
             IconButton(
               icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
-              onPressed: _listen,
+              onPressed: () {
+                _listen();
+              },
               color: _isListening ? Colors.red : null,
             ),
             Flexible(
-              child: TextField(
-                controller: widget.promptController,
-                focusNode: _textFieldFocusNode,
-                onSubmitted: (text) {
-                  _handleSubmitted(text);
-                  _textFieldFocusNode.requestFocus(); // 제출 후 다시 포커스
-                },
-                decoration: InputDecoration.collapsed(
-                  hintText: _isListening ? 'Listening...' : 'Send a message',
+              child: RawKeyboardListener(
+                focusNode: FocusNode(),
+                child: TextField(
+                  controller: widget.promptController,
+                  focusNode: _focusNode,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  onChanged: _handleTextChange,
+                  decoration: InputDecoration(
+                    hintText: _isListening ? 'Listening...' : 'Send a message',
+                    hintMaxLines: 1,
+                    helperText: 'Shift+Enter로 줄 바꿈, Enter로 메시지 전송',
+                    helperStyle: const TextStyle(fontSize: 12),
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  ),
                 ),
               ),
             ),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 4.0),
               child: IconButton(
-                icon: const Icon(Icons.send),
-                onPressed: () {
-                  _handleSubmitted(widget.promptController.text);
-                  _textFieldFocusNode.requestFocus(); // 제출 후 다시 포커스
-                },
-              ),
+                  icon: const Icon(Icons.send),
+                  onPressed: () {
+                    final text = widget.promptController.text;
+                    _clearAndStopListening();
+
+                    _handleSubmitted(text);
+                  }),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _handleTextChange(String text) {
+    final currentSelection = widget.promptController.selection;
+    final previousText =
+        _lastSelection != null ? widget.promptController.text : '';
+
+    if (currentSelection.baseOffset == currentSelection.extentOffset &&
+        currentSelection.baseOffset < previousText.length &&
+        text.length < previousText.length) {
+      // Backspace가 눌렸을 가능성이 있음
+      final deletedChar = previousText[currentSelection.baseOffset];
+      if (deletedChar == '\n') {
+        // 줄바꿈이 삭제되었다면, 현재 줄을 이전 줄의 끝으로 이동
+        _mergeLines(currentSelection.baseOffset);
+      }
+    } else {
+      // 일반적인 텍스트 변경 처리
+      setState(() {
+        // 텍스트가 너무 길어지면 자동으로 줄 바꿈
+        if (text.length > 80 && !text.contains('\n')) {
+          widget.promptController.text =
+              '${text.substring(0, 80)}\n${text.substring(80)}';
+          widget.promptController.selection = TextSelection.fromPosition(
+            TextPosition(offset: widget.promptController.text.length),
+          );
+        }
+      });
+    }
+
+    _lastSelection = currentSelection;
+  }
+
+  void _mergeLines(int cursorPosition) {
+    final text = widget.promptController.text;
+    final beforeCursor = text.substring(0, cursorPosition);
+    final afterCursor = text.substring(cursorPosition);
+
+    final lastNewlineIndex = beforeCursor.lastIndexOf('\n');
+    if (lastNewlineIndex == -1) return; // 이전 줄이 없으면 아무 것도 하지 않음
+
+    final previousLine = beforeCursor.substring(0, lastNewlineIndex);
+    final currentLine = beforeCursor.substring(lastNewlineIndex + 1);
+
+    final newText = '$previousLine$currentLine$afterCursor';
+    final newCursorPosition = previousLine.length + currentLine.length;
+
+    widget.promptController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newCursorPosition),
     );
   }
 }

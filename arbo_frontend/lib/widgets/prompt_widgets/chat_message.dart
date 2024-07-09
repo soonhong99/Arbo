@@ -16,7 +16,7 @@ class ChatMessage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           if (!isUser) ...[
-            const CircleAvatar(child: Text('C')),
+            const CircleAvatar(child: Text('MJ')),
             const SizedBox(width: 8.0),
           ],
           Flexible(

@@ -1,5 +1,6 @@
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/design/paint_stroke.dart';
+import 'package:arbo_frontend/screens/edit_post_screen.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/heart_animation_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -208,8 +209,32 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
     );
   }
 
-  void _navigateToEditPost() {
+  void _navigateToEditPost() async {
     // Implement navigation to the post edit screen
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditPostScreen(postData: postData),
+      ),
+    );
+
+    if (result != null && result is Map<String, dynamic>) {
+      setState(() {
+        postData['topic'] = result['topic'];
+        postData['title'] = result['title'];
+        postData['content'] = result['content'];
+      });
+
+      // Firestore 업데이트
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(postData['postId'])
+          .update({
+        'topic': result['topic'],
+        'title': result['title'],
+        'content': result['content'],
+      });
+    }
   }
 
   @override

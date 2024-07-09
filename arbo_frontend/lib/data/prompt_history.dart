@@ -10,6 +10,7 @@ class ChatHistory {
   String getFullConversation() {
     return messages
         .map((msg) => "${msg.isUser ? 'User' : 'AI'}: ${msg.text}")
-        .join('\n');
+        // .join('\n');
+        .join('');
   }
 }
