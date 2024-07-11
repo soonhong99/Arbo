@@ -34,9 +34,14 @@ List<PaintStroke> userPaintBackGround = [];
 
 bool firstLocationTouch = true;
 
-String country = 'Pacific Ocean';
-String city = 'Bikini';
-String district = 'Shell';
+bool otherCountry = false;
+
+String myCountry = '';
+String myCity = '';
+String myDistrict = '';
+String selectedCountry = '';
+String selectedCity = '';
+String selectedDistrict = '';
 
 String locationMessage = '당신이 속한 community 위치를 알고싶어요!';
 
@@ -44,6 +49,10 @@ List<Map<String, dynamic>> likedPostsInRoot = [];
 List<Map<String, dynamic>> myPostsInRoot = [];
 
 bool loginInRoot = false;
+
+bool isLocationSet() {
+  return myCountry.isNotEmpty && myCity.isNotEmpty && myDistrict.isNotEmpty;
+}
 
 int countTotalComments(List<dynamic>? comments) {
   if (comments == null) {

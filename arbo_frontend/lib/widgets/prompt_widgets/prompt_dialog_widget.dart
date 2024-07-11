@@ -148,12 +148,12 @@ class _PromptDialogState extends State<PromptDialog> {
     if (text.trim().isNotEmpty) {
       widget.promptController.clear();
 
-      if (_isListening == true) {
-        _focusNode.unfocus();
-        _stopListening();
-      } else {
-        _focusNode.requestFocus();
-      }
+      // if (_isListening == true) {
+      //   _focusNode.unfocus();
+      //   _stopListening();
+      // } else {
+      //   _focusNode.requestFocus();
+      // }
 
       _addMessage(ChatMessage(text: text, isUser: true));
 

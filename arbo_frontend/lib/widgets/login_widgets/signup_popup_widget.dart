@@ -1,9 +1,10 @@
 // import 'package:firebase_core/firebase_core.dart';
 import 'package:arbo_frontend/data/user_data.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_geocoding/google_geocoding.dart';
 
 class SignupPopupWidget extends StatefulWidget {
   const SignupPopupWidget({super.key});
@@ -24,10 +25,6 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   bool isLoading = false;
   String? errorMessage;
 
-  String? _country;
-  String? _adminArea;
-  String? _locality;
-
   bool showIntro = true;
   bool showLocationConfirmation = false;
 
@@ -38,29 +35,47 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   }
 
   Future<void> _getCurrentLocation() async {
-    try {
-      LocationPermission permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        // 위치 권한이 거부된 경우 처리
-        return;
+    if (isLocationSet()) {
+      return;
+    } else {
+      try {
+        LocationPermission permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          // 위치 권한이 거부된 경우 처리
+          return;
+        }
+
+        Position position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high);
+
+        var response = await googleGeocoding.geocoding
+            .getReverse(LatLon(position.latitude, position.longitude));
+
+        if (response != null && response.results != null) {
+          final geocodingResponse = response.results;
+          if (geocodingResponse != null) {
+            address = geocodingResponse[0].formattedAddress!;
+            setState(
+              () {
+                List<String> addressComponents = address.split(' ');
+                if (addressComponents.length >= 3) {
+                  myCountry = addressComponents[0];
+                  myCity = addressComponents[1];
+                  myDistrict = addressComponents[2];
+
+                  locationMessage = '$myCountry, $myCity, $myDistrict';
+                }
+              },
+            );
+          } else {
+            setState(() {
+              locationMessage = '지명 정보를 가져오지 못했습니다.';
+            });
+          }
+        }
+      } catch (e) {
+        print("Error getting location: $e");
       }
-
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-
-      List<Placemark> placemarks =
-          await placemarkFromCoordinates(position.latitude, position.longitude);
-
-      if (placemarks.isNotEmpty) {
-        Placemark placemark = placemarks[0];
-        setState(() {
-          _country = placemark.country;
-          _adminArea = placemark.administrativeArea;
-          _locality = placemark.locality;
-        });
-      }
-    } catch (e) {
-      print("Error getting location: $e");
     }
   }
 
@@ -73,7 +88,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (showIntro) {
+    if (showIntro && !isLocationSet()) {
       return _buildIntroDialog();
     } else if (showLocationConfirmation) {
       return _buildLocationConfirmationDialog();
@@ -84,12 +99,11 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
 
   Widget _buildIntroDialog() {
     return AlertDialog(
-      title: const Text('앱 소개'),
-      content: const Text(
-          '이 앱은 local 사회를 우리가 직접 paint를 해서 pain을 없애자! 라는 취지로 만들었습니다.'),
+      title: const Text('위치 정보 동의'),
+      content: const Text('당신의 community를 찾기위해서 위치 정보를 허용해주셔야 돼요!'),
       actions: <Widget>[
         TextButton(
-          child: const Text('그렇군요!'),
+          child: const Text('해주세요!'),
           onPressed: () {
             setState(() {
               showIntro = false;
@@ -108,9 +122,9 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           const Text('감지된 위치:'),
-          Text('국가: $_country'),
-          Text('시/도: $_adminArea'),
-          Text('군/구: $_locality'),
+          Text('Country: $myCountry'),
+          Text('City: $myCity'),
+          Text('District: $myDistrict'),
           const Text('이 정보가 맞습니까?'),
         ],
       ),
@@ -121,13 +135,6 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
             setState(() {
               showLocationConfirmation = false;
             });
-          },
-        ),
-        TextButton(
-          child: const Text('아니오'),
-          onPressed: () {
-            // 수동으로 위치를 입력할 수 있는 다이얼로그를 표시하거나
-            // 다시 위치를 감지하는 로직을 구현할 수 있습니다.
           },
         ),
       ],
@@ -142,9 +149,9 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text('국가: $_country'),
-            Text('시/도: $_adminArea'),
-            Text('군/구: $_locality'),
+            Text('국가: $myCountry'),
+            Text('시/도: $myCity'),
+            Text('군/구: $myDistrict'),
             _buildTextField(
                 controller: _idController,
                 label: '아이디',
@@ -231,12 +238,15 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         '이름': _nameController.text,
         '닉네임': _nicknameController.text,
         '이메일 주소': _emailController.text,
-        '국가': _country,
-        '시/도': _adminArea,
-        '군/구': _locality,
+        'country': myCountry,
+        'city': myCity,
+        'district': myDistrict,
         '하트 누른 게시물': [],
         '프롬프트 기록': [],
       });
+
+      // 사용자 지역 정보가 'userPlaceInfo' 컬렉션에 있는지 확인하고, 없으면 추가
+      await addPlaceIfNotExists(myCountry, myCity, myDistrict);
 
       setState(() {
         isLoading = false;
@@ -253,6 +263,30 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         isLoading = false;
         errorMessage = '알 수 없는 오류가 발생했습니다. 다시 시도해주세요.';
       });
+    }
+  }
+
+  Future<void> addPlaceIfNotExists(
+      String country, String city, String district) async {
+    try {
+      QuerySnapshot snapshot = await firestore_instance
+          .collection('userPlaceInfo')
+          .where('country', isEqualTo: country)
+          .where('city', isEqualTo: city)
+          .where('district', isEqualTo: district)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        // 지역 정보가 없으면 추가
+        await firestore_instance.collection('userPlaceInfo').add({
+          'country': country,
+          'city': city,
+          'district': district,
+        });
+      }
+    } catch (e) {
+      print('Error checking/adding place: $e');
     }
   }
 
@@ -287,7 +321,8 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
             child: const Text('확인'),
             onPressed: () {
               auth.signOut();
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
           ),
         ],

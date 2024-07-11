@@ -54,7 +54,7 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
     });
   }
 
-  void _refreshPage() {
+  void refreshPage() {
     DateTime now = DateTime.now();
     if (lastRefreshTime == null ||
         now.difference(lastRefreshTime!).inSeconds >= 30) {
@@ -147,7 +147,7 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
             }
             break;
           case 2:
-            _refreshPage();
+            refreshPage();
             break;
           case 3:
             _checkAndNavigateToCreatePost();

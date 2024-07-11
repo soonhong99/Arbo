@@ -2,6 +2,7 @@ import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/design/paint_stroke.dart';
 import 'package:arbo_frontend/roots/my_post_in_root.dart';
 import 'package:arbo_frontend/widgets/gemini_widgets/gemini_advisor_chat.dart';
+import 'package:arbo_frontend/widgets/place_widgets/get_user_places.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_dialog_widget.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -30,6 +31,26 @@ class RootScreenState extends State<RootScreen> {
   int selectedIndex = -1; // Added to fix selectedIndex reference
   final ScrollController _scrollController = ScrollController();
   bool firstClickedPrompt = true;
+
+  List<Map<String, dynamic>> userPlaces = [];
+
+  DateTime? lastRefreshTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserPlaces();
+  }
+
+  Future<void> _fetchUserPlaces() async {
+    userPlaces = await getUserPlaces();
+    if (userPlaces.isNotEmpty) {
+      selectedCountry = userPlaces[0]['country']!;
+      selectedCity = userPlaces[0]['city']!;
+      selectedDistrict = userPlaces[0]['district']!;
+    }
+    setState(() {});
+  }
 
   Future<void> _getLocationPermission() async {
     setState(() {
@@ -74,12 +95,12 @@ class RootScreenState extends State<RootScreen> {
             // locationMessage = address;
             List<String> addressComponents = address.split(' ');
             if (addressComponents.length >= 3) {
-              country = addressComponents[0];
-              city = addressComponents[1];
-              district = addressComponents[2];
+              myCountry = addressComponents[0];
+              myCity = addressComponents[1];
+              myDistrict = addressComponents[2];
 
               // Combine the components for the location message
-              locationMessage = '$country, $city, $district';
+              locationMessage = '$myCountry, $myCity, $myDistrict';
             }
           },
         );
@@ -167,6 +188,50 @@ class RootScreenState extends State<RootScreen> {
           .collection('users')
           .doc(userId)
           .update({'프롬프트 기록': searchHistory});
+    }
+  }
+
+  String paintCommunityText(bool otherCountry) {
+    if (otherCountry == false) {
+      return 'You live in $locationMessage! Let\'s paint your community!';
+    } else {
+      return 'look around $locationMessage! See what\'s difference with my community!';
+    }
+  }
+
+  void _onMoveToSelectedLocation() {
+    setState(() {
+      if (selectedCity == myCity &&
+          selectedCountry == myCountry &&
+          selectedDistrict == myDistrict) {
+        locationMessage = '$selectedCountry $selectedCity $selectedDistrict';
+        otherCountry = false;
+        return;
+      }
+      if (selectedCity == 'all') {
+        locationMessage = selectedCountry;
+      } else if (selectedDistrict == 'all') {
+        locationMessage = '$selectedCountry $selectedCity';
+      } else {
+        locationMessage = '$selectedCountry $selectedCity $selectedDistrict';
+      }
+      otherCountry = true;
+    });
+  }
+
+  void refreshCountry() {
+    DateTime now = DateTime.now();
+
+    if (lastRefreshTime == null ||
+        now.difference(lastRefreshTime!).inSeconds >= 10) {
+      lastRefreshTime = now;
+      _onMoveToSelectedLocation();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('다른 지역으로 가기까지 30초만 기다려주세요!'),
+        ),
+      );
     }
   }
 
@@ -278,12 +343,29 @@ class RootScreenState extends State<RootScreen> {
                                     ),
                                     child: Text(locationMessage),
                                   )
-                                : Text(
-                                    'You live in $locationMessage! Let\'s paint your community!',
-                                    style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.green[800]),
+                                : Column(
+                                    children: [
+                                      Text(
+                                        paintCommunityText(otherCountry),
+                                        style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.green[800]),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        children: [
+                                          _buildDropdownButtons(),
+                                          const SizedBox(width: 20),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              refreshCountry();
+                                            },
+                                            child: const Text('해당 지역으로 이동하기!'),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                       ),
                       Padding(
@@ -418,6 +500,81 @@ class RootScreenState extends State<RootScreen> {
                     ['name']!, // Pass the selected category
               ),
       ),
+    );
+  }
+
+  Widget _buildDropdownButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        DropdownButton<String>(
+          value: selectedCountry,
+          items: userPlaces.map((place) {
+            return DropdownMenuItem<String>(
+              value: place['country'],
+              child: Text(place['country']!),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              selectedCountry = value!;
+              selectedCity = 'all';
+              selectedDistrict = 'all';
+            });
+          },
+        ),
+        const SizedBox(
+          width: 20,
+        ),
+        DropdownButton<String>(
+          value: selectedCity,
+          items: {
+            'all',
+            ...userPlaces
+                .where((place) => place['country'] == selectedCountry)
+                .map((place) {
+              return place['city']!;
+            })
+          }.toList().map((city) {
+            return DropdownMenuItem<String>(
+              value: city,
+              child: Text(city),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              selectedCity = value!;
+              selectedDistrict = 'all';
+            });
+          },
+        ),
+        const SizedBox(
+          width: 20,
+        ),
+        DropdownButton<String>(
+          value: selectedDistrict,
+          items: {
+            'all',
+            ...userPlaces
+                .where((place) =>
+                    place['country'] == selectedCountry &&
+                    place['city'] == selectedCity)
+                .map((place) {
+              return place['district']!;
+            })
+          }.toList().map((district) {
+            return DropdownMenuItem<String>(
+              value: district,
+              child: Text(district),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              selectedDistrict = value!;
+            });
+          },
+        ),
+      ],
     );
   }
 }
