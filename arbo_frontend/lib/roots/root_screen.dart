@@ -32,35 +32,38 @@ class RootScreenState extends State<RootScreen> {
   final ScrollController _scrollController = ScrollController();
   bool firstClickedPrompt = true;
 
-  List<Map<String, dynamic>> userPlaces = [];
-
   DateTime? lastRefreshTime;
 
   @override
   void initState() {
     super.initState();
     _fetchUserPlaces().then((_) {
-      if (userPlaces.isNotEmpty) {
+      if (userPlaces.isNotEmpty &&
+          currentLoginUser == null &&
+          firstLocationTouch) {
         setState(() {
-          selectedCountry = userPlaces[0]['country']!;
-          selectedCity = userPlaces[0]['city']!;
-          selectedDistrict = userPlaces[0]['district']!;
+          selectedCountry = 'all';
+          selectedCity = 'all';
+          selectedDistrict = 'all';
+        });
+      } else if (currentLoginUser != null) {
+        setState(() {
+          selectedCountry = myCountry;
+          selectedCity = myCity;
+          selectedDistrict = myDistrict;
         });
       }
     });
   }
 
   Future<void> _fetchUserPlaces() async {
+    // if (userPlaces == []) {
+    //   userPlaces = await getUserPlaces();
+    // }
     userPlaces = await getUserPlaces();
-    if (userPlaces.isNotEmpty) {
-      selectedCountry = userPlaces[0]['country']!;
-      selectedCity = userPlaces[0]['city']!;
-      selectedDistrict = userPlaces[0]['district']!;
-    }
-    setState(() {});
   }
 
-  Future<void> _getLocationPermission() async {
+  Future<void> getLocationPermission() async {
     setState(() {
       _isLoading = true;
       locationMessage = '위치 정보를 가져오는 중...';
@@ -83,10 +86,10 @@ class RootScreenState extends State<RootScreen> {
       return;
     }
 
-    _getLocation();
+    getLocation();
   }
 
-  Future<void> _getLocation() async {
+  Future<void> getLocation() async {
     Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
 
@@ -106,7 +109,9 @@ class RootScreenState extends State<RootScreen> {
               myCountry = addressComponents[0];
               myCity = addressComponents[1];
               myDistrict = addressComponents[2];
-
+              selectedCountry = myCountry;
+              selectedCity = myCity;
+              selectedDistrict = myDistrict;
               // Combine the components for the location message
               locationMessage = '$myCountry, $myCity, $myDistrict';
             }
@@ -121,21 +126,21 @@ class RootScreenState extends State<RootScreen> {
     }
   }
 
-  void _onCategoryTapped(int index) {
+  void onCategoryTapped(int index) {
     setState(() {
       selectedIndex = index;
       _currentNavigationState = NavigationState.main;
     });
   }
 
-  void _navigateBackToInitial() {
+  void navigateBackToInitial() {
     setState(() {
       selectedIndex = -1;
       _currentNavigationState = NavigationState.initial;
     });
   }
 
-  void _showPromptDialog() {
+  void showPromptDialog() {
     if (firstClickedPrompt) {
       promptSearchHistory = loginUserData!['프롬프트 기록'] ?? [];
       firstClickedPrompt = false;
@@ -189,6 +194,7 @@ class RootScreenState extends State<RootScreen> {
     );
   }
 
+  // 현재 안쓰는중
   Future<void> saveSearchHistoryToFirebase(List<dynamic> searchHistory) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId != null) {
@@ -207,7 +213,7 @@ class RootScreenState extends State<RootScreen> {
     }
   }
 
-  void _onMoveToSelectedLocation() {
+  void onMoveToSelectedLocation() {
     setState(() {
       if (selectedCity == myCity &&
           selectedCountry == myCountry &&
@@ -233,7 +239,7 @@ class RootScreenState extends State<RootScreen> {
     if (lastRefreshTime == null ||
         now.difference(lastRefreshTime!).inSeconds >= 10) {
       lastRefreshTime = now;
-      _onMoveToSelectedLocation();
+      onMoveToSelectedLocation();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -246,6 +252,19 @@ class RootScreenState extends State<RootScreen> {
   @override
   Widget build(BuildContext context) {
     final userData = Provider.of<UserDataProvider>(context);
+
+    void initializeSelectedLocation() {
+      setState(() {
+        selectedCountry = myCountry;
+        selectedCity = myCity;
+        selectedDistrict = myDistrict;
+        locationWithLogin = true;
+      });
+    }
+
+    if (userData.isLoggedIn(currentLoginUser) && !locationWithLogin) {
+      initializeSelectedLocation();
+    }
 
     final List<Map<String, String>> furnitureCategories = [
       {'name': 'All posts', 'image': 'images/categorized/all_posts.png'},
@@ -290,6 +309,12 @@ class RootScreenState extends State<RootScreen> {
                 auth.signOut();
                 userData.fetchLoginUserData(null);
                 likedPosts = [];
+                locationWithLogin = false;
+                firstLocationTouch = true;
+                locationMessage = '당신이 속한 community 위치를 알고싶어요!';
+                selectedCity = 'all';
+                selectedCountry = 'all';
+                selectedDistrict = 'all';
               },
               onLogin: () {
                 // 로그인 로직
@@ -339,7 +364,7 @@ class RootScreenState extends State<RootScreen> {
                               firstLocationTouch) {
                             return ElevatedButton(
                               onPressed: () {
-                                _getLocationPermission();
+                                getLocationPermission();
                                 firstLocationTouch = false;
                               },
                               style: ElevatedButton.styleFrom(
@@ -364,7 +389,7 @@ class RootScreenState extends State<RootScreen> {
                                 const SizedBox(height: 10),
                                 Row(
                                   children: [
-                                    _buildDropdownButtons(),
+                                    buildDropdownButtons(),
                                     const SizedBox(width: 20),
                                     ElevatedButton(
                                       onPressed: () {
@@ -402,7 +427,7 @@ class RootScreenState extends State<RootScreen> {
                           child: PromptBar(
                             onPromptTap: () {
                               if (currentLoginUser != null) {
-                                _showPromptDialog();
+                                showPromptDialog();
                               } else {
                                 showDialog(
                                   context: context,
@@ -437,7 +462,7 @@ class RootScreenState extends State<RootScreen> {
                               itemBuilder: (context, index) {
                                 return GestureDetector(
                                   onTap: () {
-                                    _onCategoryTapped(index);
+                                    onCategoryTapped(index);
                                   },
                                   child: Column(
                                     children: [
@@ -513,7 +538,7 @@ class RootScreenState extends State<RootScreen> {
                 ],
               )
             : MainWidget(
-                onPreviousPage: _navigateBackToInitial,
+                onPreviousPage: navigateBackToInitial,
                 initialCategory: furnitureCategories[selectedIndex]
                     ['name']!, // Pass the selected category
               ),
@@ -521,46 +546,11 @@ class RootScreenState extends State<RootScreen> {
     );
   }
 
-  Widget _buildDropdownButtons() {
+  Widget buildDropdownButtons() {
     List<String> availableCountries = [
       'all',
       ...userPlaces.map((place) => place['country']!).toSet()
     ];
-
-    // 만약 현재 선택된 도시가 사용 가능한 도시 목록에 없다면 'all'로 설정
-    if (!availableCountries.contains(selectedCountry)) {
-      selectedCountry = 'all';
-    }
-
-    // 현재 선택된 국가에 해당하는 도시들만 필터링
-    List<String> availableCities = [
-      'all',
-      ...userPlaces
-          .where((place) => place['country'] == selectedCountry)
-          .map((place) => place['city']!)
-          .toSet()
-    ];
-
-    // 만약 현재 선택된 도시가 사용 가능한 도시 목록에 없다면 'all'로 설정
-    if (!availableCities.contains(selectedCity)) {
-      selectedCity = 'all';
-    }
-
-    // 현재 선택된 도시와 구/군에 해당하는 구/군들만 필터링
-    List<String> availableDistricts = [
-      'all',
-      ...userPlaces
-          .where((place) =>
-              place['country'] == selectedCountry &&
-              place['city'] == selectedCity)
-          .map((place) => place['district']!)
-          .toSet()
-    ];
-
-    // 만약 현재 선택된 구/군이 사용 가능한 구/군 목록에 없다면 'all'로 설정
-    if (!availableDistricts.contains(selectedDistrict)) {
-      selectedDistrict = 'all';
-    }
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

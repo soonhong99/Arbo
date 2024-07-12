@@ -50,6 +50,10 @@ List<Map<String, dynamic>> myPostsInRoot = [];
 
 bool loginInRoot = false;
 
+bool locationWithLogin = false;
+
+List<Map<String, dynamic>> userPlaces = [];
+
 bool isLocationSet() {
   return myCountry.isNotEmpty && myCity.isNotEmpty && myDistrict.isNotEmpty;
 }

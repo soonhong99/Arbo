@@ -27,6 +27,14 @@ class UserDataProvider with ChangeNotifier {
     };
   }
 
+  bool isLoggedIn(User? user) {
+    if (user == null) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
   Future<void> fetchLoginUserData(User? user) async {
     if (user == null) {
       currentLoginUser = null;
@@ -41,19 +49,34 @@ class UserDataProvider with ChangeNotifier {
     myCountry = loginUserData!['country'];
     myCity = loginUserData!['city'];
     myDistrict = loginUserData!['district'];
-    locationMessage = '$selectedCountry $selectedCity $selectedDistrict';
+    locationMessage = '$myCountry $myCity $myDistrict';
     firstLocationTouch = false;
 
     notifyListeners();
   }
 
   Future<void> fetchPostData() async {
-    QuerySnapshot querySnapshot = await _firestore
-        .collection('posts')
-        .orderBy('timestamp', descending: true)
-        .get();
+    // Query query =
+    //     _firestore.collection('posts').orderBy('timestamp', descending: true);
+    Query query = _firestore.collection('posts');
+
+    // 국가 선택
+    if (selectedCountry != 'all') {
+      query = query.where('country', isEqualTo: selectedCountry);
+
+      // 도시 선택
+      if (selectedCity != 'all') {
+        query = query.where('city', isEqualTo: selectedCity);
+
+        // 지역 선택
+        if (selectedDistrict != 'all') {
+          query = query.where('district', isEqualTo: selectedDistrict);
+        }
+      }
+    }
+
+    QuerySnapshot querySnapshot = await query.get();
     postListSnapshot = querySnapshot.docs;
-    // 바뀐것을 알리고 싶을 때 - Provider.of<UserDataProvider>(context);
     notifyListeners();
   }
 }
