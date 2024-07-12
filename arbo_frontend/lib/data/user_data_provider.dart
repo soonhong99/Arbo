@@ -20,6 +20,10 @@ class UserDataProvider with ChangeNotifier {
       'postOwnerId': allDataSnapshot['userId'],
       'designedPicture': allDataSnapshot['designedPicture'],
       'visitedUser': allDataSnapshot['visitedUser'],
+      'status': allDataSnapshot['status'],
+      'country': allDataSnapshot['country'],
+      'city': allDataSnapshot['city'],
+      'district': allDataSnapshot['district'],
     };
   }
 
@@ -34,6 +38,11 @@ class UserDataProvider with ChangeNotifier {
         await firestore_instance.collection('users').doc(user.uid).get();
     loginUserData = userDoc;
     nickname = loginUserData!['닉네임'];
+    myCountry = loginUserData!['country'];
+    myCity = loginUserData!['city'];
+    myDistrict = loginUserData!['district'];
+    locationMessage = '$selectedCountry $selectedCity $selectedDistrict';
+    firstLocationTouch = false;
 
     notifyListeners();
   }

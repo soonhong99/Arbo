@@ -122,6 +122,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             'hearts': _hearts,
             'designedPicture': _imageUrls,
             'visitedUser': _visitedUsers, // 방문한 사용자 닉네임 리스트 초기화
+            'country': loginUserData!['country'],
+            'city': loginUserData!['city'],
+            'district': loginUserData!['district'],
+            'status': 'pending'
           });
 
           setState(() {

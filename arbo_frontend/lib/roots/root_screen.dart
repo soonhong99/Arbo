@@ -39,7 +39,15 @@ class RootScreenState extends State<RootScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchUserPlaces();
+    _fetchUserPlaces().then((_) {
+      if (userPlaces.isNotEmpty) {
+        setState(() {
+          selectedCountry = userPlaces[0]['country']!;
+          selectedCity = userPlaces[0]['city']!;
+          selectedDistrict = userPlaces[0]['district']!;
+        });
+      }
+    });
   }
 
   Future<void> _fetchUserPlaces() async {
@@ -321,55 +329,59 @@ class RootScreenState extends State<RootScreen> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(50.0),
-                        child: _isLoading
-                            ? const CircularProgressIndicator()
-                            : locationMessage == '위치 정보를 가져오는 중...' ||
-                                    locationMessage == '위치 권한이 거부되었습니다.' ||
-                                    locationMessage ==
-                                        '위치 권한이 영구적으로 거부되었습니다.' ||
-                                    locationMessage == '지명 정보를 가져오지 못했습니다.' ||
-                                    firstLocationTouch
-                                ? ElevatedButton(
-                                    onPressed: () {
-                                      _getLocationPermission();
-                                      firstLocationTouch = false;
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.all(16.0),
-                                      backgroundColor: Colors.blue.shade100,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
+                        child: (() {
+                          if (_isLoading) {
+                            return const CircularProgressIndicator();
+                          } else if (locationMessage == '위치 정보를 가져오는 중...' ||
+                              locationMessage == '위치 권한이 거부되었습니다.' ||
+                              locationMessage == '위치 권한이 영구적으로 거부되었습니다.' ||
+                              locationMessage == '지명 정보를 가져오지 못했습니다.' ||
+                              firstLocationTouch) {
+                            return ElevatedButton(
+                              onPressed: () {
+                                _getLocationPermission();
+                                firstLocationTouch = false;
+                              },
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.all(16.0),
+                                backgroundColor: Colors.blue.shade100,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: Text(locationMessage),
+                            );
+                          } else {
+                            return Column(
+                              children: [
+                                Text(
+                                  paintCommunityText(otherCountry),
+                                  style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green[800]),
+                                ),
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    _buildDropdownButtons(),
+                                    const SizedBox(width: 20),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        refreshCountry();
+                                      },
+                                      child: const Text('해당 지역으로 이동하기!'),
                                     ),
-                                    child: Text(locationMessage),
-                                  )
-                                : Column(
-                                    children: [
-                                      Text(
-                                        paintCommunityText(otherCountry),
-                                        style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.green[800]),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      Row(
-                                        children: [
-                                          _buildDropdownButtons(),
-                                          const SizedBox(width: 20),
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              refreshCountry();
-                                            },
-                                            child: const Text('해당 지역으로 이동하기!'),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          }
+                        })(),
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.only(
+                            left: 16.0, right: 16.0, bottom: 10.0),
                         child: Container(
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
@@ -405,79 +417,85 @@ class RootScreenState extends State<RootScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 30),
                       SizedBox(
-                        height: 300,
+                        height: 280,
                         child: GestureDetector(
                           onHorizontalDragUpdate: (details) {
                             _scrollController.jumpTo(
-                                _scrollController.offset - details.delta.dx);
+                              _scrollController.offset - details.delta.dx,
+                            );
                           },
-                          child: ListView.separated(
+                          child: Scrollbar(
                             controller: _scrollController,
-                            scrollDirection: Axis.horizontal,
-                            itemCount: furnitureCategories.length,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(width: 40),
-                            itemBuilder: (context, index) {
-                              return GestureDetector(
-                                onTap: () {
-                                  _onCategoryTapped(index);
-                                },
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      width: 200,
-                                      height: 200,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Colors.white,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.grey.withOpacity(0.5),
-                                            spreadRadius: 2,
-                                            blurRadius: 5,
-                                            offset: const Offset(0, 3),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Stack(
-                                        alignment: Alignment.center,
-                                        children: [
-                                          CircularProgressIndicator(
-                                            value: 0.7,
-                                            backgroundColor: Colors.grey[300],
-                                            valueColor:
-                                                const AlwaysStoppedAnimation<
-                                                    Color>(Colors.blue),
-                                          ),
-                                          ClipOval(
-                                            child: Image.asset(
-                                              furnitureCategories[index]
-                                                  ['image']!,
-                                              width: 180,
-                                              height: 180,
-                                              fit: BoxFit.cover,
+                            child: ListView.separated(
+                              controller: _scrollController,
+                              scrollDirection: Axis.horizontal,
+                              itemCount: furnitureCategories.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(width: 40),
+                              itemBuilder: (context, index) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    _onCategoryTapped(index);
+                                  },
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        width: 200,
+                                        height: 200,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Colors.white,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color:
+                                                  Colors.grey.withOpacity(0.5),
+                                              spreadRadius: 2,
+                                              blurRadius: 5,
+                                              offset: const Offset(0, 3),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            CircularProgressIndicator(
+                                              value: 0.7,
+                                              backgroundColor: Colors.grey[300],
+                                              valueColor:
+                                                  const AlwaysStoppedAnimation<
+                                                      Color>(Colors.blue),
+                                            ),
+                                            ClipOval(
+                                              child: Image.asset(
+                                                furnitureCategories[index]
+                                                    ['image']!,
+                                                width: 180,
+                                                height: 180,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      furnitureCategories[index]['name']!,
-                                      style: const TextStyle(
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        furnitureCategories[index]['name']!,
+                                        style: const TextStyle(
                                           fontSize: 16,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 30),
                       const MyPostsInRoot(
                         postsTitle: '내 게시판',
                         notLoginInfo: '로그인하여 나만의 게시판을 확인하세요.',
@@ -504,15 +522,55 @@ class RootScreenState extends State<RootScreen> {
   }
 
   Widget _buildDropdownButtons() {
+    List<String> availableCountries = [
+      'all',
+      ...userPlaces.map((place) => place['country']!).toSet()
+    ];
+
+    // 만약 현재 선택된 도시가 사용 가능한 도시 목록에 없다면 'all'로 설정
+    if (!availableCountries.contains(selectedCountry)) {
+      selectedCountry = 'all';
+    }
+
+    // 현재 선택된 국가에 해당하는 도시들만 필터링
+    List<String> availableCities = [
+      'all',
+      ...userPlaces
+          .where((place) => place['country'] == selectedCountry)
+          .map((place) => place['city']!)
+          .toSet()
+    ];
+
+    // 만약 현재 선택된 도시가 사용 가능한 도시 목록에 없다면 'all'로 설정
+    if (!availableCities.contains(selectedCity)) {
+      selectedCity = 'all';
+    }
+
+    // 현재 선택된 도시와 구/군에 해당하는 구/군들만 필터링
+    List<String> availableDistricts = [
+      'all',
+      ...userPlaces
+          .where((place) =>
+              place['country'] == selectedCountry &&
+              place['city'] == selectedCity)
+          .map((place) => place['district']!)
+          .toSet()
+    ];
+
+    // 만약 현재 선택된 구/군이 사용 가능한 구/군 목록에 없다면 'all'로 설정
+    if (!availableDistricts.contains(selectedDistrict)) {
+      selectedDistrict = 'all';
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         DropdownButton<String>(
           value: selectedCountry,
-          items: userPlaces.map((place) {
+          items: availableCountries.map((country) {
             return DropdownMenuItem<String>(
-              value: place['country'],
-              child: Text(place['country']!),
+              value: country,
+              child: Text(country),
             );
           }).toList(),
           onChanged: (value) {
@@ -532,10 +590,8 @@ class RootScreenState extends State<RootScreen> {
             'all',
             ...userPlaces
                 .where((place) => place['country'] == selectedCountry)
-                .map((place) {
-              return place['city']!;
-            })
-          }.toList().map((city) {
+                .map((place) => place['city']!)
+          }.toSet().map((city) {
             return DropdownMenuItem<String>(
               value: city,
               child: Text(city),

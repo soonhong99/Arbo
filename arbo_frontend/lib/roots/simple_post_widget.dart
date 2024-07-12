@@ -69,7 +69,7 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
   Widget build(BuildContext context) {
     specificAllPostData = allPostDataWithPostId[widget.postId] ?? {};
     specificAllPostData['comments'] = specificAllPostData['comments'] ?? [];
-    specificAllPostData['status'] = 'pending';
+    // specificAllPostData['status'] = 'pending';
     DateTime postTime =
         (specificAllPostData['timestamp'] as Timestamp).toDate();
 

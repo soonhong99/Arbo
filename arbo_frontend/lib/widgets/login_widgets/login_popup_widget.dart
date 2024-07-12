@@ -86,9 +86,6 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
         }
       });
     }
-    // if (currentLoginUser != null) {
-    //   widget.onLoginSuccess();
-    // }
   }
 
   String _handleFirebaseAuthError(String errorCode) {
@@ -125,6 +122,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
                 labelText: '이메일',
                 hintText: 'example@example.com',
               ),
+              onSubmitted: (_) => validate(), // Enter 키 처리
             ),
             TextField(
               controller: passwordController,
@@ -132,6 +130,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
               decoration: const InputDecoration(
                 labelText: '비밀번호',
               ),
+              onSubmitted: (_) => validate(), // Enter 키 처리
             ),
             if (errorMessage.isNotEmpty)
               Padding(

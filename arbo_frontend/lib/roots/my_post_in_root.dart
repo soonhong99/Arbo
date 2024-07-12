@@ -27,7 +27,7 @@ class _MyPostsInRootState extends State<MyPostsInRoot> {
 
   @override
   Widget build(BuildContext context) {
-    final userData = Provider.of<UserDataProvider>(context);
+    Provider.of<UserDataProvider>(context);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
