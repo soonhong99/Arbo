@@ -24,6 +24,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   bool dataInitialized = false;
   bool _areCommentsVisible = false;
   bool animationCompleted = false;
+  final Map<String, bool> _commentToggleState = {};
 
   @override
   void setState(fn) {
@@ -401,14 +402,17 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                     },
                     child: Text(
                       _areCommentsVisible
-                          ? '댓글 ${comments.length}개 접기'
-                          : '댓글 ${comments.length}개 보기',
+                          ? '댓글 ${countTotalComments(comments)}개 접기'
+                          : '댓글 ${countTotalComments(comments)}개 보기',
                     ),
                   ),
                 ),
               ],
               if (_areCommentsVisible)
                 ...comments.map((comment) {
+                  bool hasReplies = comment['replies'] != null &&
+                      comment['replies'].isNotEmpty;
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -418,24 +422,44 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                         subtitle: Text((comment['timestamp'] as Timestamp)
                             .toDate()
                             .toString()),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.reply),
-                          onPressed: () =>
-                              _showReplyDialog(comment['commentId']),
-                        ),
-                      ),
-                      ...comment['replies'].map<Widget>((reply) {
-                        return Padding(
-                          padding: const EdgeInsets.only(left: 16.0),
-                          child: ListTile(
-                            title: Text(
-                                '${reply['nickname']} - ${reply['comment']}'),
-                            subtitle: Text((reply['timestamp'] as Timestamp)
-                                .toDate()
-                                .toString()),
+                        leading: IconButton(
+                          icon: Icon(
+                            _commentToggleState[comment['commentId']] ?? false
+                                ? Icons.arrow_drop_down
+                                : Icons.arrow_right,
                           ),
-                        );
-                      }).toList(),
+                          onPressed: () {
+                            setState(() {
+                              _commentToggleState[comment['commentId']] =
+                                  !(_commentToggleState[comment['commentId']] ??
+                                      false);
+                            });
+                          },
+                        ),
+                        trailing: IconButton(
+                            icon: const Icon(Icons.reply),
+                            onPressed: () {
+                              if (currentLoginUser == null) {
+                                _showLoginPopup();
+                                return;
+                              }
+                              _showReplyDialog(comment['commentId']);
+                            }),
+                      ),
+                      if (hasReplies &&
+                          (_commentToggleState[comment['commentId']] ?? false))
+                        ...comment['replies'].map<Widget>((reply) {
+                          return Padding(
+                            padding: const EdgeInsets.only(left: 70.0),
+                            child: ListTile(
+                              title: Text(
+                                  '${reply['nickname']} - ${reply['comment']}'),
+                              subtitle: Text((reply['timestamp'] as Timestamp)
+                                  .toDate()
+                                  .toString()),
+                            ),
+                          );
+                        }).toList(),
                     ],
                   );
                 }).toList(),

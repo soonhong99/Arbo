@@ -36,6 +36,7 @@ class MainWidgetState extends State<MainWidget> {
   final UserDataProvider userDataProvider = UserDataProvider();
   late Future<void> _fetchDataFuture;
   late String selectedCategory;
+  String sortBy = 'latest'; // 'latest', 'popular', 'best' 중 하나
 
   @override
   void initState() {
@@ -71,13 +72,60 @@ class MainWidgetState extends State<MainWidget> {
         cutoff = DateTime(1970);
     }
 
-    return postListSnapshot.where((post) {
+    // return postListSnapshot.where((post) {
+    //   bool matchesCategory =
+    //       selectedCategory == 'All posts' || post['topic'] == selectedCategory;
+    //   bool matchesTime =
+    //       (post['timestamp'] as Timestamp).toDate().isAfter(cutoff);
+    //   return matchesCategory && matchesTime;
+    // }).toList();
+    List<DocumentSnapshot> filtered = postListSnapshot.where((post) {
       bool matchesCategory =
           selectedCategory == 'All posts' || post['topic'] == selectedCategory;
       bool matchesTime =
           (post['timestamp'] as Timestamp).toDate().isAfter(cutoff);
       return matchesCategory && matchesTime;
     }).toList();
+
+    // 정렬
+    switch (sortBy) {
+      case 'latest':
+        filtered.sort((a, b) => (b['timestamp'] as Timestamp)
+            .compareTo(a['timestamp'] as Timestamp));
+        break;
+      case 'popular':
+        filtered
+            .sort((a, b) => (b['hearts'] as int).compareTo(a['hearts'] as int));
+        break;
+      case 'progress':
+        // 'best' 정렬 로직을 여기에 추가하세요
+        filtered.sort((a, b) {
+          // 상태에 따른 우선순위 정의
+          Map<String, int> statusPriority = {
+            'approved': 0,
+            'pending': 1,
+            'rejected': 2,
+          };
+
+          int priorityA =
+              statusPriority[a['status']] ?? 3; // 알 수 없는 상태는 가장 낮은 우선순위
+          int priorityB = statusPriority[b['status']] ?? 3;
+
+          // 우선 상태로 정렬
+          int comparison = priorityA.compareTo(priorityB);
+
+          // 상태가 같을 경우, 시간순으로 정렬 (최신이 위로)
+          if (comparison == 0) {
+            return (b['timestamp'] as Timestamp)
+                .compareTo(a['timestamp'] as Timestamp);
+          }
+
+          return comparison;
+        });
+        break;
+    }
+
+    return filtered;
   }
 
   @override
@@ -149,7 +197,11 @@ class MainWidgetState extends State<MainWidget> {
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 TextButton(
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    setState(() {
+                                      sortBy = 'latest';
+                                    });
+                                  },
                                   child: const Row(
                                     children: [
                                       Icon(Icons.noise_aware_sharp),
@@ -158,7 +210,11 @@ class MainWidgetState extends State<MainWidget> {
                                   ),
                                 ),
                                 TextButton(
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    setState(() {
+                                      sortBy = 'popular';
+                                    });
+                                  },
                                   child: const Row(
                                     children: [
                                       Icon(Icons.fire_hydrant_alt_sharp),
@@ -167,11 +223,15 @@ class MainWidgetState extends State<MainWidget> {
                                   ),
                                 ),
                                 TextButton(
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    setState(() {
+                                      sortBy = 'progress';
+                                    });
+                                  },
                                   child: const Row(
                                     children: [
                                       Icon(Icons.local_fire_department_sharp),
-                                      Text('베스트'),
+                                      Text('progress'),
                                     ],
                                   ),
                                 ),

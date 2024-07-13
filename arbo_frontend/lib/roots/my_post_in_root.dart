@@ -32,59 +32,60 @@ class _MyPostsInRootState extends State<MyPostsInRoot> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 2,
-              blurRadius: 5,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: currentLoginUser != null
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      widget.postsTitle,
-                      style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  if (widget.mypost)
-                    _buildPostsList(context)
-                  else
-                    _buildHeartsList(),
-                ],
-              )
-            : Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Text(widget.notLoginInfo),
-                    const SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return LoginPopupWidget(
-                              onLoginSuccess: () {},
-                            );
-                          },
-                        );
-                      },
-                      child: const Text('로그인'),
-                    ),
-                  ],
-                ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.3),
+                spreadRadius: 2,
+                blurRadius: 5,
+                offset: const Offset(0, 3),
               ),
-      ),
+            ],
+          ),
+          child: currentLoginUser != null
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        widget.postsTitle,
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    if (widget.mypost)
+                      _buildPostsList(context)
+                    else
+                      _buildHeartsList(),
+                  ],
+                )
+              : widget.mypost
+                  ? Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          Text(widget.notLoginInfo),
+                          const SizedBox(height: 10),
+                          ElevatedButton(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return LoginPopupWidget(
+                                    onLoginSuccess: () {},
+                                  );
+                                },
+                              );
+                            },
+                            child: const Text('로그인'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : null),
     );
   }
 
@@ -113,7 +114,6 @@ class _MyPostsInRootState extends State<MyPostsInRoot> {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => LoadingScreen(postId: post['id']),
-                    //SearchDetailScreen(postId: post['id']),
                   ),
                 );
               },

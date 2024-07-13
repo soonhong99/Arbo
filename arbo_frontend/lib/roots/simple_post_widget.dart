@@ -39,7 +39,7 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
       case 'approved':
         return 1.0;
       case 'rejected':
-        return 0.0;
+        return 1.0;
       default:
         return 0.0;
     }
@@ -69,7 +69,6 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
   Widget build(BuildContext context) {
     specificAllPostData = allPostDataWithPostId[widget.postId] ?? {};
     specificAllPostData['comments'] = specificAllPostData['comments'] ?? [];
-    // specificAllPostData['status'] = 'pending';
     DateTime postTime =
         (specificAllPostData['timestamp'] as Timestamp).toDate();
 
@@ -133,6 +132,19 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${specificAllPostData['country']}/${specificAllPostData['city']}/${specificAllPostData['district']}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
                       color: _getStatusColor(specificAllPostData['status']),
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -147,11 +159,12 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
               LinearProgressIndicator(
                 value: _getProgressValue(specificAllPostData['status']),
                 backgroundColor: Colors.grey[300],
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                    _getStatusColor(specificAllPostData['status'])),
               ),
               const SizedBox(height: 16),
               Text(
-                '필요한이유는요... ${specificAllPostData['content']}',
+                'PAINT: ${specificAllPostData['content']}',
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),

@@ -56,8 +56,6 @@ class UserDataProvider with ChangeNotifier {
   }
 
   Future<void> fetchPostData() async {
-    // Query query =
-    //     _firestore.collection('posts').orderBy('timestamp', descending: true);
     Query query = _firestore.collection('posts');
 
     // 국가 선택

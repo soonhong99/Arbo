@@ -37,29 +37,41 @@ class RootScreenState extends State<RootScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchUserPlaces().then((_) {
-      if (userPlaces.isNotEmpty &&
-          currentLoginUser == null &&
-          firstLocationTouch) {
+    if (userPlaces.isEmpty) {
+      _fetchUserPlaces().then((_) {
         setState(() {
           selectedCountry = 'all';
           selectedCity = 'all';
           selectedDistrict = 'all';
         });
-      } else if (currentLoginUser != null) {
-        setState(() {
-          selectedCountry = myCountry;
-          selectedCity = myCity;
-          selectedDistrict = myDistrict;
-        });
-      }
-    });
+      });
+    } else if (currentLoginUser != null) {
+      setState(() {
+        selectedCountry = myCountry;
+        selectedCity = myCity;
+        selectedDistrict = myDistrict;
+      });
+    }
+    // _fetchUserPlaces().then((_) {
+    //   if (userPlaces.isNotEmpty &&
+    //       currentLoginUser == null &&
+    //       firstLocationTouch) {
+    //     setState(() {
+    //       selectedCountry = 'all';
+    //       selectedCity = 'all';
+    //       selectedDistrict = 'all';
+    //     });
+    //   } else if (currentLoginUser != null) {
+    //     setState(() {
+    //       selectedCountry = myCountry;
+    //       selectedCity = myCity;
+    //       selectedDistrict = myDistrict;
+    //     });
+    //   }
+    // });
   }
 
   Future<void> _fetchUserPlaces() async {
-    // if (userPlaces == []) {
-    //   userPlaces = await getUserPlaces();
-    // }
     userPlaces = await getUserPlaces();
   }
 
@@ -311,6 +323,7 @@ class RootScreenState extends State<RootScreen> {
                 likedPosts = [];
                 locationWithLogin = false;
                 firstLocationTouch = true;
+                firstSpecificPostTouch = true;
                 locationMessage = '당신이 속한 community 위치를 알고싶어요!';
                 selectedCity = 'all';
                 selectedCountry = 'all';
