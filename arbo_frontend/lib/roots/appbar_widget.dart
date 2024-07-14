@@ -76,121 +76,171 @@ class _CustomSliverAppBarState extends State<CustomSliverAppBar> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Notifications'),
-          content: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            future: firestore_instance
-                .collection('users')
-                .doc(widget.user!.uid)
-                .get(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const CircularProgressIndicator();
-              }
-
-              if (snapshot.hasError) {
-                return Text('Error: ${snapshot.error}');
-              }
-
-              if (!snapshot.hasData || snapshot.data == null) {
-                return const Text('No data available');
-              }
-
-              final userData = snapshot.data!.data();
-              if (userData == null) {
-                return const Text('User data is null');
-              }
-
-              final alertMap =
-                  userData['alertMap'] as Map<String, dynamic>? ?? {};
-              final alertComments = alertMap['alertComment'] as List? ?? [];
-              final alertHearts = alertMap['alertHeart'] as List? ?? [];
-
-              // 여기서부터 알림 처리 로직...
-              Map<String, List<dynamic>> groupedAlerts = {};
-              for (var comment in alertComments) {
-                String postId = comment['postId'] as String? ?? '';
-                groupedAlerts.putIfAbsent(postId, () => []).add(comment);
-              }
-              for (var heart in alertHearts) {
-                String postId = heart['postId'] as String? ?? '';
-                groupedAlerts.putIfAbsent(postId, () => []).add(heart);
-              }
-
-              return StatefulBuilder(
-                builder: (BuildContext context, StateSetter setState) {
-                  return SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: groupedAlerts.entries.map((entry) {
-                        String postId = entry.key;
-                        List<dynamic> alerts = entry.value;
-                        String postTitle = (alerts.first['title'] as String?) ??
-                            'Unknown Title';
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ListTile(
-                              title: Text('$postTitle에 대한 알림이 왔습니다!'),
-                              trailing: IconButton(
-                                icon: Icon(_expandedStates[postId] ?? false
-                                    ? Icons.arrow_drop_down
-                                    : Icons.arrow_right),
-                                onPressed: () {
-                                  setState(() {
-                                    _expandedStates[postId] =
-                                        !(_expandedStates[postId] ?? false);
-                                  });
-                                },
-                              ),
-                            ),
-                            if (_expandedStates[postId] ?? false)
-                              ...alerts
-                                  .where((alert) =>
-                                      alert['userId'] != widget.user!.uid)
-                                  .map((alert) => ListTile(
-                                        title: Text(alert['comment'] != null
-                                            ? '${alert['nickname'] ?? 'Unknown'}님이 댓글을 달았습니다: ${alert['comment']}'
-                                            : '${alert['nickname'] ?? 'Unknown'}님이 좋아요를 눌렀습니다'),
-                                        subtitle: Text(DateTime.parse(
-                                                alert['commentTimestamp'] ??
-                                                    alert['heartTimestamp'] ??
-                                                    DateTime.now()
-                                                        .toIso8601String())
-                                            .toLocal()
-                                            .toString()),
-                                      )),
-                            ElevatedButton(
-                              child: const Text('해당 게시글로 이동하기!'),
-                              onPressed: () async {
-                                // 알림 삭제 로직
-                                await _deleteAlerts(postId);
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        LoadingScreen(postId: postId),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        );
-                      }).toList(),
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final width = constraints.maxWidth * 0.7;
+              final height = constraints.maxHeight * 0.7;
+              return SizedBox(
+                width: width,
+                height: height,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text(
+                        'Notifications',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  );
-                },
+                    Expanded(
+                      child:
+                          FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                        future: firestore_instance
+                            .collection('users')
+                            .doc(widget.user!.uid)
+                            .get(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
+
+                          if (snapshot.hasError) {
+                            return Center(
+                                child: Text('Error: ${snapshot.error}'));
+                          }
+
+                          if (!snapshot.hasData || snapshot.data == null) {
+                            return const Center(
+                                child: Text('No data available'));
+                          }
+
+                          final userData = snapshot.data!.data();
+                          if (userData == null) {
+                            return const Center(
+                                child: Text('User data is null'));
+                          }
+
+                          final alertMap =
+                              userData['alertMap'] as Map<String, dynamic>? ??
+                                  {};
+                          final alertComments =
+                              alertMap['alertComment'] as List? ?? [];
+                          final alertHearts =
+                              alertMap['alertHeart'] as List? ?? [];
+
+                          // 여기서부터 알림 처리 로직...
+                          Map<String, List<dynamic>> groupedAlerts = {};
+                          for (var comment in alertComments) {
+                            String postId = comment['postId'] as String? ?? '';
+                            groupedAlerts
+                                .putIfAbsent(postId, () => [])
+                                .add(comment);
+                          }
+                          for (var heart in alertHearts) {
+                            String postId = heart['postId'] as String? ?? '';
+                            groupedAlerts
+                                .putIfAbsent(postId, () => [])
+                                .add(heart);
+                          }
+
+                          return StatefulBuilder(
+                            builder:
+                                (BuildContext context, StateSetter setState) {
+                              return SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: groupedAlerts.entries.map((entry) {
+                                    String postId = entry.key;
+                                    List<dynamic> alerts = entry.value;
+                                    String postTitle =
+                                        (alerts.first['title'] as String?) ??
+                                            'Unknown Title';
+
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        ListTile(
+                                          title:
+                                              Text('$postTitle에 대한 알림이 왔습니다!'),
+                                          trailing: IconButton(
+                                            icon: Icon(
+                                                _expandedStates[postId] ?? false
+                                                    ? Icons.arrow_drop_down
+                                                    : Icons.arrow_right),
+                                            onPressed: () {
+                                              setState(() {
+                                                _expandedStates[postId] =
+                                                    !(_expandedStates[postId] ??
+                                                        false);
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                        if (_expandedStates[postId] ?? false)
+                                          ...alerts
+                                              .where((alert) =>
+                                                  alert['userId'] !=
+                                                  widget.user!.uid)
+                                              .map((alert) => ListTile(
+                                                    title: Text(alert[
+                                                                'comment'] !=
+                                                            null
+                                                        ? '${alert['nickname'] ?? 'Unknown'}님이 댓글을 달았습니다: ${alert['comment']}'
+                                                        : '${alert['nickname'] ?? 'Unknown'}님이 좋아요를 눌렀습니다'),
+                                                    subtitle: Text(DateTime.parse(alert[
+                                                                'commentTimestamp'] ??
+                                                            alert[
+                                                                'heartTimestamp'] ??
+                                                            DateTime.now()
+                                                                .toIso8601String())
+                                                        .toLocal()
+                                                        .toString()),
+                                                  )),
+                                        ElevatedButton(
+                                          child: const Text('해당 게시글로 이동하기!'),
+                                          onPressed: () async {
+                                            // 알림 삭제 로직
+                                            await _deleteAlerts(postId);
+                                            Navigator.of(context)
+                                                .pushReplacement(
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    LoadingScreen(
+                                                        postId: postId),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    TextButton(
+                      child: const Text('Close'),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                ),
               );
             },
           ),
-          actions: [
-            TextButton(
-              child: const Text('Close'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
         );
       },
     );

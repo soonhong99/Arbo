@@ -23,6 +23,7 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
   bool dataInitialized = false;
   bool _areCommentsVisible = false;
   bool animationCompleted = false;
+  final Map<String, bool> _commentToggleState = {};
 
   @override
   void setState(fn) {
@@ -112,16 +113,19 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
         firestore_instance.collection('users').doc(userUid);
     DocumentReference heartRef =
         firestore_instance.collection('posts').doc(widget.postId);
-    try {
-      await firestore_instance
-          .collection('users')
-          .doc(postData['userId'])
-          .update({
-        'alertMap.alertHeart': FieldValue.arrayUnion([alertHeart])
-      });
-    } catch (e) {
-      print('cant go alert: $e');
+    if (currentLoginUser!.uid != postData['userId']) {
+      try {
+        await firestore_instance
+            .collection('users')
+            .doc(postData['userId'])
+            .update({
+          'alertMap.alertHeart': FieldValue.arrayUnion([alertHeart])
+        });
+      } catch (e) {
+        print('cant go alert: $e');
+      }
     }
+
     if (_hasUserLiked) {
       await userRef.update({
         '하트 누른 게시물': FieldValue.arrayRemove([widget.postId])
@@ -171,16 +175,19 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
       'nickname': nickname, // Include nickname
       'replies': [],
     };
-    try {
-      await firestore_instance
-          .collection('users')
-          .doc(postData['userId'])
-          .update({
-        'alertMap.alertComment': FieldValue.arrayUnion([alertComment])
-      });
-    } catch (e) {
-      print('cannot alert comment: $e');
+    if (currentLoginUser!.uid != postData['userId']) {
+      try {
+        await firestore_instance
+            .collection('users')
+            .doc(postData['userId'])
+            .update({
+          'alertMap.alertComment': FieldValue.arrayUnion([alertComment])
+        });
+      } catch (e) {
+        print('cannot alert comment: $e');
+      }
     }
+
     await postRef.update({
       'comments': FieldValue.arrayUnion([newComment])
     });
@@ -443,44 +450,84 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
                     },
                     child: Text(
                       _areCommentsVisible
-                          ? '댓글 ${comments.length}개 접기'
-                          : '댓글 ${comments.length}개 보기',
+                          ? '댓글 ${countTotalComments(comments)}개 접기'
+                          : '댓글 ${countTotalComments(comments)}개 보기',
                     ),
                   ),
                 ),
               ],
               if (_areCommentsVisible)
-                ...comments.map((comment) {
+                ...(postData['comments'] as List).reversed.map((comment) {
+                  bool hasReplies = comment['replies'] != null &&
+                      comment['replies'].isNotEmpty;
+                  int replyCount = comment['replies']?.length ?? 0;
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ListTile(
                         title: Text(
                             '${comment['nickname']} - ${comment['comment']}'),
-                        subtitle: Text((comment['timestamp'] as Timestamp)
-                            .toDate()
-                            .toString()),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.reply),
-                          onPressed: () =>
-                              _showReplyDialog(comment['commentId']),
-                        ),
-                      ),
-                      ...comment['replies'].map<Widget>((reply) {
-                        return Padding(
-                          padding: const EdgeInsets.only(left: 16.0),
-                          child: ListTile(
-                            title: Text(
-                                '${reply['nickname']} - ${reply['comment']}'),
-                            subtitle: Text((reply['timestamp'] as Timestamp)
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text((comment['timestamp'] as Timestamp)
                                 .toDate()
                                 .toString()),
+                            if (hasReplies)
+                              Text(
+                                '$replyCount개의 답글이 있습니다',
+                                style: const TextStyle(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                          ],
+                        ),
+                        leading: IconButton(
+                          icon: Icon(
+                            _commentToggleState[comment['commentId']] ?? false
+                                ? Icons.arrow_drop_down
+                                : Icons.arrow_right,
                           ),
-                        );
-                      }).toList(),
+                          onPressed: () {
+                            setState(() {
+                              _commentToggleState[comment['commentId']] =
+                                  !(_commentToggleState[comment['commentId']] ??
+                                      false);
+                            });
+                          },
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.reply),
+                          onPressed: () {
+                            if (currentLoginUser == null) {
+                              _showLoginPopup();
+                              return;
+                            }
+                            _showReplyDialog(comment['commentId']);
+                          },
+                        ),
+                      ),
+                      if (hasReplies &&
+                          (_commentToggleState[comment['commentId']] ?? false))
+                        ...(comment['replies'] as List)
+                            .reversed
+                            .map<Widget>((reply) {
+                          return Padding(
+                            padding: const EdgeInsets.only(left: 70.0),
+                            child: ListTile(
+                              title: Text(
+                                  '${reply['nickname']} - ${reply['comment']}'),
+                              subtitle: Text((reply['timestamp'] as Timestamp)
+                                  .toDate()
+                                  .toString()),
+                            ),
+                          );
+                        }),
                     ],
                   );
-                }).toList(),
+                }),
             ],
           ),
         ),

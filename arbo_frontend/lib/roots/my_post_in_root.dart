@@ -107,8 +107,8 @@ class _MyPostsInRootState extends State<MyPostsInRoot> {
           itemBuilder: (context, index) {
             var post = displayPosts[index];
             return ListTile(
-              title: Text(post['title']),
-              subtitle: Text(post['content']),
+              title: Text('Title: ${post['title']}'),
+              subtitle: Text('Content: ${post['content']}'),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
                 Navigator.of(context).push(

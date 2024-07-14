@@ -107,15 +107,17 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
         firestore_instance.collection('users').doc(userUid);
     DocumentReference heartRef =
         firestore_instance.collection('posts').doc(postData['postId']);
-    try {
-      await firestore_instance
-          .collection('users')
-          .doc(postData['postOwnerId'])
-          .update({
-        'alertMap.alertHeart': FieldValue.arrayUnion([alertHeart])
-      });
-    } catch (e) {
-      print('cant go alert: $e');
+    if (currentLoginUser!.uid != postData['postOwnerId']) {
+      try {
+        await firestore_instance
+            .collection('users')
+            .doc(postData['postOwnerId'])
+            .update({
+          'alertMap.alertHeart': FieldValue.arrayUnion([alertHeart])
+        });
+      } catch (e) {
+        print('cant go alert: $e');
+      }
     }
 
     if (_hasUserLiked) {
@@ -168,16 +170,17 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       'nickname': nickname, // Include nickname
       'replies': [],
     };
-
-    try {
-      await firestore_instance
-          .collection('users')
-          .doc(postData['postOwnerId'])
-          .update({
-        'alertMap.alertComment': FieldValue.arrayUnion([alertComment])
-      });
-    } catch (e) {
-      print('cannot alert comment: $e');
+    if (currentLoginUser!.uid != postData['postOwnerId']) {
+      try {
+        await firestore_instance
+            .collection('users')
+            .doc(postData['postOwnerId'])
+            .update({
+          'alertMap.alertComment': FieldValue.arrayUnion([alertComment])
+        });
+      } catch (e) {
+        print('cannot alert comment: $e');
+      }
     }
 
     await postRef.update({
@@ -269,6 +272,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   @override
   Widget build(BuildContext context) {
     final comments = postData['comments'] ?? [];
+
     DateTime postTime = (postData['timestamp'] as Timestamp).toDate();
     final screenWidth = MediaQuery.of(context).size.width;
     final imageSize = screenWidth * 0.7; // 70% of the screen width
@@ -446,9 +450,10 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                 ),
               ],
               if (_areCommentsVisible)
-                ...comments.map((comment) {
+                ...(postData['comments'] as List).reversed.map((comment) {
                   bool hasReplies = comment['replies'] != null &&
                       comment['replies'].isNotEmpty;
+                  int replyCount = comment['replies']?.length ?? 0;
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,9 +461,22 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                       ListTile(
                         title: Text(
                             '${comment['nickname']} - ${comment['comment']}'),
-                        subtitle: Text((comment['timestamp'] as Timestamp)
-                            .toDate()
-                            .toString()),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text((comment['timestamp'] as Timestamp)
+                                .toDate()
+                                .toString()),
+                            if (hasReplies)
+                              Text(
+                                '$replyCount개의 답글이 있습니다',
+                                style: const TextStyle(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                          ],
+                        ),
                         leading: IconButton(
                           icon: Icon(
                             _commentToggleState[comment['commentId']] ?? false
@@ -474,18 +492,21 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                           },
                         ),
                         trailing: IconButton(
-                            icon: const Icon(Icons.reply),
-                            onPressed: () {
-                              if (currentLoginUser == null) {
-                                _showLoginPopup();
-                                return;
-                              }
-                              _showReplyDialog(comment['commentId']);
-                            }),
+                          icon: const Icon(Icons.reply),
+                          onPressed: () {
+                            if (currentLoginUser == null) {
+                              _showLoginPopup();
+                              return;
+                            }
+                            _showReplyDialog(comment['commentId']);
+                          },
+                        ),
                       ),
                       if (hasReplies &&
                           (_commentToggleState[comment['commentId']] ?? false))
-                        ...comment['replies'].map<Widget>((reply) {
+                        ...(comment['replies'] as List)
+                            .reversed
+                            .map<Widget>((reply) {
                           return Padding(
                             padding: const EdgeInsets.only(left: 70.0),
                             child: ListTile(
@@ -496,10 +517,10 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                                   .toString()),
                             ),
                           );
-                        }).toList(),
+                        }),
                     ],
                   );
-                }).toList(),
+                }),
             ],
           ),
         ),

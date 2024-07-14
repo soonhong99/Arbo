@@ -23,6 +23,8 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   List<String> postClickedHeart = [];
   List<String> promptSearchHistory = [];
   bool isLoading = false;
+  bool isLoadingLocation = false;
+
   String? errorMessage;
 
   bool showIntro = true;
@@ -36,12 +38,19 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
 
   Future<void> _getCurrentLocation() async {
     if (isLocationSet()) {
+      setState(() {
+        showLocationConfirmation = true;
+      });
       return;
     } else {
       try {
         LocationPermission permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           // 위치 권한이 거부된 경우 처리
+          setState(() {
+            isLoadingLocation = false;
+            errorMessage = '위치 권한이 거부되었습니다.';
+          });
           return;
         }
 
@@ -68,13 +77,16 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
               },
             );
           } else {
-            setState(() {
-              locationMessage = '지명 정보를 가져오지 못했습니다.';
-            });
+            errorMessage = '지명 정보를 가져오지 못했습니다.';
           }
         }
       } catch (e) {
-        print("Error getting location: $e");
+        errorMessage = "위치 정보를 가져오는 중 오류가 발생했습니다: $e";
+      } finally {
+        setState(() {
+          isLoadingLocation = false;
+          showLocationConfirmation = true;
+        });
       }
     }
   }
@@ -90,6 +102,8 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   Widget build(BuildContext context) {
     if (showIntro && !isLocationSet()) {
       return _buildIntroDialog();
+    } else if (isLoadingLocation) {
+      return _buildLoadingDialog();
     } else if (showLocationConfirmation) {
       return _buildLocationConfirmationDialog();
     } else {
@@ -107,8 +121,9 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
           onPressed: () {
             setState(() {
               showIntro = false;
-              showLocationConfirmation = true;
+              //showLocationConfirmation = true;
             });
+            _getCurrentLocation();
           },
         ),
       ],
@@ -138,6 +153,19 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildLoadingDialog() {
+    return const AlertDialog(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
+          Text('위치 정보를 가져오는 중...'),
+        ],
+      ),
     );
   }
 
