@@ -9,7 +9,6 @@
 .history
 .svn/
 migrate_working_dir/
-myvenv/
 # IntelliJ related
 *.iml
 *.ipr
@@ -22,6 +21,7 @@ myvenv/
 #.vscode/
 *.env
 .venv/
+*myvenv/
 
 # Flutter/Dart/Pub related
 **/doc/api/
