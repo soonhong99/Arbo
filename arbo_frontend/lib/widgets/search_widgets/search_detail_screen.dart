@@ -102,12 +102,26 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
       _showLoginPopup();
       return;
     }
-
+    final alertHeart = {
+      'heartTimestamp': Timestamp.now().toDate().toIso8601String(), // 변경된 부분
+      'postId': widget.postId,
+      'userId': currentLoginUser!.uid,
+      'nickname': nickname,
+    };
     DocumentReference userRef =
         firestore_instance.collection('users').doc(userUid);
     DocumentReference heartRef =
         firestore_instance.collection('posts').doc(widget.postId);
-
+    try {
+      await firestore_instance
+          .collection('users')
+          .doc(postData['userId'])
+          .update({
+        'alertMap.alertHeart': FieldValue.arrayUnion([alertHeart])
+      });
+    } catch (e) {
+      print('cant go alert: $e');
+    }
     if (_hasUserLiked) {
       await userRef.update({
         '하트 누른 게시물': FieldValue.arrayRemove([widget.postId])
@@ -137,6 +151,14 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
       _showLoginPopup();
       return;
     }
+
+    final alertComment = {
+      'comment': comment,
+      'commentTimestamp': Timestamp.now().toDate().toIso8601String(),
+      'postId': widget.postId,
+      'userId': currentLoginUser!.uid,
+      'nickname': nickname,
+    };
     dataChanged = true;
     DocumentReference postRef =
         firestore_instance.collection('posts').doc(widget.postId);
@@ -149,7 +171,16 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
       'nickname': nickname, // Include nickname
       'replies': [],
     };
-
+    try {
+      await firestore_instance
+          .collection('users')
+          .doc(postData['userId'])
+          .update({
+        'alertMap.alertComment': FieldValue.arrayUnion([alertComment])
+      });
+    } catch (e) {
+      print('cannot alert comment: $e');
+    }
     await postRef.update({
       'comments': FieldValue.arrayUnion([newComment])
     });

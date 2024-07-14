@@ -95,11 +95,28 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       _showLoginPopup();
       return;
     }
+    final alertHeart = {
+      'heartTimestamp': Timestamp.now().toDate().toIso8601String(), // 변경된 부분
+      'postId': postData['postId'],
+      'userId': currentLoginUser!.uid,
+      'nickname': nickname,
+      'title': postData['title'],
+    };
 
     DocumentReference userRef =
         firestore_instance.collection('users').doc(userUid);
     DocumentReference heartRef =
         firestore_instance.collection('posts').doc(postData['postId']);
+    try {
+      await firestore_instance
+          .collection('users')
+          .doc(postData['postOwnerId'])
+          .update({
+        'alertMap.alertHeart': FieldValue.arrayUnion([alertHeart])
+      });
+    } catch (e) {
+      print('cant go alert: $e');
+    }
 
     if (_hasUserLiked) {
       await userRef.update({
@@ -130,6 +147,15 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       _showLoginPopup();
       return;
     }
+
+    final alertComment = {
+      'comment': comment,
+      'commentTimestamp': Timestamp.now().toDate().toIso8601String(),
+      'postId': postData['postId'],
+      'userId': currentLoginUser!.uid,
+      'nickname': nickname,
+      'title': postData['title'],
+    };
     dataChanged = true;
     DocumentReference postRef =
         firestore_instance.collection('posts').doc(postData['postId']);
@@ -142,6 +168,17 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       'nickname': nickname, // Include nickname
       'replies': [],
     };
+
+    try {
+      await firestore_instance
+          .collection('users')
+          .doc(postData['postOwnerId'])
+          .update({
+        'alertMap.alertComment': FieldValue.arrayUnion([alertComment])
+      });
+    } catch (e) {
+      print('cannot alert comment: $e');
+    }
 
     await postRef.update({
       'comments': FieldValue.arrayUnion([newComment])

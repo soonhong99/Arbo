@@ -46,6 +46,7 @@ class _PromptDialogState extends State<PromptDialog> {
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
   bool _isLoading = true;
+  bool createPost = false;
   TextSelection? _lastSelection;
   late final FocusNode _focusNode;
   late PostCreationHelper _postCreationHelper;
@@ -571,6 +572,7 @@ class _PromptDialogState extends State<PromptDialog> {
 
   void _createPost() async {
     setState(() {
+      createPost = true;
       _isLoading = true;
     });
 
@@ -637,26 +639,30 @@ class _PromptDialogState extends State<PromptDialog> {
         content: SizedBox(
           width: MediaQuery.of(context).size.width * 0.7,
           height: MediaQuery.of(context).size.height * 0.7,
-          child: _isLoading ? _buildLoadingIndicator() : _buildChatUI(),
+          child:
+              _isLoading ? _buildLoadingIndicator(createPost) : _buildChatUI(),
         ),
         actions: [
           TextButton(
             onPressed: _createPost,
-            child: const Text('Create Post'),
+            child: const Text('Create Post With Dialog!'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildLoadingIndicator() {
-    return const Center(
+  Widget _buildLoadingIndicator(bool createPost) {
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
-          Text("Initializing chat..."),
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+          if (createPost)
+            const Text("MinJi makes Post..")
+          else
+            const Text("Initializing chat..."),
         ],
       ),
     );

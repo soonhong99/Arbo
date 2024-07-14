@@ -6,7 +6,8 @@ from nltk.tag import pos_tag
 
 app = Flask(__name__)
 CORS(app) 
-
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
 @app.route('/extract_nouns', methods=['POST'])
 def extract_nouns():
     data = request.json

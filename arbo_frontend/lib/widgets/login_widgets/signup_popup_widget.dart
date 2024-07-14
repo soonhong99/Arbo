@@ -243,6 +243,10 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         'district': myDistrict,
         '하트 누른 게시물': [],
         '프롬프트 기록': [],
+        'alertMap': {
+          'alertComment': [],
+          'alertHeart': [],
+        },
       });
 
       // 사용자 지역 정보가 'userPlaceInfo' 컬렉션에 있는지 확인하고, 없으면 추가
