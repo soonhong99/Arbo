@@ -25,8 +25,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneNumberController1 = TextEditingController();
-  final TextEditingController _phoneNumberController2 = TextEditingController();
+  final TextEditingController _phoneNumberController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
 
   FocusNode passwordFocusNode = FocusNode();
@@ -45,13 +44,23 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   bool showIntro = true;
   bool isLoadingLocation = false;
   String? errorMessage;
-  String? myCountry;
-  String? myCity;
-  String? myDistrict;
   String _selectedCountryCode = '+82'; // 기본값으로 한국 국가 코드 설정
+  bool _isIdChecked = false;
+  bool _isNicknameChecked = false;
+  String? _idErrorMessage = '6자 이상, 영어 및 숫자로 입력해주세요';
+  String? _nicknameErrorMessage = '4자 이상, 영어 및 숫자로 입력해주세요';
 
+  String? _phoneErrorMessage = '본인 핸드폰 번호를 써주세요';
   String? _passwordError;
+
   bool _isPasswordValid = false;
+  bool _isIdValid = false;
+  bool _isNicknameValid = false;
+
+  bool _isEmailVerified = false;
+  bool _isEmailSent = false;
+  String? _tempUserId;
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -59,6 +68,38 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   void initState() {
     super.initState();
     _getCurrentLocation();
+    _idController.addListener(_validateId);
+    _nicknameController.addListener(_validateNickname);
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user != null && user.emailVerified) {
+        _verifyEmail();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _idController.removeListener(_validateId);
+    _idController.dispose();
+    _nicknameController.removeListener(_validateNickname);
+    _nicknameController.dispose();
+    // ... 다른 controller들의 dispose ...
+    super.dispose();
+  }
+
+  void _validateId() {
+    final String id = _idController.text;
+    setState(() {
+      _isIdValid = id.length >= 6 && RegExp(r'^[a-zA-Z0-9]+$').hasMatch(id);
+    });
+  }
+
+  void _validateNickname() {
+    final String nickname = _nicknameController.text;
+    setState(() {
+      _isNicknameValid =
+          nickname.length >= 4 && RegExp(r'^[a-zA-Z0-9]+$').hasMatch(nickname);
+    });
   }
 
   Future<void> _getCurrentLocation() async {
@@ -182,7 +223,8 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
           children: [
             Text('위치: $myCountry, $myCity, $myDistrict'),
             const SizedBox(height: 20),
-            _buildTextField(controller: _idController, label: '아이디'),
+            _buildTextField(
+                controller: _idController, label: '아이디', isId: true),
             TextFormField(
               controller: _passwordController,
               decoration: const InputDecoration(labelText: '비밀번호'),
@@ -251,8 +293,12 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
               },
             ),
             _buildTextField(controller: _nameController, label: '이름'),
-            _buildTextField(controller: _nicknameController, label: '닉네임'),
-            _buildTextField(controller: _emailController, label: '이메일 주소'),
+            _buildTextField(
+                controller: _nicknameController,
+                label: '닉네임',
+                isNickname: true),
+            _buildTextField(
+                controller: _emailController, label: '이메일 주소', isEmail: true),
             const SizedBox(height: 20),
             _buildPhoneNumberInput(),
             const SizedBox(height: 10),
@@ -287,18 +333,98 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     required TextEditingController controller,
     required String label,
     bool isPassword = false,
+    bool isId = false,
+    bool isNickname = false,
+    bool isEmail = false,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextFormField(
-        controller: controller,
-        obscureText: isPassword,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextFormField(
+              controller: controller,
+              obscureText: isPassword,
+              decoration: InputDecoration(
+                labelText: label,
+                border: const OutlineInputBorder(),
+                errorText: isId
+                    ? _idErrorMessage
+                    : (isNickname ? _nicknameErrorMessage : null),
+              ),
+            ),
+          ),
+          if (isId)
+            ElevatedButton(
+              onPressed: _isIdValid ? () => _checkIdDuplicate('id') : null,
+              child: const Text('중복확인'),
+            )
+          else if (isNickname)
+            ElevatedButton(
+              onPressed:
+                  _isNicknameValid ? () => _checkIdDuplicate('nickname') : null,
+              child: const Text('중복확인'),
+            )
+          else if (isEmail)
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed:
+                      _isEmailVerified ? null : _checkEmailAndSendVerification,
+                  child: Text(_isEmailSent ? '재전송' : '인증하기'),
+                ),
+                if (_isEmailSent && !_isEmailVerified)
+                  ElevatedButton(
+                    onPressed: _verifyEmail,
+                    child: const Text('인증 완료'),
+                  ),
+                if (_isEmailVerified)
+                  const Padding(
+                    padding: EdgeInsets.only(left: 8.0),
+                    child: Text('이메일 인증 완료!',
+                        style: TextStyle(color: Colors.green)),
+                  ),
+              ],
+            ),
+        ],
       ),
     );
+  }
+
+  Future<void> _checkIdDuplicate(String nicknameOrId) async {
+    String controllerText = '';
+    if (nicknameOrId == 'id') {
+      controllerText = _idController.text;
+      _idErrorMessage = '6자 이상, 영어 및 숫자로만 입력해주세요';
+    } else if (nicknameOrId == 'nickname') {
+      controllerText = _nicknameController.text;
+      _nicknameErrorMessage = '6자 이상, 영어 및 숫자로만 입력해주세요';
+    }
+
+    final QuerySnapshot result = await _firestore
+        .collection('duplicate_id_phonenum')
+        .where(nicknameOrId, isEqualTo: controllerText)
+        .get();
+
+    setState(() {
+      if (result.docs.isEmpty) {
+        if (nicknameOrId == 'id') {
+          _idErrorMessage = '사용할 수 있는 아이디입니다!';
+          _isIdChecked = true;
+        } else {
+          _nicknameErrorMessage = '사용할 수 있는 닉네임입니다!';
+          _isNicknameChecked = true;
+        }
+      } else {
+        if (nicknameOrId == 'id') {
+          _idErrorMessage = '이미 사용 중인 아이디입니다.';
+          _isIdChecked = false;
+        } else {
+          _nicknameErrorMessage = '이미 사용 중인 닉네임입니다.';
+          _isNicknameChecked = false;
+        }
+      }
+    });
   }
 
   Widget _buildPhoneNumberInput() {
@@ -315,34 +441,14 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         const SizedBox(width: 10),
         Expanded(
           child: TextFormField(
-            controller: _phoneNumberController1,
+            controller: _phoneNumberController,
             focusNode: phoneNumberFocusNode1,
             decoration: const InputDecoration(
-              labelText: '앞 4자리',
+              labelText: 'Phone Number',
               border: OutlineInputBorder(),
             ),
-            keyboardType: TextInputType.number,
+            keyboardType: TextInputType.phone,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            maxLength: 4,
-            onChanged: (value) {
-              if (value.length == 4) {
-                FocusScope.of(context).requestFocus(phoneNumberFocusNode2);
-              }
-            },
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: TextFormField(
-            controller: _phoneNumberController2,
-            focusNode: phoneNumberFocusNode2,
-            decoration: const InputDecoration(
-              labelText: '뒤 4자리',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            maxLength: 4,
           ),
         ),
         const SizedBox(width: 10),
@@ -387,13 +493,31 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   }
 
   void _requestPhoneAuth() async {
+    final String phoneNumber =
+        "$_selectedCountryCode${_phoneNumberController.text}";
+
+    final QuerySnapshot result = await _firestore
+        .collection('duplicate_id_phonenum')
+        .where('phoneNum', isEqualTo: phoneNumber)
+        .get();
+
+    if (result.docs.isNotEmpty) {
+      setState(() {
+        _phoneErrorMessage = '전에 인증된 전화번호입니다. 다른 전화번호로 인증하세요.';
+      });
+      return;
+    }
+
+    setState(() {
+      showLoading = true;
+      _phoneErrorMessage = null;
+    });
     setState(() {
       showLoading = true;
     });
 
     await _auth.verifyPhoneNumber(
-      phoneNumber:
-          "${_selectedCountryCode}10${_phoneNumberController1.text}${_phoneNumberController2.text}",
+      phoneNumber: phoneNumber,
       verificationCompleted: (phoneAuthCredential) async {
         // 자동 인증 완료 (안드로이드에서만 작동)
         signInWithPhoneAuthCredential(phoneAuthCredential);
@@ -453,7 +577,104 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     }
   }
 
+  Future<void> _checkEmailAndSendVerification() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      setState(() {
+        errorMessage = "이메일을 입력해주세요.";
+      });
+      return;
+    }
+
+    // 이메일 중복 확인
+    final QuerySnapshot result = await _firestore
+        .collection('duplicate_id_phonenum')
+        .where('email', isEqualTo: email)
+        .get();
+
+    if (result.docs.isNotEmpty) {
+      setState(() {
+        errorMessage = "이미 사용 중인 이메일입니다. 다른 이메일을 사용해주세요.";
+      });
+      return;
+    }
+
+    try {
+      // 임시 사용자 생성
+      UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: "temporaryPassword",
+      );
+
+      _tempUserId = userCredential.user!.uid;
+
+      // 이메일 인증 링크 발송
+      await userCredential.user!.sendEmailVerification();
+
+      setState(() {
+        _isEmailSent = true;
+        errorMessage = "인증 이메일이 발송되었습니다. 이메일을 확인해주세요.";
+      });
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        errorMessage = getErrorMessage(e.code);
+      });
+    }
+  }
+
+  Future<void> _verifyEmail() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await user.reload();
+      user = FirebaseAuth.instance.currentUser; // Refresh the user object
+
+      if (user!.emailVerified) {
+        setState(() {
+          _isEmailVerified = true;
+          errorMessage = "이메일 인증이 완료되었습니다!";
+        });
+        // 이메일 정보를 duplicate_id_phonenum에 추가
+        await _firestore.collection('duplicate_id_phonenum').add({
+          'email': _emailController.text.trim(),
+        });
+
+        // 임시 사용자 삭제
+        if (_tempUserId != null) {
+          await _auth.currentUser?.delete();
+          await _auth.signOut();
+          _tempUserId = null;
+        }
+      } else {
+        setState(() {
+          errorMessage = "이메일이 아직 인증되지 않았습니다. 이메일을 확인해주세요.";
+        });
+      }
+    }
+  }
+
   void signUp() async {
+    if (!_isIdChecked) {
+      setState(() {
+        errorMessage = "아이디 중복 확인을 해주세요.";
+      });
+      return;
+    }
+
+    if (!_isNicknameChecked) {
+      setState(() {
+        errorMessage = "닉네임 중복 확인을 해주세요.";
+      });
+      return;
+    }
+
+    if (!_isEmailVerified) {
+      setState(() {
+        errorMessage = "이메일 인증을 완료해주세요.";
+      });
+      return;
+    }
+
     if (_passwordController.text != _verifyPasswordController.text) {
       setState(() {
         errorMessage = "비밀번호가 일치하지 않습니다.";
@@ -473,6 +694,9 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         password: _passwordController.text.trim(),
       );
 
+      final String phoneNumber =
+          "$_selectedCountryCode${_phoneNumberController.text}";
+
       await _firestore.collection('users').doc(userCredential.user?.uid).set({
         '아이디': _idController.text,
         '생년월일': _birthController.text,
@@ -482,14 +706,19 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         'country': myCountry,
         'city': myCity,
         'district': myDistrict,
-        '전화번호':
-            "+8210${_phoneNumberController1.text}${_phoneNumberController2.text}",
+        '전화번호': phoneNumber,
         '하트 누른 게시물': [],
         '프롬프트 기록': [],
         'alertMap': {
           'alertComment': [],
           'alertHeart': [],
         },
+      });
+
+      await _firestore.collection('duplicate_id_phonenum').add({
+        'id': _idController.text,
+        'phoneNum': phoneNumber,
+        'nickname': _nicknameController.text,
       });
 
       setState(() {
