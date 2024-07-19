@@ -61,8 +61,17 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   bool _isEmailSent = false;
   String? _tempUserId;
 
+  String? _birthErrorMessage;
+  bool _isBirthValid = false;
+
+  String? _nameErrorMessage;
+  bool _isNameValid = false;
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  DateTime? _lastEmailVerificationTime;
+  DateTime? _lastPhoneVerificationTime;
 
   @override
   void initState() {
@@ -70,6 +79,9 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     _getCurrentLocation();
     _idController.addListener(_validateId);
     _nicknameController.addListener(_validateNickname);
+    _birthController.addListener(_validateBirth);
+    _nameController.addListener(_validateName);
+
     FirebaseAuth.instance.authStateChanges().listen((User? user) {
       if (user != null && user.emailVerified) {
         _verifyEmail();
@@ -83,6 +95,10 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     _idController.dispose();
     _nicknameController.removeListener(_validateNickname);
     _nicknameController.dispose();
+    _birthController.removeListener(_validateBirth);
+    _birthController.dispose();
+    _nameController.removeListener(_validateName);
+    _nameController.dispose();
     // ... 다른 controller들의 dispose ...
     super.dispose();
   }
@@ -99,6 +115,65 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     setState(() {
       _isNicknameValid =
           nickname.length >= 4 && RegExp(r'^[a-zA-Z0-9]+$').hasMatch(nickname);
+    });
+  }
+
+  void _validateBirth() {
+    final String birth = _birthController.text;
+    setState(() {
+      if (birth.isEmpty) {
+        _birthErrorMessage = '생년월일을 입력해주세요';
+        _isBirthValid = false;
+      } else if (!RegExp(r'^\d{8}$').hasMatch(birth)) {
+        _birthErrorMessage = '올바른 형식이 아닙니다 (YYYYMMDD)';
+        _isBirthValid = false;
+      } else {
+        try {
+          final year = int.parse(birth.substring(0, 4));
+          final month = int.parse(birth.substring(4, 6));
+          final day = int.parse(birth.substring(6, 8));
+
+          // 월과 일이 유효한지 확인
+          if (month < 1 || month > 12 || day < 1 || day > 31) {
+            throw const FormatException('Invalid month or day');
+          }
+
+          final date = DateTime(year, month, day);
+
+          // 날짜가 유효한지 확인
+          if (date.month != month || date.day != day) {
+            throw const FormatException('Invalid date');
+          }
+
+          if (date.isAfter(DateTime.now())) {
+            _birthErrorMessage = '올바르지 않은 날짜입니다 (미래 날짜)';
+            _isBirthValid = false;
+          } else {
+            _birthErrorMessage = '정확한 생년월일을 입력해야 불편함이 없답니다!';
+            _isBirthValid = true;
+          }
+        } catch (e) {
+          print('birth error: $e');
+          _birthErrorMessage = '올바르지 않은 날짜입니다';
+          _isBirthValid = false;
+        }
+      }
+    });
+  }
+
+  void _validateName() {
+    final String name = _nameController.text;
+    setState(() {
+      if (name.isEmpty) {
+        _nameErrorMessage = '이름을 입력해주세요';
+        _isNameValid = false;
+      } else if (!RegExp(r'^[a-zA-Z]+$').hasMatch(name)) {
+        _nameErrorMessage = '올바른 형식이 아닙니다 (only English)';
+        _isNameValid = false;
+      } else {
+        _nameErrorMessage = '정확한 이름을 입력해야 불편함이 없답니다!';
+        _isNameValid = true;
+      }
     });
   }
 
@@ -129,7 +204,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         if (response != null && response.results != null) {
           final geocodingResponse = response.results;
           if (geocodingResponse != null) {
-            address = geocodingResponse[0].formattedAddress!;
+            address = geocodingResponse[1].formattedAddress!;
             setState(
               () {
                 List<String> addressComponents = address.split(' ');
@@ -273,26 +348,24 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
             ),
             TextFormField(
               controller: _birthController,
-              decoration: const InputDecoration(labelText: '생년월일 (YYYYMMDD)'),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '생년월일을 입력해주세요';
-                }
-                if (!RegExp(r'^\d{8}$').hasMatch(value)) {
-                  return '올바른 형식이 아닙니다 (YYYYMMDD)';
-                }
-                try {
-                  final date = DateFormat('yyyyMMdd').parseStrict(value);
-                  if (date.isAfter(DateTime.now())) {
-                    return '올바르지 않은 날짜입니다';
-                  }
-                } catch (e) {
-                  return '올바르지 않은 날짜입니다';
-                }
-                return null;
-              },
+              decoration: InputDecoration(
+                labelText: '생년월일 (YYYYMMDD)',
+                errorText: _birthErrorMessage,
+                errorStyle:
+                    TextStyle(color: _isBirthValid ? Colors.green : Colors.red),
+              ),
+              onChanged: (_) => _validateBirth(),
             ),
-            _buildTextField(controller: _nameController, label: '이름'),
+            TextFormField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: '영어로 이름 입력',
+                errorText: _nameErrorMessage,
+                errorStyle:
+                    TextStyle(color: _isNameValid ? Colors.green : Colors.red),
+              ),
+              onChanged: (_) => _validateName(),
+            ),
             _buildTextField(
                 controller: _nicknameController,
                 label: '닉네임',
@@ -369,8 +442,17 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
             Row(
               children: [
                 ElevatedButton(
-                  onPressed:
-                      _isEmailVerified ? null : _checkEmailAndSendVerification,
+                  onPressed: _isEmailVerified
+                      ? null
+                      : (_lastEmailVerificationTime != null &&
+                              DateTime.now()
+                                      .difference(_lastEmailVerificationTime!) <
+                                  const Duration(seconds: 30))
+                          ? () {
+                              CustomToast.show(
+                                  context, "30초 뒤에 다시 이메일을 인증해주세요!");
+                            }
+                          : _checkEmailAndSendVerification,
                   child: Text(_isEmailSent ? '재전송' : '인증하기'),
                 ),
                 if (_isEmailSent && !_isEmailVerified)
@@ -453,7 +535,15 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         ),
         const SizedBox(width: 10),
         ElevatedButton(
-          onPressed: authOk ? null : _requestPhoneAuth,
+          onPressed: authOk
+              ? null
+              : (_lastPhoneVerificationTime != null &&
+                      DateTime.now().difference(_lastPhoneVerificationTime!) <
+                          const Duration(seconds: 30))
+                  ? () {
+                      CustomToast.show(context, "30초 뒤에 다시 전화번호를 인증요청하세요!");
+                    }
+                  : _requestPhoneAuth,
           child: Text(authOk ? '인증완료' : '인증요청'),
         ),
       ],
@@ -493,6 +583,15 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   }
 
   void _requestPhoneAuth() async {
+    if (_lastPhoneVerificationTime != null &&
+        DateTime.now().difference(_lastPhoneVerificationTime!) <
+            const Duration(seconds: 30)) {
+      setState(() {
+        errorMessage = "30초 뒤에 다시 전화번호를 인증요청하세요!";
+      });
+      return;
+    }
+
     final String phoneNumber =
         "$_selectedCountryCode${_phoneNumberController.text}";
 
@@ -533,6 +632,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
           showLoading = false;
           this.verificationId = verificationId;
           requestedAuth = true;
+          _lastPhoneVerificationTime = DateTime.now();
         });
         CustomToast.show(context, "인증 코드가 발송되었습니다.");
       },
@@ -578,6 +678,15 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   }
 
   Future<void> _checkEmailAndSendVerification() async {
+    if (_lastEmailVerificationTime != null &&
+        DateTime.now().difference(_lastEmailVerificationTime!) <
+            const Duration(seconds: 30)) {
+      setState(() {
+        errorMessage = "30초 뒤에 다시 이메일을 인증해주세요!";
+      });
+      return;
+    }
+
     final email = _emailController.text.trim();
     if (email.isEmpty) {
       setState(() {
@@ -615,6 +724,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
       setState(() {
         _isEmailSent = true;
         errorMessage = "인증 이메일이 발송되었습니다. 이메일을 확인해주세요.";
+        _lastEmailVerificationTime = DateTime.now();
       });
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -671,6 +781,13 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     if (!_isEmailVerified) {
       setState(() {
         errorMessage = "이메일 인증을 완료해주세요.";
+      });
+      return;
+    }
+
+    if (!_isBirthValid) {
+      setState(() {
+        errorMessage = "올바른 생년월일을 입력해주세요.";
       });
       return;
     }

@@ -4,6 +4,7 @@ import 'package:arbo_frontend/widgets/login_widgets/signup_popup_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPopupWidget extends StatefulWidget {
   // 로그인에 성공하면 해야할 콜백 함수 - login을 다른 class에서 했을 때 사용
@@ -18,6 +19,8 @@ class LoginPopupWidget extends StatefulWidget {
 class _LoginPopupWidgetState extends State<LoginPopupWidget> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  bool _rememberEmail = false;
+
   // final FirebaseAuth _auth = FirebaseAuth.instance;
 
   bool isLoading = false;
@@ -28,6 +31,31 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
   void setState(fn) {
     if (mounted) {
       super.setState(fn);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedEmail();
+  }
+
+  _loadSavedEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      emailController.text = prefs.getString('saved_email') ?? '';
+      _rememberEmail = prefs.getBool('remember_email') ?? false;
+    });
+  }
+
+  _saveEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberEmail) {
+      await prefs.setString('saved_email', emailController.text);
+      await prefs.setBool('remember_email', true);
+    } else {
+      await prefs.remove('saved_email');
+      await prefs.setBool('remember_email', false);
     }
   }
 
@@ -77,6 +105,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
     }
 
     if (isLoginSuccessful == true && mounted) {
+      await _saveEmail();
       final userData = Provider.of<UserDataProvider>(context, listen: false);
       userData.fetchLoginUserData(currentLoginUser!);
       Future.delayed(const Duration(milliseconds: 500)).then((_) {
@@ -131,6 +160,19 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
                 labelText: '비밀번호',
               ),
               onSubmitted: (_) => validate(), // Enter 키 처리
+            ),
+            Row(
+              children: [
+                Checkbox(
+                  value: _rememberEmail,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      _rememberEmail = value ?? false;
+                    });
+                  },
+                ),
+                const Text('이메일 저장'),
+              ],
             ),
             if (errorMessage.isNotEmpty)
               Padding(

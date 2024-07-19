@@ -111,7 +111,7 @@ class RootScreenState extends State<RootScreen> {
     if (response != null && response.results != null) {
       final geocodingResponse = response.results;
       if (geocodingResponse != null) {
-        address = geocodingResponse[0].formattedAddress!;
+        address = geocodingResponse[1].formattedAddress!;
         setState(
           () {
             _isLoading = false;
