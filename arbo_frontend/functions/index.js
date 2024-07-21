@@ -23,55 +23,31 @@ require("firebase-functions/v2/https");
 //   response.send("Hello from Firebase!");
 // });
 
-// 내가 쓰는 코드
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-const algoliasearch = require("algoliasearch");
-
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
 admin.initializeApp();
 
+exports.cleanupUnverifiedUsers = functions.pubsub.schedule('every 1 hours').onRun(async (context) => {
+  const now = admin.firestore.Timestamp.now();
+  const cutoff = admin.firestore.Timestamp.fromMillis(now.toMillis() - 3600000); // 1 hour ago
 
-const ALGOLIA_INDEX_NAME = "posts";
+  const snapshot = await admin.firestore().collection('temp_users').where('createdAt', '<', cutoff).get();
 
-// const client = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_ADMIN_KEY);
+  const batch = admin.firestore().batch();
+  snapshot.docs.forEach((doc) => {
+    batch.delete(doc.ref);
+  });
 
-const client = algoliasearch(
-    functions.config().algolia.appid_dev,
-    functions.config().algolia.writeapikey_dev,
-    functions.config().algolia.searchapikey_dev,
-);
+  await batch.commit();
 
-const index = client.initIndex(ALGOLIA_INDEX_NAME);
+  const auth = admin.auth();
+  for (const doc of snapshot.docs) {
+    try {
+      await auth.deleteUser(doc.id);
+    } catch (error) {
+      console.log(`Error deleting user ${doc.id}:`, error);
+    }
+  }
 
-exports.onPostCreated = functions
-    .region("asia-northeast3")
-    .firestore
-    .document("posts/{postId}")
-    .onCreate(async (snap, context) => {
-      const postData = snap.data();
-      postData.objectID = context.params.postId;
-
-      await index.saveObject(postData);
-    });
-
-exports.onPostUpdated = functions
-    .region("asia-northeast3")
-    .firestore
-    .document("posts/{postId}")
-    .onUpdate(async (change, context) => {
-      const postData = change.after.data();
-      const prevpostData = change.before.data();
-      postData.objectID = context.params.postId;
-
-      await index.saveObject(postData);
-    });
-
-exports.onPostDeleted = functions
-    .region("asia-northeast3")
-    .firestore
-    .document("posts/{postId}")
-    .onDelete(async (snap, context) => {
-      const objectID = context.params.postId;
-
-      await index.deleteObject(objectID);
-    });
+  return null;
+});

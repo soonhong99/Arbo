@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/widgets/main_widgets/custom_toast_widget.dart';
 import 'package:country_code_picker/country_code_picker.dart';
@@ -7,7 +9,6 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_geocoding/google_geocoding.dart';
-import 'package:intl/intl.dart';
 
 class SignupPopupWidget extends StatefulWidget {
   const SignupPopupWidget({super.key});
@@ -73,6 +74,8 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   DateTime? _lastEmailVerificationTime;
   DateTime? _lastPhoneVerificationTime;
 
+  Timer? _authTimer;
+
   @override
   void initState() {
     super.initState();
@@ -100,6 +103,8 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     _nameController.removeListener(_validateName);
     _nameController.dispose();
     // ... 다른 controller들의 dispose ...
+    _authTimer?.cancel();
+
     super.dispose();
   }
 
@@ -289,114 +294,123 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   }
 
   Widget _buildSignupDialog() {
-    return Scaffold(
-      appBar: AppBar(title: const Text('회원가입')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('위치: $myCountry, $myCity, $myDistrict'),
-            const SizedBox(height: 20),
-            _buildTextField(
-                controller: _idController, label: '아이디', isId: true),
-            TextFormField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: '비밀번호'),
-              obscureText: true,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '비밀번호를 입력해주세요';
-                }
-                if (value.length < 6) {
-                  return '비밀번호는 6자 이상이어야 합니다';
-                }
-                return null;
-              },
-              onChanged: (value) {
-                setState(() {
-                  _isPasswordValid = _verifyPasswordController.text == value;
-                  _passwordError = _isPasswordValid ? null : '비밀번호가 일치하지 않습니다';
-                });
-              },
-            ),
-            TextFormField(
-              controller: _verifyPasswordController,
-              decoration: InputDecoration(
-                labelText: '비밀번호 확인',
-                errorText: _passwordError,
-                errorStyle: TextStyle(
-                    color: _isPasswordValid ? Colors.green : Colors.red),
+    return WillPopScope(
+      onWillPop: () async {
+        if (_tempUserId != null) {
+          await _deleteUnverifiedUser();
+        }
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('회원가입')),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('위치: $myCountry, $myCity, $myDistrict'),
+              const SizedBox(height: 20),
+              _buildTextField(
+                  controller: _idController, label: '아이디', isId: true),
+              TextFormField(
+                controller: _passwordController,
+                decoration: const InputDecoration(labelText: '비밀번호'),
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return '비밀번호를 입력해주세요';
+                  }
+                  if (value.length < 6) {
+                    return '비밀번호는 6자 이상이어야 합니다';
+                  }
+                  return null;
+                },
+                onChanged: (value) {
+                  setState(() {
+                    _isPasswordValid = _verifyPasswordController.text == value;
+                    _passwordError =
+                        _isPasswordValid ? null : '비밀번호가 일치하지 않습니다';
+                  });
+                },
               ),
-              obscureText: true,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '비밀번호를 다시 입력해주세요';
-                }
-                if (value != _passwordController.text) {
-                  return '비밀번호가 일치하지 않습니다';
-                }
-                return null;
-              },
-              onChanged: (value) {
-                setState(() {
-                  _isPasswordValid = _passwordController.text == value;
-                  _passwordError =
-                      _isPasswordValid ? '올바른 비밀번호!' : '비밀번호가 일치하지 않습니다';
-                });
-              },
-            ),
-            TextFormField(
-              controller: _birthController,
-              decoration: InputDecoration(
-                labelText: '생년월일 (YYYYMMDD)',
-                errorText: _birthErrorMessage,
-                errorStyle:
-                    TextStyle(color: _isBirthValid ? Colors.green : Colors.red),
-              ),
-              onChanged: (_) => _validateBirth(),
-            ),
-            TextFormField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: '영어로 이름 입력',
-                errorText: _nameErrorMessage,
-                errorStyle:
-                    TextStyle(color: _isNameValid ? Colors.green : Colors.red),
-              ),
-              onChanged: (_) => _validateName(),
-            ),
-            _buildTextField(
-                controller: _nicknameController,
-                label: '닉네임',
-                isNickname: true),
-            _buildTextField(
-                controller: _emailController, label: '이메일 주소', isEmail: true),
-            const SizedBox(height: 20),
-            _buildPhoneNumberInput(),
-            const SizedBox(height: 10),
-            if (requestedAuth) _buildOtpInput(),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: authOk ? signUp : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 10),
-                minimumSize: const Size(double.infinity, 0),
-              ),
-              child: const Text('가입하기'),
-            ),
-            if (showLoading) const Center(child: CircularProgressIndicator()),
-            if (errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: Text(
-                  errorMessage!,
-                  style: const TextStyle(color: Colors.red),
+              TextFormField(
+                controller: _verifyPasswordController,
+                decoration: InputDecoration(
+                  labelText: '비밀번호 확인',
+                  errorText: _passwordError,
+                  errorStyle: TextStyle(
+                      color: _isPasswordValid ? Colors.green : Colors.red),
                 ),
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return '비밀번호를 다시 입력해주세요';
+                  }
+                  if (value != _passwordController.text) {
+                    return '비밀번호가 일치하지 않습니다';
+                  }
+                  return null;
+                },
+                onChanged: (value) {
+                  setState(() {
+                    _isPasswordValid = _passwordController.text == value;
+                    _passwordError =
+                        _isPasswordValid ? '올바른 비밀번호!' : '비밀번호가 일치하지 않습니다';
+                  });
+                },
               ),
-          ],
+              TextFormField(
+                controller: _birthController,
+                decoration: InputDecoration(
+                  labelText: '생년월일 (YYYYMMDD)',
+                  errorText: _birthErrorMessage,
+                  errorStyle: TextStyle(
+                      color: _isBirthValid ? Colors.green : Colors.red),
+                ),
+                onChanged: (_) => _validateBirth(),
+              ),
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: '영어로 이름 입력',
+                  errorText: _nameErrorMessage,
+                  errorStyle: TextStyle(
+                      color: _isNameValid ? Colors.green : Colors.red),
+                ),
+                onChanged: (_) => _validateName(),
+              ),
+              _buildTextField(
+                  controller: _nicknameController,
+                  label: '닉네임',
+                  isNickname: true),
+              _buildTextField(
+                  controller: _emailController, label: '이메일 주소', isEmail: true),
+              const SizedBox(height: 20),
+              _buildPhoneNumberInput(),
+              const SizedBox(height: 10),
+              if (requestedAuth) _buildOtpInput(),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: authOk ? signUp : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 10),
+                  minimumSize: const Size(double.infinity, 0),
+                ),
+                child: const Text('가입하기'),
+              ),
+              if (showLoading) const Center(child: CircularProgressIndicator()),
+              if (errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    errorMessage!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -721,6 +735,15 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
       // 이메일 인증 링크 발송
       await userCredential.user!.sendEmailVerification();
 
+      // Firestore에 임시 문서 생성
+      await _firestore.collection('temp_users').doc(_tempUserId).set({
+        'email': email,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // 로컬 타이머 설정
+      _setAuthTimer();
+
       setState(() {
         _isEmailSent = true;
         errorMessage = "인증 이메일이 발송되었습니다. 이메일을 확인해주세요.";
@@ -730,6 +753,25 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
       setState(() {
         errorMessage = getErrorMessage(e.code);
       });
+    }
+  }
+
+  void _setAuthTimer() {
+    _authTimer?.cancel();
+    _authTimer = Timer(const Duration(hours: 1), () {
+      _deleteUnverifiedUser();
+    });
+  }
+
+  Future<void> _deleteUnverifiedUser() async {
+    if (_tempUserId != null) {
+      try {
+        await _auth.currentUser?.delete();
+        await _firestore.collection('temp_users').doc(_tempUserId).delete();
+        _tempUserId = null;
+      } catch (e) {
+        print("Error deleting unverified user: $e");
+      }
     }
   }
 

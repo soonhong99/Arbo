@@ -1,5 +1,6 @@
 import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:arbo_frontend/data/user_data.dart';
+import 'package:arbo_frontend/widgets/login_widgets/password_reset_dialog.dart';
 import 'package:arbo_frontend/widgets/login_widgets/signup_popup_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -142,82 +143,103 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('로그인'),
-      content: SingleChildScrollView(
-        child: ListBody(
-          children: <Widget>[
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: '이메일',
-                hintText: 'example@example.com',
-              ),
-              onSubmitted: (_) => validate(), // Enter 키 처리
-            ),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: '비밀번호',
-              ),
-              onSubmitted: (_) => validate(), // Enter 키 처리
-            ),
-            Row(
-              children: [
-                Checkbox(
-                  value: _rememberEmail,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      _rememberEmail = value ?? false;
-                    });
-                  },
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.3, // 화면 너비의 80%로 설정
+
+        child: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: '이메일',
+                  hintText: 'example@example.com',
                 ),
-                const Text('이메일 저장'),
-              ],
-            ),
-            if (errorMessage.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  errorMessage,
-                  style: const TextStyle(color: Colors.red),
-                ),
+                onSubmitted: (_) => validate(), // Enter 키 처리
               ),
-            if (isLoginSuccessful)
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: AnimatedOpacity(
-                  opacity: isLoginSuccessful ? 1.0 : 0.0,
-                  duration: const Duration(seconds: 1),
-                  child: const Text(
-                    '로그인 성공!',
-                    style: TextStyle(color: Colors.green),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: '비밀번호',
+                ),
+                onSubmitted: (_) => validate(), // Enter 키 처리
+              ),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _rememberEmail,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        _rememberEmail = value ?? false;
+                      });
+                    },
+                  ),
+                  const Text('이메일 저장'),
+                ],
+              ),
+              if (errorMessage.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    errorMessage,
+                    style: const TextStyle(color: Colors.red),
                   ),
                 ),
-              ),
-          ],
+              if (isLoginSuccessful)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: AnimatedOpacity(
+                    opacity: isLoginSuccessful ? 1.0 : 0.0,
+                    duration: const Duration(seconds: 1),
+                    child: const Text(
+                      '로그인 성공!',
+                      style: TextStyle(color: Colors.green),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
       actions: <Widget>[
-        TextButton(
-          child:
-              isLoading ? const CircularProgressIndicator() : const Text('로그인'),
-          onPressed: () {
-            if (!isLoading) {
-              validate();
-            }
-          },
-        ),
-        TextButton(
-          child: const Text('회원가입'),
-          onPressed: () {
-            // Handle sign up navigation
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return const SignupPopupWidget(); // SignupPopupWidget을 반환합니다.
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            TextButton(
+              child: isLoading
+                  ? const CircularProgressIndicator()
+                  : const Text('로그인'),
+              onPressed: () {
+                if (!isLoading) {
+                  validate();
+                }
               },
-            );
-          },
+            ),
+            TextButton(
+              child: const Text('회원가입'),
+              onPressed: () {
+                // Handle sign up navigation
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return const SignupPopupWidget(); // SignupPopupWidget을 반환합니다.
+                  },
+                );
+              },
+            ),
+            TextButton(
+              child: const Text('비밀번호 찾기'),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return const PasswordResetDialog();
+                  },
+                );
+              },
+            ),
+          ],
         ),
       ],
     );

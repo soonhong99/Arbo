@@ -1,5 +1,6 @@
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/data/user_data_provider.dart';
+import 'package:arbo_frontend/screens/create_post_screen.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/loading_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -150,7 +151,13 @@ class _MyPostsInRootState extends State<MyPostsInRoot> {
         } else if (snapshot.hasError) {
           return const Text('오류가 발생했습니다.');
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Text('좋아한 글이 없습니다.');
+          return _buildEmptyMessage(
+            'Community needs your heart! Come on! Let\'s paint it!',
+            '게시물 보러가기',
+            () {
+              // 여기에 게시물 목록으로 이동하는 로직을 추가하세요.
+            },
+          );
         } else {
           final docs = snapshot.data!;
           likedPostsInRoot = docs
@@ -201,7 +208,11 @@ class _MyPostsInRootState extends State<MyPostsInRoot> {
         } else if (snapshot.hasError) {
           return const Text('오류가 발생했습니다.');
         } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Text('작성한 글이 없습니다.');
+          return _buildEmptyMessage(
+            '작성된 글이 없습니다! 글을 작성하러 가봅시다!',
+            '글 작성하기',
+            _checkAndNavigateToCreatePost,
+          );
         } else {
           final docs = snapshot.data!.docs;
 
@@ -217,5 +228,55 @@ class _MyPostsInRootState extends State<MyPostsInRoot> {
         }
       },
     );
+  }
+
+  Widget _buildErrorMessage(String message) {
+    return Container(
+      height: 200,
+      alignment: Alignment.center,
+      child: Text(
+        message,
+        style: const TextStyle(fontSize: 16),
+      ),
+    );
+  }
+
+  Widget _buildEmptyMessage(
+      String message, String buttonText, VoidCallback onPressed) {
+    return Container(
+      height: 200,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            message,
+            style: const TextStyle(fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: onPressed,
+            child: Text(buttonText),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _checkAndNavigateToCreatePost() {
+    if (currentLoginUser != null) {
+      Navigator.pushNamed(context, CreatePostScreen.routeName)
+          .then((result) {});
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return LoginPopupWidget(
+            onLoginSuccess: () {},
+          );
+        },
+      );
+    }
   }
 }
