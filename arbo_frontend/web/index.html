@@ -1,7 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base href="$FLUTTER_BASE_HREF">
+  <!-- for local only -->
+  <!-- <base href="$FLUTTER_BASE_HREF"> -->
+  <!-- for deploying on github pages -->
+  <base href="./">
+
+  <!-- firebase web hosting 일단 멈추기 - github으로 실행하기 일단 -->
+  <!-- <base href="/"> -->
+
+
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
@@ -10,46 +18,53 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="arbo_frontend">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/Icon-192.png">
+  <!-- <link rel="apple-touch-icon" href="icons/Icon-192.png"> -->
+
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" href="./favicon.png"/>
 
   <title>arbo_frontend</title>
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="./manifest.json">
+  <!-- <link rel="manifest" href="manifest.json"> -->
+
 
   <script>
     var serviceWorkerVersion = null;
   </script>
   
   <!-- This script adds the flutter initialization JS code -->
-  <script src="flutter.js" defer></script>
+  <!-- <script src="./flutter.js" defer></script> -->
+  <script src="./flutter.js" defer></script>
+
 </head>
 <body>
   <script>
     // self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
     window.flutterWebRenderer = "html";
-    window.addEventListener('load', function (ev) {
-      FlutterLoader.load('./').then(function (engineInitializer) {
-        return engineInitializer.initializeEngine();
-      }).then(function (appRunner) {
-        return appRunner.runApp();
-      });
-    });
     window.addEventListener('load', function(ev) {
+      var loading = document.querySelector('#loading');
       // Download main.dart.js
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
-            appRunner.runApp();
-          });
-        }
-      });
+      if (_flutter) {
+        _flutter.loader.loadEntrypoint({
+          serviceWorker: {
+            serviceWorkerVersion: serviceWorkerVersion,
+          },
+          onEntrypointLoaded: function(engineInitializer) {
+            engineInitializer.initializeEngine().then(function(appRunner) {
+              appRunner.runApp();
+            });
+          }
+        });
+      } else {
+        // Fallback for newer versions of Flutter
+        var scriptTag = document.createElement('script');
+        scriptTag.src = 'main.dart.js';
+        scriptTag.type = 'application/javascript';
+        document.body.append(scriptTag);
+      }
     });
-    
   </script>
 </body>
 </html>

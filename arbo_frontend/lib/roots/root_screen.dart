@@ -328,6 +328,8 @@ class RootScreenState extends State<RootScreen> {
                 selectedCity = 'all';
                 selectedCountry = 'all';
                 selectedDistrict = 'all';
+                likedPostsInRoot = [];
+                myPostsInRoot = [];
               },
               onLogin: () {
                 // 로그인 로직

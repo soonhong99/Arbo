@@ -173,7 +173,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         _nameErrorMessage = '이름을 입력해주세요';
         _isNameValid = false;
       } else if (!RegExp(r'^[a-zA-Z]+$').hasMatch(name)) {
-        _nameErrorMessage = '올바른 형식이 아닙니다 (only English)';
+        _nameErrorMessage = '올바른 형식이 아닙니다 (only English, not white space)';
         _isNameValid = false;
       } else {
         _nameErrorMessage = '정확한 이름을 입력해야 불편함이 없답니다!';

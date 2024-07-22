@@ -23,15 +23,18 @@ require("firebase-functions/v2/https");
 //   response.send("Hello from Firebase!");
 // });
 
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
 admin.initializeApp();
 
-exports.cleanupUnverifiedUsers = functions.pubsub.schedule('every 1 hours').onRun(async (context) => {
+// eslint-disable-next-line max-len
+exports.cleanupUnverifiedUsers = functions.pubsub.schedule("every 1 hours").onRun(async (context) => {
   const now = admin.firestore.Timestamp.now();
+  // eslint-disable-next-line max-len
   const cutoff = admin.firestore.Timestamp.fromMillis(now.toMillis() - 3600000); // 1 hour ago
 
-  const snapshot = await admin.firestore().collection('temp_users').where('createdAt', '<', cutoff).get();
+  // eslint-disable-next-line max-len
+  const snapshot = await admin.firestore().collection("temp_users").where("createdAt", "<", cutoff).get();
 
   const batch = admin.firestore().batch();
   snapshot.docs.forEach((doc) => {

@@ -13,7 +13,7 @@ import 'package:provider/provider.dart';
 import 'firebase/firebase_options.dart';
 
 void main() async {
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: "env");
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
@@ -54,10 +54,10 @@ class App extends StatelessWidget {
         ..addAll({
           LogicalKeySet(LogicalKeyboardKey.space): const ActivateIntent(),
         }),
-      // initialRoute: '/',
-      home: const ReadyScreen(),
+      initialRoute: '/',
 
       routes: {
+        '/': (context) => const ReadyScreen(),
         SpecificPostScreen.routeName: (context) => const SpecificPostScreen(),
         CreatePostScreen.routeName: (context) => const CreatePostScreen(),
       },
