@@ -237,6 +237,17 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     }
   }
 
+  Future<bool> _checkLocationPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return false;
+      }
+    }
+    return permission != LocationPermission.deniedForever;
+  }
+
   Widget _buildIntroDialog() {
     return AlertDialog(
       title: const Text('위치 정보 동의'),
@@ -244,12 +255,33 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
       actions: <Widget>[
         TextButton(
           child: const Text('I agreed It!'),
-          onPressed: () {
-            setState(() {
-              showIntro = false;
-              //showLocationConfirmation = true;
-            });
-            _getCurrentLocation();
+          onPressed: () async {
+            bool hasPermission = await _checkLocationPermission();
+            if (hasPermission) {
+              setState(() {
+                showIntro = false;
+              });
+              _getCurrentLocation();
+            } else {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('위치 권한 거부'),
+                    content: const Text('위치 권한을 동의하지 않으셨습니다! 위치 정보가 필요합니다.'),
+                    actions: <Widget>[
+                      TextButton(
+                        child: const Text('다시 시도'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _buildIntroDialog();
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
+            }
           },
         ),
       ],

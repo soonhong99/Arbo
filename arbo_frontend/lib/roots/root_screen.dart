@@ -52,23 +52,6 @@ class RootScreenState extends State<RootScreen> {
         selectedDistrict = myDistrict;
       });
     }
-    // _fetchUserPlaces().then((_) {
-    //   if (userPlaces.isNotEmpty &&
-    //       currentLoginUser == null &&
-    //       firstLocationTouch) {
-    //     setState(() {
-    //       selectedCountry = 'all';
-    //       selectedCity = 'all';
-    //       selectedDistrict = 'all';
-    //     });
-    //   } else if (currentLoginUser != null) {
-    //     setState(() {
-    //       selectedCountry = myCountry;
-    //       selectedCity = myCity;
-    //       selectedDistrict = myDistrict;
-    //     });
-    //   }
-    // });
   }
 
   Future<void> _fetchUserPlaces() async {
@@ -85,7 +68,7 @@ class RootScreenState extends State<RootScreen> {
     if (permission == LocationPermission.denied) {
       setState(() {
         _isLoading = false;
-        locationMessage = '위치 권한이 거부되었습니다.';
+        locationMessage = '위치 권한이 거부되었습니다. 위치 엑세스를 허용해주세요.';
       });
       return;
     }
@@ -93,7 +76,7 @@ class RootScreenState extends State<RootScreen> {
     if (permission == LocationPermission.deniedForever) {
       setState(() {
         _isLoading = false;
-        locationMessage = '위치 권한이 영구적으로 거부되었습니다.';
+        locationMessage = '위치 권한이 영구적으로 거부되었습니다. 위치 엑세스를 허용해주세요.';
       });
       return;
     }
@@ -373,8 +356,10 @@ class RootScreenState extends State<RootScreen> {
                           if (_isLoading) {
                             return const CircularProgressIndicator();
                           } else if (locationMessage == '위치 정보를 가져오는 중...' ||
-                              locationMessage == '위치 권한이 거부되었습니다.' ||
-                              locationMessage == '위치 권한이 영구적으로 거부되었습니다.' ||
+                              locationMessage ==
+                                  '위치 권한이 거부되었습니다. 위치 엑세스를 허용해주세요.' ||
+                              locationMessage ==
+                                  '위치 권한이 영구적으로 거부되었습니다. 위치 엑세스를 허용해주세요.' ||
                               locationMessage == '지명 정보를 가져오지 못했습니다.' ||
                               firstLocationTouch) {
                             return ElevatedButton(
