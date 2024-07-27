@@ -51,6 +51,9 @@ class _PromptDialogState extends State<PromptDialog> {
   late final FocusNode _focusNode;
   late PostCreationHelper _postCreationHelper;
   late TextEditingController textInPrompt;
+  int _messageCount = 0;
+  bool _isCreatePostButtonEnabled = false;
+  bool _isWaitingForResponse = false;
 
   @override
   void initState() {
@@ -146,27 +149,40 @@ class _PromptDialogState extends State<PromptDialog> {
   }
 
   Future<void> _handleSubmitted(String text) async {
-    if (text.trim().isNotEmpty) {
+    if (text.trim().isNotEmpty && !_isWaitingForResponse) {
+      setState(() {
+        _isWaitingForResponse = true;
+      });
+
       widget.promptController.clear();
 
-      // if (_isListening == true) {
-      //   _focusNode.unfocus();
-      //   _stopListening();
-      // } else {
-      //   _focusNode.requestFocus();
-      // }
-
       _addMessage(ChatMessage(text: text, isUser: true));
+      _incrementMessageCount();
 
       try {
         String response = await widget.onSendMessage(text);
-        _addMessage(ChatMessage(text: response, isUser: false));
+        _addMessage(ChatMessage(text: response.trim(), isUser: false));
+        _incrementMessageCount();
       } catch (e) {
         print('Error getting response: $e');
         _addMessage(const ChatMessage(
             text: "Sorry, an error occurred.", isUser: false));
+        _incrementMessageCount();
+      } finally {
+        setState(() {
+          _isWaitingForResponse = false;
+        });
       }
     }
+  }
+
+  void _incrementMessageCount() {
+    setState(() {
+      _messageCount++;
+      if (_messageCount >= 6 && !_isCreatePostButtonEnabled) {
+        _isCreatePostButtonEnabled = true;
+      }
+    });
   }
 
   void _addMessage(ChatMessage message) {
@@ -644,7 +660,7 @@ class _PromptDialogState extends State<PromptDialog> {
         ),
         actions: [
           TextButton(
-            onPressed: _createPost,
+            onPressed: _isCreatePostButtonEnabled ? _createPost : null,
             child: const Text('Create Post With Dialog!'),
           ),
         ],
@@ -719,6 +735,8 @@ class _PromptDialogState extends State<PromptDialog> {
                   keyboardType: TextInputType.multiline,
                   textInputAction: TextInputAction.newline,
                   onChanged: _handleTextChange,
+                  // 프롬프트 응답이 올떄까지 기다리기
+                  enabled: !_isWaitingForResponse,
                   decoration: InputDecoration(
                     hintText: _isListening ? 'Listening...' : 'Send a message',
                     hintMaxLines: 1,
@@ -733,13 +751,15 @@ class _PromptDialogState extends State<PromptDialog> {
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 4.0),
               child: IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: () {
-                    final text = widget.promptController.text;
-                    _clearAndStopListening();
-
-                    _handleSubmitted(text);
-                  }),
+                icon: const Icon(Icons.send),
+                onPressed: _isWaitingForResponse
+                    ? null
+                    : () {
+                        final text = widget.promptController.text;
+                        _clearAndStopListening();
+                        _handleSubmitted(text);
+                      },
+              ),
             ),
           ],
         ),

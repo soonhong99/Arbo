@@ -23,7 +23,7 @@ class UserDataProvider with ChangeNotifier {
       'status': allDataSnapshot['status'],
       'country': allDataSnapshot['country'],
       'city': allDataSnapshot['city'],
-      'district': allDataSnapshot['district'],
+      //'district': allDataSnapshot['district'],
     };
   }
 
@@ -48,8 +48,8 @@ class UserDataProvider with ChangeNotifier {
     nickname = loginUserData!['닉네임'];
     myCountry = loginUserData!['country'];
     myCity = loginUserData!['city'];
-    myDistrict = loginUserData!['district'];
-    locationMessage = '$myCountry $myCity $myDistrict';
+    //myDistrict = loginUserData!['district'];
+    locationMessage = '$myCountry $myCity';
     firstLocationTouch = false;
 
     notifyListeners();
@@ -66,10 +66,10 @@ class UserDataProvider with ChangeNotifier {
       if (selectedCity != 'all') {
         query = query.where('city', isEqualTo: selectedCity);
 
-        // 지역 선택
-        if (selectedDistrict != 'all') {
-          query = query.where('district', isEqualTo: selectedDistrict);
-        }
+        // // 지역 선택
+        // if (selectedDistrict != 'all') {
+        //   query = query.where('district', isEqualTo: selectedDistrict);
+        // }
       }
     }
 

@@ -30,48 +30,56 @@ class PostCreationHelper {
       TextPart("topic, title and reason: ")
     ];
 
-    try {
-      final result =
-          await vertexAIModel.generateContent([Content("user", parts)]);
-      final response = result.text;
+    const maxRetries = 3;
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        final result = await vertexAIModel
+            .generateContent([Content("user", parts)]).timeout(
+                const Duration(seconds: 30)); // 30초 타임아웃 추가
+        final response = result.text;
 
-      if (response == null || response.isEmpty) {
-        throw Exception('Response is null or empty');
-      }
-
-      // 응답을 파싱하여 주제와 제목을 추출합니다.
-      final lines = response.split('\n');
-      String topic = '';
-      String title = '';
-      String reason = '';
-
-      for (var line in lines) {
-        if (line.startsWith('Topic:')) {
-          topic = line.substring(6).trim();
-        } else if (line.startsWith('Title:')) {
-          title = line.substring(6).trim();
-        } else if (line.startsWith('Reason:')) {
-          reason = line.substring(7).trim();
+        if (response == null || response.isEmpty) {
+          throw Exception('Response is null or empty');
         }
+
+        final lines = response.split('\n');
+        String topic = '';
+        String title = '';
+        String reason = '';
+
+        for (var line in lines) {
+          if (line.toLowerCase().startsWith('topic:')) {
+            topic = line.substring(6).trim();
+          } else if (line.toLowerCase().startsWith('title:')) {
+            title = line.substring(6).trim();
+          } else if (line.toLowerCase().startsWith('reason:')) {
+            reason = line.substring(7).trim();
+          }
+        }
+
+        topic = topic.replaceAll('*', '');
+        title = title.replaceAll('*', '');
+        reason = reason.replaceAll('*', '');
+
+        if (topic.isEmpty || title.isEmpty || reason.isEmpty) {
+          throw Exception(
+              'Failed to extract topic or title or reason from response');
+        }
+
+        return {'topic': topic, 'title': title, 'reason': reason};
+      } catch (e) {
+        print('Error in getSuggestions (attempt ${attempt + 1}): $e');
+        if (attempt == maxRetries - 1) {
+          return {
+            'topic': 'Error occurred',
+            'title': 'Please try again',
+            'reason': 'Unable to generate response after $maxRetries attempts'
+          };
+        }
+        await Future.delayed(Duration(seconds: 2 * (attempt + 1))); // 재시도 전 대기
       }
-
-      topic = topic.replaceAll('*', '');
-      title = title.replaceAll('*', '');
-      reason = reason.replaceAll('*', '');
-
-      if (topic.isEmpty || title.isEmpty || reason.isEmpty) {
-        throw Exception(
-            'Failed to extract topic or title or reason from response');
-      }
-
-      return {'topic': topic, 'title': title, 'reason': reason};
-    } catch (e) {
-      print('Error in getSuggestions: $e');
-      return {
-        'topic': 'Error occurred',
-        'title': 'Please try again',
-        'reason': 'So sorry'
-      };
     }
+
+    throw Exception('Failed to get suggestions after $maxRetries attempts');
   }
 }

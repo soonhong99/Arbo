@@ -9,7 +9,7 @@ Future<List<Map<String, dynamic>>> getUserPlaces() async {
       return {
         'country': doc['country'],
         'city': doc['city'],
-        'district': doc['district'],
+        //'district': doc['district'],
       };
     }).toList();
   } catch (e) {

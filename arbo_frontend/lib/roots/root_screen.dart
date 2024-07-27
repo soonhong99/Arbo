@@ -42,14 +42,14 @@ class RootScreenState extends State<RootScreen> {
         setState(() {
           selectedCountry = 'all';
           selectedCity = 'all';
-          selectedDistrict = 'all';
+          // selectedDistrict = 'all';
         });
       });
     } else if (currentLoginUser != null) {
       setState(() {
         selectedCountry = myCountry;
         selectedCity = myCity;
-        selectedDistrict = myDistrict;
+        // selectedDistrict = myDistrict;
       });
     }
   }
@@ -103,12 +103,12 @@ class RootScreenState extends State<RootScreen> {
             if (addressComponents.length >= 3) {
               myCountry = addressComponents[0];
               myCity = addressComponents[1];
-              myDistrict = addressComponents[2];
+              //myDistrict = addressComponents[2];
               selectedCountry = myCountry;
               selectedCity = myCity;
-              selectedDistrict = myDistrict;
+              //selectedDistrict = myDistrict;
               // Combine the components for the location message
-              locationMessage = '$myCountry, $myCity, $myDistrict';
+              locationMessage = '$myCountry, $myCity';
             }
           },
         );
@@ -210,19 +210,13 @@ class RootScreenState extends State<RootScreen> {
 
   void onMoveToSelectedLocation() {
     setState(() {
-      if (selectedCity == myCity &&
-          selectedCountry == myCountry &&
-          selectedDistrict == myDistrict) {
-        locationMessage = '$selectedCountry $selectedCity $selectedDistrict';
+      if (selectedCity == myCity && selectedCountry == myCountry) {
+        locationMessage = '$selectedCountry $selectedCity';
         otherCountry = false;
         return;
       }
       if (selectedCity == 'all') {
         locationMessage = selectedCountry;
-      } else if (selectedDistrict == 'all') {
-        locationMessage = '$selectedCountry $selectedCity';
-      } else {
-        locationMessage = '$selectedCountry $selectedCity $selectedDistrict';
       }
       otherCountry = true;
     });
@@ -252,7 +246,7 @@ class RootScreenState extends State<RootScreen> {
       setState(() {
         selectedCountry = myCountry;
         selectedCity = myCity;
-        selectedDistrict = myDistrict;
+        // selectedDistrict = myDistrict;
         locationWithLogin = true;
       });
     }
@@ -310,7 +304,7 @@ class RootScreenState extends State<RootScreen> {
                 locationMessage = '당신이 속한 community 위치를 알고싶어요!';
                 selectedCity = 'all';
                 selectedCountry = 'all';
-                selectedDistrict = 'all';
+                //selectedDistrict = 'all';
                 likedPostsInRoot = [];
                 myPostsInRoot = [];
               },
@@ -567,7 +561,7 @@ class RootScreenState extends State<RootScreen> {
             setState(() {
               selectedCountry = value!;
               selectedCity = 'all';
-              selectedDistrict = 'all';
+              //selectedDistrict = 'all';
             });
           },
         ),
@@ -590,36 +584,36 @@ class RootScreenState extends State<RootScreen> {
           onChanged: (value) {
             setState(() {
               selectedCity = value!;
-              selectedDistrict = 'all';
+              //selectedDistrict = 'all';
             });
           },
         ),
         const SizedBox(
           width: 20,
         ),
-        DropdownButton<String>(
-          value: selectedDistrict,
-          items: {
-            'all',
-            ...userPlaces
-                .where((place) =>
-                    place['country'] == selectedCountry &&
-                    place['city'] == selectedCity)
-                .map((place) {
-              return place['district']!;
-            })
-          }.toList().map((district) {
-            return DropdownMenuItem<String>(
-              value: district,
-              child: Text(district),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() {
-              selectedDistrict = value!;
-            });
-          },
-        ),
+        // DropdownButton<String>(
+        //   value: selectedDistrict,
+        //   items: {
+        //     'all',
+        //     ...userPlaces
+        //         .where((place) =>
+        //             place['country'] == selectedCountry &&
+        //             place['city'] == selectedCity)
+        //         .map((place) {
+        //       return place['district']!;
+        //     })
+        //   }.toList().map((district) {
+        //     return DropdownMenuItem<String>(
+        //       value: district,
+        //       child: Text(district),
+        //     );
+        //   }).toList(),
+        //   onChanged: (value) {
+        //     setState(() {
+        //       selectedDistrict = value!;
+        //     });
+        //   },
+        // ),
       ],
     );
   }

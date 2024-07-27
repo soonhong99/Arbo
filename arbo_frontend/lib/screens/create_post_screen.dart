@@ -20,6 +20,10 @@ Future<String> createNewPost(String title, String content, String topic) async {
       'hearts': 0,
       'designedPicture': [],
       'visitedUser': 0,
+      'status': 'pending',
+      'country': myCountry,
+      'city': myCity,
+      //'district': myDistrict,
     });
     print('Post created successfully');
     return docRef.id;
@@ -124,7 +128,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             'visitedUser': _visitedUsers, // 방문한 사용자 닉네임 리스트 초기화
             'country': loginUserData!['country'],
             'city': loginUserData!['city'],
-            'district': loginUserData!['district'],
+            //'district': loginUserData!['district'],
             'status': 'pending'
           });
 

@@ -216,9 +216,9 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
                 if (addressComponents.length >= 3) {
                   myCountry = addressComponents[0];
                   myCity = addressComponents[1];
-                  myDistrict = addressComponents[2];
+                  //myDistrict = addressComponents[2];
 
-                  locationMessage = '$myCountry, $myCity, $myDistrict';
+                  locationMessage = '$myCountry, $myCity';
                 }
               },
             );
@@ -308,17 +308,28 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
           const Text('감지된 위치:'),
           Text('Country: $myCountry'),
           Text('City: $myCity'),
-          Text('District: $myDistrict'),
+          //Text('District: $myDistrict'),
           const Text('이 정보가 맞습니까?'),
         ],
       ),
       actions: <Widget>[
         TextButton(
-          child: const Text('예'),
+          onPressed: isLocationSet()
+              ? () {
+                  setState(() {
+                    showLocationConfirmation = false;
+                  });
+                }
+              : null,
+          child: const Text('예'), // 위치 정보가 유효하지 않으면 버튼 비활성화
+        ),
+        TextButton(
+          child: const Text('다시 시도'),
           onPressed: () {
             setState(() {
               showLocationConfirmation = false;
             });
+            _getCurrentLocation();
           },
         ),
       ],
@@ -340,7 +351,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('위치: $myCountry, $myCity, $myDistrict'),
+              Text('위치: $myCountry, $myCity'),
               const SizedBox(height: 20),
               _buildTextField(
                   controller: _idController, label: '아이디', isId: true),
@@ -818,10 +829,6 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
           _isEmailVerified = true;
           errorMessage = "이메일 인증이 완료되었습니다!";
         });
-        // 이메일 정보를 duplicate_id_phonenum에 추가
-        await _firestore.collection('duplicate_id_phonenum').add({
-          'email': _emailController.text.trim(),
-        });
 
         // 임시 사용자 삭제
         if (_tempUserId != null) {
@@ -896,7 +903,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         '이메일 주소': _emailController.text,
         'country': myCountry,
         'city': myCity,
-        'district': myDistrict,
+        //'district': myDistrict,
         '전화번호': phoneNumber,
         '하트 누른 게시물': [],
         '프롬프트 기록': [],
@@ -910,6 +917,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         'id': _idController.text,
         'phoneNum': phoneNumber,
         'nickname': _nicknameController.text,
+        'email': _emailController.text.trim(),
       });
 
       setState(() {

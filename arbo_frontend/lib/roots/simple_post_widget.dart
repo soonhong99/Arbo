@@ -136,7 +136,7 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '${specificAllPostData['country']}/${specificAllPostData['city']}/${specificAllPostData['district']}',
+                      '${specificAllPostData['country']}/${specificAllPostData['city']}',
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
