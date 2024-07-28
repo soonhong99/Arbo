@@ -389,7 +389,7 @@ class RootScreenState extends State<RootScreen> {
                                       onPressed: () {
                                         refreshCountry();
                                       },
-                                      child: const Text('해당 지역으로 이동하기!'),
+                                      child: const Text('Move to the area!'),
                                     ),
                                   ],
                                 ),
@@ -516,14 +516,16 @@ class RootScreenState extends State<RootScreen> {
                       ),
                       const SizedBox(height: 30),
                       const MyPostsInRoot(
-                        postsTitle: '내 게시판',
-                        notLoginInfo: '로그인하여 나만의 게시판을 확인하세요.',
+                        postsTitle: 'My Pain\'ting',
+                        notLoginInfo:
+                            'Log in and Check out my own Bulletin Board.',
                         mypost: true,
                       ),
                       const SizedBox(height: 50),
                       const MyPostsInRoot(
-                        postsTitle: '참여하는 게시판',
-                        notLoginInfo: '로그인하여 내가 참여한 게시판을 확인하세요.',
+                        postsTitle: 'Participating Bulletin Board',
+                        notLoginInfo:
+                            'Log in and Check out the Bulletin Board I participated in.',
                         mypost: false,
                       ),
                       const SizedBox(height: 200),

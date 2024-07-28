@@ -41,7 +41,7 @@ class PromptBar extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '당신의 고민을 지역사회와 함께 해결해보세요!',
+                    'Click and Try to solve your problems with your community!',
                     style: TextStyle(color: Colors.white),
                   ),
                 ),

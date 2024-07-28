@@ -333,7 +333,7 @@ class _CustomSliverAppBarState extends State<CustomSliverAppBar> {
             child: Row(
               children: [
                 Icon(widget.user == null ? Icons.login : Icons.person),
-                Text(widget.user == null ? '로그인' : '마이페이지'),
+                Text(widget.user == null ? 'Login' : 'Mypage'),
               ],
             ),
           ),

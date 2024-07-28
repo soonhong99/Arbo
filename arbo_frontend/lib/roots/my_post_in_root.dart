@@ -81,7 +81,7 @@ class _MyPostsInRootState extends State<MyPostsInRoot> {
                                 },
                               );
                             },
-                            child: const Text('로그인'),
+                            child: const Text('Login'),
                           ),
                         ],
                       ),
@@ -131,46 +131,11 @@ class _MyPostsInRootState extends State<MyPostsInRoot> {
                     _isExpanded = !_isExpanded;
                   });
                 },
-                child: Text(_isExpanded ? '접기' : '더 보기'),
+                child: Text(_isExpanded ? 'Folding' : 'See more details'),
               ),
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildHeartsList() {
-    if (loginInRoot && likedPostsInRoot.isNotEmpty) {
-      return _buildLocalPostsList('liked');
-    }
-    return FutureBuilder<List<DocumentSnapshot>>(
-      future: _getLikedPosts(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return const Text('오류가 발생했습니다.');
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return _buildEmptyMessage(
-            'Community needs your heart! Come on! Let\'s paint it!',
-            '게시물 보러가기',
-            () {
-              // 여기에 게시물 목록으로 이동하는 로직을 추가하세요.
-            },
-          );
-        } else {
-          final docs = snapshot.data!;
-          likedPostsInRoot = docs
-              .map((doc) => {
-                    'id': doc.id,
-                    'title': doc['title'],
-                    'content': doc['content'],
-                  })
-              .toList();
-          loginInRoot = true;
-          return _buildLocalPostsList('liked');
-        }
-      },
     );
   }
 
@@ -193,6 +158,41 @@ class _MyPostsInRootState extends State<MyPostsInRoot> {
     return likedPostDocs;
   }
 
+  Widget _buildHeartsList() {
+    if (loginInRoot && likedPostsInRoot.isNotEmpty) {
+      return _buildLocalPostsList('liked');
+    }
+    return FutureBuilder<List<DocumentSnapshot>>(
+      future: _getLikedPosts(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return const Text('오류가 발생했습니다.');
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return _buildEmptyMessage(
+            'Community needs your heart! Come on! Let\'s paint it!',
+            'Go to see a post',
+            () {
+              // 여기에 게시물 목록으로 이동하는 로직을 추가하세요.
+            },
+          );
+        } else {
+          final docs = snapshot.data!;
+          likedPostsInRoot = docs
+              .map((doc) => {
+                    'id': doc.id,
+                    'title': doc['title'],
+                    'content': doc['content'],
+                  })
+              .toList();
+          loginInRoot = true;
+          return _buildLocalPostsList('liked');
+        }
+      },
+    );
+  }
+
   Widget _buildPostsList(BuildContext context) {
     if (loginInRoot && myPostsInRoot.isNotEmpty) {
       return _buildLocalPostsList('mypost');
@@ -206,11 +206,11 @@ class _MyPostsInRootState extends State<MyPostsInRoot> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return const Text('오류가 발생했습니다.');
+          return const Text('Error has occurred.');
         } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return _buildEmptyMessage(
-            '작성된 글이 없습니다! 글을 작성하러 가봅시다!',
-            '글 작성하기',
+            'No Writings Written! Let\'s go for pain\'ting!',
+            'Pain\'ting for our community',
             _checkAndNavigateToCreatePost,
           );
         } else {

@@ -4,8 +4,12 @@ class Product {
   final String postId;
   final String title;
   final String image;
+  final int hearts;
+  final int visitedUser;
+  final String topic;
 
-  Product(this.postId, this.title, this.image);
+  Product(this.postId, this.title, this.image, this.hearts, this.visitedUser,
+      this.topic);
 
   static Product fromJson(Map<String, dynamic> json) {
     return Product(
@@ -14,6 +18,9 @@ class Product {
       (json['designedPicture'] != null && json['designedPicture'].isNotEmpty)
           ? json['designedPicture'][0]
           : 'https://via.placeholder.com/150', // Default placeholder image URL
+      json['hearts'] ?? 0,
+      json['visitedUser'] ?? 0,
+      json['topic'] ?? '',
     );
   }
 }

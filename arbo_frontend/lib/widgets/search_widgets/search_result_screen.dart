@@ -67,6 +67,19 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     super.dispose();
   }
 
+  Widget _buildInfoItem(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Colors.grey[600]),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+        ),
+      ],
+    );
+  }
+
   Widget _hits(BuildContext context) => PagedListView<int, Product>(
         pagingController: _pagingController,
         builderDelegate: PagedChildBuilderDelegate<Product>(
@@ -81,16 +94,48 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                 ),
               );
             },
-            child: Container(
-              color: Colors.white,
-              height: 80,
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  SizedBox(width: 50, child: Image.network(item.image)),
-                  const SizedBox(width: 20),
-                  Expanded(child: Text(item.title)),
-                ],
+            child: Card(
+              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              elevation: 2,
+              child: Container(
+                color: Colors.white,
+                height: 140, // 높이를 조금 더 늘림
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: Image.network(item.image, fit: BoxFit.cover),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            item.title,
+                            style: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildInfoItem(Icons.topic, item.topic),
+                              _buildInfoItem(Icons.favorite, '${item.hearts}'),
+                              _buildInfoItem(
+                                  Icons.person, '${item.visitedUser}'),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -22,13 +22,13 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
   String _getStatusText(String status) {
     switch (status) {
       case 'pending':
-        return '진행 중';
+        return 'In Progress';
       case 'approved':
-        return '승인됨';
+        return 'Approved';
       case 'rejected':
-        return '거절됨';
+        return 'Rejected';
       default:
-        return '미정';
+        return 'None';
     }
   }
 
@@ -73,128 +73,179 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
         (specificAllPostData['timestamp'] as Timestamp).toDate();
 
     return GestureDetector(
-        onTap: () async {
-          // 방문기록 추가
-          page_location++;
-          addPageToHistory(specificAllPostData);
+      onTap: () async {
+        // 방문기록 추가
+        page_location++;
+        addPageToHistory(specificAllPostData);
 
-          // Navigate to SpecificPostScreen and wait for the result
-          final result = await Navigator.pushNamed(
-            context,
-            SpecificPostScreen.routeName,
-            arguments: specificAllPostData,
-          );
+        // Navigate to SpecificPostScreen and wait for the result
+        final result = await Navigator.pushNamed(
+          context,
+          SpecificPostScreen.routeName,
+          arguments: specificAllPostData,
+        );
 
-          // Update the local state if result is returned
-          if (result != null && result is Map<String, dynamic>) {
-            setState(() {
-              specificAllPostData = result;
-            });
-          }
-        },
-        child: Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.3),
-                spreadRadius: 2,
-                blurRadius: 5,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          specificAllPostData['title'],
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '작성자: ${specificAllPostData['nickname']}',
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${specificAllPostData['country']}/${specificAllPostData['city']}',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(specificAllPostData['status']),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      _getStatusText(specificAllPostData['status']),
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              LinearProgressIndicator(
-                value: _getProgressValue(specificAllPostData['status']),
-                backgroundColor: Colors.grey[300],
-                valueColor: AlwaysStoppedAnimation<Color>(
-                    _getStatusColor(specificAllPostData['status'])),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'PAINT: ${specificAllPostData['content']}',
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+        // Update the local state if result is returned
+        if (result != null && result is Map<String, dynamic>) {
+          setState(() {
+            specificAllPostData = result;
+          });
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.favorite, color: Colors.red),
-                      const SizedBox(width: 4),
-                      Text('${specificAllPostData['hearts']}'),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Icon(Icons.comment, color: Colors.blue),
-                      const SizedBox(width: 4),
                       Text(
-                          '${countTotalComments(specificAllPostData['comments'])}'),
+                        specificAllPostData['title'],
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.person, size: 16),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'Pain\'ter:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              specificAllPostData['nickname'],
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${specificAllPostData['country']}/${specificAllPostData['city']}',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(specificAllPostData['status']),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _getStatusText(specificAllPostData['status']),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            LinearProgressIndicator(
+              value: _getProgressValue(specificAllPostData['status']),
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(
+                  _getStatusColor(specificAllPostData['status'])),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.article, size: 16, color: Colors.blue),
+                      SizedBox(width: 4),
+                      Text(
+                        'Post Content:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
                   Text(
-                    '${postTime.year}-${postTime.month}-${postTime.day}',
-                    style: const TextStyle(color: Colors.grey),
+                    specificAllPostData['content'],
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
-            ],
-          ),
-        ));
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.favorite, color: Colors.red),
+                    const SizedBox(width: 4),
+                    Text('${specificAllPostData['hearts']}'),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.comment, color: Colors.blue),
+                    const SizedBox(width: 4),
+                    Text(
+                        '${countTotalComments(specificAllPostData['comments'])}'),
+                  ],
+                ),
+                Text(
+                  '${postTime.year}-${postTime.month}-${postTime.day}',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -30,8 +30,15 @@ class MainWidgetState extends State<MainWidget> {
     'Local Commercial',
     'Local Events'
   ];
-  List<String> updatedTime = ['지난 1일', '지난 1주', '지난 1개월', '지난 1년', '전체'];
-  String selectedUpdatedTime = '지난 1개월';
+  List<String> updatedTime = [
+    'Last 1 Day',
+    'Last 1 Week',
+    'Last 1 Month',
+    'Last 1 Year',
+    'All Time'
+  ];
+  String selectedUpdatedTime = 'Last 1 Month';
+
   bool showAllCategories = false;
   final UserDataProvider userDataProvider = UserDataProvider();
   late Future<void> _fetchDataFuture;
@@ -72,13 +79,6 @@ class MainWidgetState extends State<MainWidget> {
         cutoff = DateTime(1970);
     }
 
-    // return postListSnapshot.where((post) {
-    //   bool matchesCategory =
-    //       selectedCategory == 'All posts' || post['topic'] == selectedCategory;
-    //   bool matchesTime =
-    //       (post['timestamp'] as Timestamp).toDate().isAfter(cutoff);
-    //   return matchesCategory && matchesTime;
-    // }).toList();
     List<DocumentSnapshot> filtered = postListSnapshot.where((post) {
       bool matchesCategory =
           selectedCategory == 'All posts' || post['topic'] == selectedCategory;
@@ -205,7 +205,7 @@ class MainWidgetState extends State<MainWidget> {
                                   child: const Row(
                                     children: [
                                       Icon(Icons.noise_aware_sharp),
-                                      Text('최신'),
+                                      Text('Newest'),
                                     ],
                                   ),
                                 ),
@@ -218,7 +218,7 @@ class MainWidgetState extends State<MainWidget> {
                                   child: const Row(
                                     children: [
                                       Icon(Icons.fire_hydrant_alt_sharp),
-                                      Text('인기'),
+                                      Text('Hottest'),
                                     ],
                                   ),
                                 ),

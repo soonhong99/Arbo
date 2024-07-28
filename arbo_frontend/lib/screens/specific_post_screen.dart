@@ -1,4 +1,5 @@
 import 'package:arbo_frontend/data/user_data.dart';
+import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:arbo_frontend/design/paint_stroke.dart';
 import 'package:arbo_frontend/screens/edit_post_screen.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
@@ -6,6 +7,7 @@ import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/heart_animation_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class SpecificPostScreen extends StatefulWidget {
   static const routeName = '/specific_post';
@@ -46,6 +48,73 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       checkIfUserLiked();
       _checkIfPostOwner();
       dataInitialized = true;
+    }
+  }
+
+  Future<void> deletePost() async {
+    bool? confirmDelete = await showDialog<bool?>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('게시글 삭제'),
+          content: const Text('정말로 이 게시글을 삭제하시겠습니까?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('아니오'),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            TextButton(
+              child: const Text('예'),
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        );
+      },
+    );
+
+    // 사용자가 대화 상자를 닫거나 '아니오'를 선택한 경우
+    if (confirmDelete != true) {
+      return; // 함수 종료
+    }
+
+    // 여기서부터는 사용자가 '예'를 선택한 경우의 로직
+    try {
+      // 로딩 인디케이터 표시
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+
+      // Firebase에서 게시글 삭제
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(postData['postId'])
+          .delete();
+
+      // 로딩 인디케이터 닫기
+      Navigator.of(context).pop();
+
+      // 삭제 완료 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('게시글이 삭제되었습니다!')),
+      );
+
+      // 현재 화면 닫기
+      // Navigator.of(context).pop();
+
+      // 게시글 목록 새로고침 (이 부분은 앱의 구조에 따라 다르게 구현해야 할 수 있습니다)
+      // _refreshData();
+    } catch (e) {
+      // 오류 발생 시 로딩 인디케이터 닫기
+      Navigator.of(context).pop();
+
+      // 오류 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('삭제 중 오류가 발생했습니다: $e')),
+      );
     }
   }
 
@@ -269,6 +338,24 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     }
   }
 
+  String _formatTimestamp(Timestamp timestamp) {
+    final now = DateTime.now();
+    final date = timestamp.toDate();
+    final difference = now.difference(date);
+
+    if (difference.inDays > 7) {
+      return DateFormat('yyyy-MM-dd').format(date);
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays}일 전';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}시간 전';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}분 전';
+    } else {
+      return '방금 전';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final comments = postData['comments'] ?? [];
@@ -310,6 +397,12 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                     IconButton(
                       icon: const Icon(Icons.edit),
                       onPressed: _navigateToEditPost,
+                    ),
+                  const SizedBox(width: 8.0),
+                  if (_isPostOwner)
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: deletePost,
                     ),
                 ],
               ),
@@ -424,7 +517,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
               TextField(
                 controller: _commentController,
                 decoration: InputDecoration(
-                  hintText: '댓글을 입력하세요.',
+                  hintText: 'Please enter your comments.',
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.send),
                     onPressed: () =>
@@ -443,8 +536,8 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                     },
                     child: Text(
                       _areCommentsVisible
-                          ? '댓글 ${countTotalComments(comments)}개 접기'
-                          : '댓글 ${countTotalComments(comments)}개 보기',
+                          ? 'Hide ${countTotalComments(comments)} Comments'
+                          : 'View ${countTotalComments(comments)} Comments',
                     ),
                   ),
                 ),
@@ -458,66 +551,177 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ListTile(
-                        title: Text(
-                            '${comment['nickname']} - ${comment['comment']}'),
-                        subtitle: Column(
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text((comment['timestamp'] as Timestamp)
-                                .toDate()
-                                .toString()),
-                            if (hasReplies)
-                              Text(
-                                '$replyCount개의 답글이 있습니다',
-                                style: const TextStyle(
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.bold,
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: Colors.blue[100],
+                                  child: Text(
+                                    comment['nickname'][0].toUpperCase(),
+                                    style: TextStyle(color: Colors.blue[800]),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            comment['nickname'],
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            _formatTimestamp(
+                                                comment['timestamp']
+                                                    as Timestamp),
+                                            style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 12),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(comment['comment']),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                TextButton.icon(
+                                  icon: Icon(
+                                    _commentToggleState[comment['commentId']] ??
+                                            false
+                                        ? Icons.arrow_drop_up
+                                        : Icons.arrow_drop_down,
+                                    color: Colors.blue,
+                                  ),
+                                  label: Text(
+                                    hasReplies
+                                        ? 'View $replyCount ${replyCount == 1 ? 'reply' : 'replies'}'
+                                        : 'No replies',
+                                    style: const TextStyle(color: Colors.blue),
+                                  ),
+                                  onPressed: hasReplies
+                                      ? () {
+                                          setState(() {
+                                            _commentToggleState[
+                                                    comment['commentId']] =
+                                                !(_commentToggleState[
+                                                        comment['commentId']] ??
+                                                    false);
+                                          });
+                                        }
+                                      : null,
+                                ),
+                                TextButton.icon(
+                                  icon: const Icon(Icons.reply,
+                                      color: Colors.green),
+                                  label: const Text('Reply',
+                                      style: TextStyle(color: Colors.green)),
+                                  onPressed: () {
+                                    if (currentLoginUser == null) {
+                                      _showLoginPopup();
+                                      return;
+                                    }
+                                    _showReplyDialog(comment['commentId']);
+                                  },
+                                ),
+                              ],
+                            ),
                           ],
-                        ),
-                        leading: IconButton(
-                          icon: Icon(
-                            _commentToggleState[comment['commentId']] ?? false
-                                ? Icons.arrow_drop_down
-                                : Icons.arrow_right,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _commentToggleState[comment['commentId']] =
-                                  !(_commentToggleState[comment['commentId']] ??
-                                      false);
-                            });
-                          },
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.reply),
-                          onPressed: () {
-                            if (currentLoginUser == null) {
-                              _showLoginPopup();
-                              return;
-                            }
-                            _showReplyDialog(comment['commentId']);
-                          },
                         ),
                       ),
                       if (hasReplies &&
                           (_commentToggleState[comment['commentId']] ?? false))
-                        ...(comment['replies'] as List)
-                            .reversed
-                            .map<Widget>((reply) {
-                          return Padding(
-                            padding: const EdgeInsets.only(left: 70.0),
-                            child: ListTile(
-                              title: Text(
-                                  '${reply['nickname']} - ${reply['comment']}'),
-                              subtitle: Text((reply['timestamp'] as Timestamp)
-                                  .toDate()
-                                  .toString()),
-                            ),
-                          );
-                        }),
+                        Container(
+                          margin: const EdgeInsets.only(left: 40, bottom: 8),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Column(
+                            children: (comment['replies'] as List)
+                                .reversed
+                                .map<Widget>((reply) {
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: Colors.green[100],
+                                      child: Text(
+                                        reply['nickname'][0].toUpperCase(),
+                                        style: TextStyle(
+                                            color: Colors.green[800],
+                                            fontSize: 12),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                reply['nickname'],
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                _formatTimestamp(
+                                                    reply['timestamp']
+                                                        as Timestamp),
+                                                style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 10),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(reply['comment'],
+                                              style: const TextStyle(
+                                                  fontSize: 14)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
                     ],
                   );
                 }),

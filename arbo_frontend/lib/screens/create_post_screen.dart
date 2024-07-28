@@ -165,6 +165,136 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     super.dispose();
   }
 
+  Widget _buildTextField({
+    required IconData icon,
+    required String label,
+    required Function(String?) onSaved,
+    required String? Function(String?) validator,
+    int maxLines = 1,
+  }) {
+    return TextFormField(
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      maxLines: maxLines,
+      validator: validator,
+      onSaved: onSaved,
+    );
+  }
+
+  Widget _buildDropdown({
+    required IconData icon,
+    required String label,
+    required String? value,
+    required List<String> items,
+    required Function(String?) onChanged,
+    required String? Function(String?) validator,
+    required Function(String?) onSaved,
+  }) {
+    return DropdownButtonFormField<String>(
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      value: value,
+      items: items.map<DropdownMenuItem<String>>((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
+      onChanged: onChanged,
+      validator: validator,
+      onSaved: onSaved,
+    );
+  }
+
+  Widget _buildImageUploadSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Images (${_imageUrls.length}/3)',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton.icon(
+          onPressed: _imageUrls.length < 3 ? _pickImage : null,
+          icon: const Icon(Icons.add_photo_alternate),
+          label: const Text('Upload Image'),
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.blue,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: _imageUrls.map((url) => _buildImagePreview(url)).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImagePreview(String url) {
+    return Stack(
+      children: [
+        Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                print(error);
+                return const Icon(
+                  Icons.error,
+                  color: Colors.red,
+                );
+              },
+            ),
+          ),
+        ),
+        Positioned(
+          top: 5,
+          right: 5,
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _imageUrls.remove(url);
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 18),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -182,113 +312,94 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             },
           ),
           actions: [
-            IconButton(
+            TextButton.icon(
               icon: const Icon(Icons.save),
+              label: const Text(
+                "Upload your painting!",
+                style: TextStyle(
+                  color: Colors.green, // 연두색 텍스트 색상
+                  fontWeight: FontWeight.bold, // 굵은 텍스트
+                ),
+              ),
               onPressed: _savePost,
-            ),
+            )
           ],
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: <Widget>[
-                TextFormField(
-                  decoration: const InputDecoration(labelText: 'Title'),
-                  validator: (value) {
-                    return value!.isEmpty ? 'Please enter a title' : null;
-                  },
-                  onSaved: (value) => _title = value!,
-                ),
-                DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Scale'),
-                  value: _scale,
-                  items: <String>['대자보', '소자보']
-                      .map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _scale = newValue!;
-                    });
-                  },
-                  validator: (value) {
-                    return value == null || value.isEmpty
-                        ? 'Please select a scale'
-                        : null;
-                  },
-                  onSaved: (value) => _scale = value!,
-                ),
-                DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Topic'),
-                  value: _topic,
-                  items: <String>[
-                    'Education and Development',
-                    'Improving Facilites',
-                    'Recycling Management',
-                    'Crime Prevention',
-                    'Local Commercial',
-                    'Local Events'
-                  ].map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _topic = newValue!;
-                    });
-                  },
-                  validator: (value) {
-                    return value == null || value.isEmpty
-                        ? 'Please select a topic'
-                        : null;
-                  },
-                  onSaved: (value) => _topic = value!,
-                ),
-                TextFormField(
-                  decoration: const InputDecoration(labelText: 'Content'),
-                  maxLines: 8,
-                  validator: (value) {
-                    return value!.isEmpty ? 'Please enter some content' : null;
-                  },
-                  onSaved: (value) => _content = value!,
-                ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: _imageUrls.length < 3 ? _pickImage : null,
-                  child: const Text('Upload Image'),
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 10,
-                  children: _imageUrls
-                      .map((url) => Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              border: Border.all(),
-                            ),
-                            child: Image.network(
-                              url,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                print(error);
-                                return const Icon(
-                                  Icons.error,
-                                  color: Colors.red,
-                                );
-                              },
-                            ),
-                          ))
-                      .toList(),
-                ),
-              ],
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  _buildTextField(
+                    icon: Icons.title,
+                    label: 'Title',
+                    onSaved: (value) => _title = value!,
+                    validator: (value) {
+                      return value!.isEmpty ? 'Please enter a title' : null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDropdown(
+                    icon: Icons.scale,
+                    label: 'Scale',
+                    value: _scale,
+                    items: ['대자보', '소자보'],
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _scale = newValue!;
+                      });
+                    },
+                    validator: (value) {
+                      return value == null || value.isEmpty
+                          ? 'Please select a scale'
+                          : null;
+                    },
+                    onSaved: (value) => _scale = value!,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDropdown(
+                    icon: Icons.category,
+                    label: 'Topic',
+                    value: _topic,
+                    items: [
+                      'Education and Development',
+                      'Improving Facilites',
+                      'Recycling Management',
+                      'Crime Prevention',
+                      'Local Commercial',
+                      'Local Events'
+                    ],
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _topic = newValue!;
+                      });
+                    },
+                    validator: (value) {
+                      return value == null || value.isEmpty
+                          ? 'Please select a topic'
+                          : null;
+                    },
+                    onSaved: (value) => _topic = value!,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    icon: Icons.article,
+                    label: 'Content',
+                    maxLines: 8,
+                    onSaved: (value) => _content = value!,
+                    validator: (value) {
+                      return value!.isEmpty
+                          ? 'Please enter some content'
+                          : null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  _buildImageUploadSection(),
+                ],
+              ),
             ),
           ),
         ),

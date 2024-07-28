@@ -64,7 +64,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
     if (emailController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty) {
       setState(() {
-        errorMessage = '이메일과 비밀번호를 입력하세요.';
+        errorMessage = 'Please enter your email and password.';
       });
       return;
     }
@@ -142,7 +142,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('로그인'),
+      title: const Text('Login'),
       content: SizedBox(
         width: MediaQuery.of(context).size.width * 0.3, // 화면 너비의 80%로 설정
 
@@ -152,7 +152,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
               TextField(
                 controller: emailController,
                 decoration: const InputDecoration(
-                  labelText: '이메일',
+                  labelText: 'Your Email',
                   hintText: 'example@example.com',
                 ),
                 onSubmitted: (_) => validate(), // Enter 키 처리
@@ -161,7 +161,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
                 controller: passwordController,
                 obscureText: true,
                 decoration: const InputDecoration(
-                  labelText: '비밀번호',
+                  labelText: 'Your Password',
                 ),
                 onSubmitted: (_) => validate(), // Enter 키 처리
               ),
@@ -175,7 +175,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
                       });
                     },
                   ),
-                  const Text('이메일 저장'),
+                  const Text('Save Your Email'),
                 ],
               ),
               if (errorMessage.isNotEmpty)
@@ -193,7 +193,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
                     opacity: isLoginSuccessful ? 1.0 : 0.0,
                     duration: const Duration(seconds: 1),
                     child: const Text(
-                      '로그인 성공!',
+                      'Login Success!',
                       style: TextStyle(color: Colors.green),
                     ),
                   ),
@@ -209,7 +209,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
             TextButton(
               child: isLoading
                   ? const CircularProgressIndicator()
-                  : const Text('로그인'),
+                  : const Text('Login'),
               onPressed: () {
                 if (!isLoading) {
                   validate();
@@ -217,7 +217,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
               },
             ),
             TextButton(
-              child: const Text('회원가입'),
+              child: const Text('Create Account'),
               onPressed: () {
                 // Handle sign up navigation
                 showDialog(
@@ -229,7 +229,7 @@ class _LoginPopupWidgetState extends State<LoginPopupWidget> {
               },
             ),
             TextButton(
-              child: const Text('비밀번호 찾기'),
+              child: const Text('Find Your Password'),
               onPressed: () {
                 showDialog(
                   context: context,

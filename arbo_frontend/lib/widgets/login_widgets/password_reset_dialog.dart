@@ -18,11 +18,12 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
         email: _emailController.text.trim(),
       );
       setState(() {
-        _message = '비밀번호 재설정 이메일을 보냈습니다. 이메일을 확인해주세요.';
+        _message =
+            'I sent you a password reset email, please check your email.';
       });
     } catch (e) {
       setState(() {
-        _message = '오류가 발생했습니다: ${e.toString()}';
+        _message = 'Error Occured: ${e.toString()}';
       });
     }
   }
@@ -30,13 +31,13 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('비밀번호 재설정'),
+      title: const Text('Reset Your Password'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: _emailController,
-            decoration: const InputDecoration(labelText: '이메일'),
+            decoration: const InputDecoration(labelText: 'Your Email'),
           ),
           const SizedBox(height: 16),
           Text(_message),
@@ -47,11 +48,11 @@ class _PasswordResetDialogState extends State<PasswordResetDialog> {
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: const Text('취소'),
+          child: const Text('Cancel'),
         ),
         TextButton(
           onPressed: _resetPassword,
-          child: const Text('재설정 이메일 보내기'),
+          child: const Text('Send password reset email'),
         ),
       ],
     );

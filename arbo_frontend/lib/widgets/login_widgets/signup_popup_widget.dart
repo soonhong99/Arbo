@@ -48,10 +48,12 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   String _selectedCountryCode = '+82'; // 기본값으로 한국 국가 코드 설정
   bool _isIdChecked = false;
   bool _isNicknameChecked = false;
-  String? _idErrorMessage = '6자 이상, 영어 및 숫자로 입력해주세요';
-  String? _nicknameErrorMessage = '4자 이상, 영어 및 숫자로 입력해주세요';
+  String? _idErrorMessage =
+      'Please enter at least 6 characters in English and numbers';
+  String? _nicknameErrorMessage =
+      'Please enter at least 4 characters, English and numbers';
 
-  String? _phoneErrorMessage = '본인 핸드폰 번호를 써주세요';
+  String? _phoneErrorMessage = 'Please write down your phone number';
   String? _passwordError;
 
   bool _isPasswordValid = false;
@@ -127,10 +129,10 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     final String birth = _birthController.text;
     setState(() {
       if (birth.isEmpty) {
-        _birthErrorMessage = '생년월일을 입력해주세요';
+        _birthErrorMessage = 'Please enter your date of birth';
         _isBirthValid = false;
       } else if (!RegExp(r'^\d{8}$').hasMatch(birth)) {
-        _birthErrorMessage = '올바른 형식이 아닙니다 (YYYYMMDD)';
+        _birthErrorMessage = 'It\'s not the right format (YYYYMMDD)';
         _isBirthValid = false;
       } else {
         try {
@@ -151,15 +153,16 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
           }
 
           if (date.isAfter(DateTime.now())) {
-            _birthErrorMessage = '올바르지 않은 날짜입니다 (미래 날짜)';
+            _birthErrorMessage = 'Invalid date (future date)';
             _isBirthValid = false;
           } else {
-            _birthErrorMessage = '정확한 생년월일을 입력해야 불편함이 없답니다!';
+            _birthErrorMessage =
+                'You have to enter the exact date of birth to use it, but there is no inconvenience!';
             _isBirthValid = true;
           }
         } catch (e) {
           print('birth error: $e');
-          _birthErrorMessage = '올바르지 않은 날짜입니다';
+          _birthErrorMessage = 'Invalid date';
           _isBirthValid = false;
         }
       }
@@ -170,13 +173,15 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     final String name = _nameController.text;
     setState(() {
       if (name.isEmpty) {
-        _nameErrorMessage = '이름을 입력해주세요';
+        _nameErrorMessage = 'Please enter your name';
         _isNameValid = false;
       } else if (!RegExp(r'^[a-zA-Z]+$').hasMatch(name)) {
-        _nameErrorMessage = '올바른 형식이 아닙니다 (only English, not white space)';
+        _nameErrorMessage =
+            'It\'s not the right format (only English, not white space)';
         _isNameValid = false;
       } else {
-        _nameErrorMessage = '정확한 이름을 입력해야 불편함이 없답니다!';
+        _nameErrorMessage =
+            'There is no inconvenience in using it only when you enter the exact name!';
         _isNameValid = true;
       }
     });
@@ -195,7 +200,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
           // 위치 권한이 거부된 경우 처리
           setState(() {
             isLoadingLocation = false;
-            errorMessage = '위치 권한이 거부되었습니다.';
+            errorMessage = 'Location permission denied.';
           });
           return;
         }
@@ -223,11 +228,11 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
               },
             );
           } else {
-            errorMessage = '지명 정보를 가져오지 못했습니다.';
+            errorMessage = 'Failed to get place name information.';
           }
         }
       } catch (e) {
-        errorMessage = "위치 정보를 가져오는 중 오류가 발생했습니다: $e";
+        errorMessage = "Error getting location information: $e";
       } finally {
         setState(() {
           isLoadingLocation = false;
@@ -250,8 +255,9 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
 
   Widget _buildIntroDialog() {
     return AlertDialog(
-      title: const Text('위치 정보 동의'),
-      content: const Text('당신의 community를 찾기위해서 위치 정보를 허용해주셔야 돼요!'),
+      title: const Text('Agree Location Information'),
+      content: const Text(
+          'You have to allow location information to find your community!'),
       actions: <Widget>[
         TextButton(
           child: const Text('I agreed It!'),
@@ -267,11 +273,12 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: const Text('위치 권한 거부'),
-                    content: const Text('위치 권한을 동의하지 않으셨습니다! 위치 정보가 필요합니다.'),
+                    title: const Text('Deny Location Permissions'),
+                    content: const Text(
+                        'You did not agree to the location permissions! Location information is required.'),
                     actions: <Widget>[
                       TextButton(
-                        child: const Text('다시 시도'),
+                        child: const Text('Try Again'),
                         onPressed: () {
                           Navigator.of(context).pop();
                           _buildIntroDialog();
@@ -301,15 +308,14 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
 
   Widget _buildLocationConfirmationDialog() {
     return AlertDialog(
-      title: const Text('위치 확인'),
+      title: const Text('Check Your Location'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Text('감지된 위치:'),
+          const Text('Detected locations:'),
           Text('Country: $myCountry'),
           Text('City: $myCity'),
-          //Text('District: $myDistrict'),
-          const Text('이 정보가 맞습니까?'),
+          const Text('Is this information correct?'),
         ],
       ),
       actions: <Widget>[
@@ -321,10 +327,10 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
                   });
                 }
               : null,
-          child: const Text('예'), // 위치 정보가 유효하지 않으면 버튼 비활성화
+          child: const Text('Yes'), // 위치 정보가 유효하지 않으면 버튼 비활성화
         ),
         TextButton(
-          child: const Text('다시 시도'),
+          child: const Text('Try Again'),
           onPressed: () {
             setState(() {
               showLocationConfirmation = false;
@@ -345,26 +351,27 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         return true;
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('회원가입')),
+        appBar: AppBar(title: const Text('Create Account')),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('위치: $myCountry, $myCity'),
+              Text('Your Location: $myCountry, $myCity'),
               const SizedBox(height: 20),
               _buildTextField(
-                  controller: _idController, label: '아이디', isId: true),
+                  controller: _idController, label: 'Your Own Id', isId: true),
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(labelText: '비밀번호'),
+                decoration:
+                    const InputDecoration(labelText: 'Your Own Password'),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return '비밀번호를 입력해주세요';
+                    return 'Please enter your password.';
                   }
                   if (value.length < 6) {
-                    return '비밀번호는 6자 이상이어야 합니다';
+                    return 'Password must be at least 6 characters';
                   }
                   return null;
                 },
@@ -372,14 +379,14 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
                   setState(() {
                     _isPasswordValid = _verifyPasswordController.text == value;
                     _passwordError =
-                        _isPasswordValid ? null : '비밀번호가 일치하지 않습니다';
+                        _isPasswordValid ? null : 'Password doesn\'t match';
                   });
                 },
               ),
               TextFormField(
                 controller: _verifyPasswordController,
                 decoration: InputDecoration(
-                  labelText: '비밀번호 확인',
+                  labelText: 'Check the password',
                   errorText: _passwordError,
                   errorStyle: TextStyle(
                       color: _isPasswordValid ? Colors.green : Colors.red),
@@ -387,25 +394,26 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return '비밀번호를 다시 입력해주세요';
+                    return 'Please Reenter Your Own Password';
                   }
                   if (value != _passwordController.text) {
-                    return '비밀번호가 일치하지 않습니다';
+                    return 'Password doesn\'t match';
                   }
                   return null;
                 },
                 onChanged: (value) {
                   setState(() {
                     _isPasswordValid = _passwordController.text == value;
-                    _passwordError =
-                        _isPasswordValid ? '올바른 비밀번호!' : '비밀번호가 일치하지 않습니다';
+                    _passwordError = _isPasswordValid
+                        ? 'Correct Password!'
+                        : 'Password doesn\'t match';
                   });
                 },
               ),
               TextFormField(
                 controller: _birthController,
                 decoration: InputDecoration(
-                  labelText: '생년월일 (YYYYMMDD)',
+                  labelText: 'Date Of Birth (YYYYMMDD)',
                   errorText: _birthErrorMessage,
                   errorStyle: TextStyle(
                       color: _isBirthValid ? Colors.green : Colors.red),
@@ -415,7 +423,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
-                  labelText: '영어로 이름 입력',
+                  labelText: 'Type your name in English',
                   errorText: _nameErrorMessage,
                   errorStyle: TextStyle(
                       color: _isNameValid ? Colors.green : Colors.red),
@@ -424,10 +432,12 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
               ),
               _buildTextField(
                   controller: _nicknameController,
-                  label: '닉네임',
+                  label: 'Your Own Nickname',
                   isNickname: true),
               _buildTextField(
-                  controller: _emailController, label: '이메일 주소', isEmail: true),
+                  controller: _emailController,
+                  label: 'Your Email Address',
+                  isEmail: true),
               const SizedBox(height: 20),
               _buildPhoneNumberInput(),
               const SizedBox(height: 10),
@@ -441,7 +451,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
                       const EdgeInsets.symmetric(horizontal: 50, vertical: 10),
                   minimumSize: const Size(double.infinity, 0),
                 ),
-                child: const Text('가입하기'),
+                child: const Text('Sign Up'),
               ),
               if (showLoading) const Center(child: CircularProgressIndicator()),
               if (errorMessage != null)
@@ -484,16 +494,26 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
               ),
             ),
           ),
+          const SizedBox(width: 10),
           if (isId)
-            ElevatedButton(
-              onPressed: _isIdValid ? () => _checkIdDuplicate('id') : null,
-              child: const Text('중복확인'),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: _isIdValid ? () => _checkIdDuplicate('id') : null,
+                  child: const Text('Check Redundancy'),
+                ),
+              ],
             )
           else if (isNickname)
-            ElevatedButton(
-              onPressed:
-                  _isNicknameValid ? () => _checkIdDuplicate('nickname') : null,
-              child: const Text('중복확인'),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: _isNicknameValid
+                      ? () => _checkIdDuplicate('nickname')
+                      : null,
+                  child: const Text('Check Redundancy'),
+                ),
+              ],
             )
           else if (isEmail)
             Row(
@@ -506,21 +526,23 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
                                       .difference(_lastEmailVerificationTime!) <
                                   const Duration(seconds: 30))
                           ? () {
-                              CustomToast.show(
-                                  context, "30초 뒤에 다시 이메일을 인증해주세요!");
+                              CustomToast.show(context,
+                                  "Please authenticate your email again in 30 seconds!");
                             }
                           : _checkEmailAndSendVerification,
-                  child: Text(_isEmailSent ? '재전송' : '인증하기'),
+                  child: Text(_isEmailSent
+                      ? 'Retransmission'
+                      : 'Sent Email to Authentication'),
                 ),
                 if (_isEmailSent && !_isEmailVerified)
                   ElevatedButton(
                     onPressed: _verifyEmail,
-                    child: const Text('인증 완료'),
+                    child: const Text('Authentication completed'),
                   ),
                 if (_isEmailVerified)
                   const Padding(
                     padding: EdgeInsets.only(left: 8.0),
-                    child: Text('이메일 인증 완료!',
+                    child: Text('E-mail authentication completed!',
                         style: TextStyle(color: Colors.green)),
                   ),
               ],
@@ -534,10 +556,12 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     String controllerText = '';
     if (nicknameOrId == 'id') {
       controllerText = _idController.text;
-      _idErrorMessage = '6자 이상, 영어 및 숫자로만 입력해주세요';
+      _idErrorMessage =
+          'Please enter at least 6 characters in English and numbers';
     } else if (nicknameOrId == 'nickname') {
       controllerText = _nicknameController.text;
-      _nicknameErrorMessage = '6자 이상, 영어 및 숫자로만 입력해주세요';
+      _nicknameErrorMessage =
+          'Please enter at least 6 characters in English and numbers';
     }
 
     final QuerySnapshot result = await _firestore
@@ -548,18 +572,18 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     setState(() {
       if (result.docs.isEmpty) {
         if (nicknameOrId == 'id') {
-          _idErrorMessage = '사용할 수 있는 아이디입니다!';
+          _idErrorMessage = 'This is the ID you can use!';
           _isIdChecked = true;
         } else {
-          _nicknameErrorMessage = '사용할 수 있는 닉네임입니다!';
+          _nicknameErrorMessage = 'This is a nickname you can use!';
           _isNicknameChecked = true;
         }
       } else {
         if (nicknameOrId == 'id') {
-          _idErrorMessage = '이미 사용 중인 아이디입니다.';
+          _idErrorMessage = 'The ID is already in use.';
           _isIdChecked = false;
         } else {
-          _nicknameErrorMessage = '이미 사용 중인 닉네임입니다.';
+          _nicknameErrorMessage = 'Nicknames already in use.';
           _isNicknameChecked = false;
         }
       }
@@ -598,10 +622,13 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
                       DateTime.now().difference(_lastPhoneVerificationTime!) <
                           const Duration(seconds: 30))
                   ? () {
-                      CustomToast.show(context, "30초 뒤에 다시 전화번호를 인증요청하세요!");
+                      CustomToast.show(context,
+                          "Request authentication for your phone number again in 30 seconds!");
                     }
                   : _requestPhoneAuth,
-          child: Text(authOk ? '인증완료' : '인증요청'),
+          child: Text(authOk
+              ? 'Authentication completed'
+              : 'Sent Message for Authentication'),
         ),
       ],
     );
@@ -615,7 +642,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
             controller: _otpController,
             focusNode: otpFocusNode,
             decoration: const InputDecoration(
-              labelText: '인증번호',
+              labelText: 'Authentication Phone Number',
               border: OutlineInputBorder(),
             ),
             keyboardType: TextInputType.number,
@@ -626,7 +653,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         const SizedBox(width: 10),
         ElevatedButton(
           onPressed: _verifyOtp,
-          child: const Text('확인'),
+          child: const Text('Check'),
         ),
       ],
     );
@@ -644,7 +671,8 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         DateTime.now().difference(_lastPhoneVerificationTime!) <
             const Duration(seconds: 30)) {
       setState(() {
-        errorMessage = "30초 뒤에 다시 전화번호를 인증요청하세요!";
+        errorMessage =
+            "Request authentication for your phone number again in 30 seconds!";
       });
       return;
     }
@@ -659,7 +687,8 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
 
     if (result.docs.isNotEmpty) {
       setState(() {
-        _phoneErrorMessage = '전에 인증된 전화번호입니다. 다른 전화번호로 인증하세요.';
+        _phoneErrorMessage =
+            'This is a previously authenticated phone number. Please authenticate with a different phone number.';
       });
       return;
     }
@@ -681,7 +710,8 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
       verificationFailed: (verificationFailed) async {
         setState(() {
           showLoading = false;
-          errorMessage = "인증 코드 발송 실패: ${verificationFailed.message}";
+          errorMessage =
+              "Failed to send authentication code: ${verificationFailed.message}";
         });
       },
       codeSent: (verificationId, resendingToken) async {
@@ -691,7 +721,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
           requestedAuth = true;
           _lastPhoneVerificationTime = DateTime.now();
         });
-        CustomToast.show(context, "인증 코드가 발송되었습니다.");
+        CustomToast.show(context, "The authentication code has been sent.");
       },
       codeAutoRetrievalTimeout: (verificationId) {},
     );
@@ -724,12 +754,12 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
 
         await _auth.currentUser?.delete();
         await _auth.signOut();
-        CustomToast.show(context, "전화번호 인증이 완료되었습니다.");
+        CustomToast.show(context, "Phone number authentication completed.");
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
         showLoading = false;
-        errorMessage = "인증 실패: ${e.message}";
+        errorMessage = "Authentication failed: ${e.message}";
       });
     }
   }
@@ -739,7 +769,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         DateTime.now().difference(_lastEmailVerificationTime!) <
             const Duration(seconds: 30)) {
       setState(() {
-        errorMessage = "30초 뒤에 다시 이메일을 인증해주세요!";
+        errorMessage = "Please authenticate your email again in 30 seconds!";
       });
       return;
     }
@@ -747,7 +777,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
       setState(() {
-        errorMessage = "이메일을 입력해주세요.";
+        errorMessage = "Please enter your email.";
       });
       return;
     }
@@ -760,7 +790,8 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
 
     if (result.docs.isNotEmpty) {
       setState(() {
-        errorMessage = "이미 사용 중인 이메일입니다. 다른 이메일을 사용해주세요.";
+        errorMessage =
+            "This email is already in use, please use another email.";
       });
       return;
     }
@@ -789,7 +820,8 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
 
       setState(() {
         _isEmailSent = true;
-        errorMessage = "인증 이메일이 발송되었습니다. 이메일을 확인해주세요.";
+        errorMessage =
+            "A certification email has been sent, please check your email.";
         _lastEmailVerificationTime = DateTime.now();
       });
     } on FirebaseAuthException catch (e) {
@@ -827,7 +859,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
       if (user!.emailVerified) {
         setState(() {
           _isEmailVerified = true;
-          errorMessage = "이메일 인증이 완료되었습니다!";
+          errorMessage = "Email authentication is complete!";
         });
 
         // 임시 사용자 삭제
@@ -838,7 +870,8 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         }
       } else {
         setState(() {
-          errorMessage = "이메일이 아직 인증되지 않았습니다. 이메일을 확인해주세요.";
+          errorMessage =
+              "Your email has not been authenticated yet, please check your email.";
         });
       }
     }
@@ -847,35 +880,35 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   void signUp() async {
     if (!_isIdChecked) {
       setState(() {
-        errorMessage = "아이디 중복 확인을 해주세요.";
+        errorMessage = "Please double-check your ID.";
       });
       return;
     }
 
     if (!_isNicknameChecked) {
       setState(() {
-        errorMessage = "닉네임 중복 확인을 해주세요.";
+        errorMessage = "Please double-check the nicknames.";
       });
       return;
     }
 
     if (!_isEmailVerified) {
       setState(() {
-        errorMessage = "이메일 인증을 완료해주세요.";
+        errorMessage = "Please complete the email authentication.";
       });
       return;
     }
 
     if (!_isBirthValid) {
       setState(() {
-        errorMessage = "올바른 생년월일을 입력해주세요.";
+        errorMessage = "Please enter a valid date of birth.";
       });
       return;
     }
 
     if (_passwordController.text != _verifyPasswordController.text) {
       setState(() {
-        errorMessage = "비밀번호가 일치하지 않습니다.";
+        errorMessage = "Password does not match.";
       });
       return;
     }
@@ -903,7 +936,6 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
         '이메일 주소': _emailController.text,
         'country': myCountry,
         'city': myCity,
-        //'district': myDistrict,
         '전화번호': phoneNumber,
         '하트 누른 게시물': [],
         '프롬프트 기록': [],
@@ -923,7 +955,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
       setState(() {
         showLoading = false;
       });
-      CustomToast.show(context, "회원가입이 완료되었습니다.");
+      CustomToast.show(context, "You have completed your membership.");
 
       Navigator.of(context).pop();
     } on FirebaseAuthException catch (e) {
@@ -934,7 +966,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     } catch (e) {
       setState(() {
         showLoading = false;
-        errorMessage = '알 수 없는 오류가 발생했습니다. 다시 시도해주세요.';
+        errorMessage = 'An unknown error occurred, please try again.';
       });
     }
   }
@@ -943,19 +975,19 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     switch (errorCode) {
       case "user-not-found":
       case "wrong-password":
-        return "이메일 혹은 비밀번호가 일치하지 않습니다.";
+        return "Email or password does not match.";
       case "email-already-in-use":
-        return "이미 사용 중인 이메일입니다.";
+        return "This email is already in use.";
       case "weak-password":
-        return "비밀번호는 6글자 이상이어야 합니다.";
+        return "Password must be at least 6 characters long.";
       case "network-request-failed":
-        return "네트워크 연결에 실패 하였습니다.";
+        return "Network connection failed.";
       case "invalid-email":
-        return "잘못된 이메일 형식입니다.";
+        return "Invalid email format.";
       case "internal-error":
-        return "잘못된 요청입니다.";
+        return "Invalid request.";
       default:
-        return "로그인에 실패 하였습니다.";
+        return "Login failed.";
     }
   }
 }
