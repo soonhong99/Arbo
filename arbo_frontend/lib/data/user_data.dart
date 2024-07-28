@@ -43,7 +43,7 @@ String selectedCountry = '';
 String selectedCity = '';
 //String selectedDistrict = '';
 
-String locationMessage = '당신이 속한 community 위치를 알고싶어요!';
+String locationMessage = 'click and know what your pain\'t country!';
 
 List<Map<String, dynamic>> likedPostsInRoot = [];
 List<Map<String, dynamic>> myPostsInRoot = [];

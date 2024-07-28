@@ -93,11 +93,16 @@ class _ReadyScreenState extends State<ReadyScreen>
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 40),
                 if (!_isLoading)
                   ElevatedButton(
                     onPressed: _navigateToRootScreen,
-                    child: const Text('Paint Local Society YOURSELF!'),
+                    child: const Text(
+                      'Click and Paint Local Society YOURSELF!',
+                      style: TextStyle(
+                        fontSize: 20, // 'CommPain't 텍스트 크기와 동일하게 설정
+                      ),
+                    ),
                   ),
                 if (_isLoading) const CircularProgressIndicator(),
                 if (_locationMessage != null)

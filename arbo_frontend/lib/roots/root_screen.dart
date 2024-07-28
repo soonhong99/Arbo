@@ -301,7 +301,7 @@ class RootScreenState extends State<RootScreen> {
                 locationWithLogin = false;
                 firstLocationTouch = true;
                 firstSpecificPostTouch = true;
-                locationMessage = '당신이 속한 community 위치를 알고싶어요!';
+                locationMessage = 'I want to know your community!';
                 selectedCity = 'all';
                 selectedCountry = 'all';
                 //selectedDistrict = 'all';

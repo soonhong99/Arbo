@@ -43,7 +43,7 @@ class SearchDesignBar extends StatelessWidget {
               ],
               decoration: const InputDecoration(
                 counterText: '',
-                labelText: '검색할 디자인을 입력하세요',
+                labelText: 'search compain\'ting',
                 labelStyle: TextStyle(color: Colors.black26),
                 focusedBorder: UnderlineInputBorder(
                   borderSide: BorderSide(width: 1, color: Colors.black12),
