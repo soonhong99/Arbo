@@ -65,11 +65,6 @@ class UserDataProvider with ChangeNotifier {
       // 도시 선택
       if (selectedCity != 'all') {
         query = query.where('city', isEqualTo: selectedCity);
-
-        // // 지역 선택
-        // if (selectedDistrict != 'all') {
-        //   query = query.where('district', isEqualTo: selectedDistrict);
-        // }
       }
     }
 

@@ -1,6 +1,9 @@
+import 'package:arbo_frontend/data/history_data.dart';
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:arbo_frontend/design/paint_stroke.dart';
+import 'package:arbo_frontend/roots/main_widget.dart';
+import 'package:arbo_frontend/roots/root_screen.dart';
 import 'package:arbo_frontend/screens/edit_post_screen.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
@@ -27,6 +30,9 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   bool _areCommentsVisible = false;
   bool animationCompleted = false;
   final Map<String, bool> _commentToggleState = {};
+  final UserDataProvider userDataProvider = UserDataProvider();
+  late Future<void> _fetchDataFuture;
+  bool deleteInSpecific = false;
 
   @override
   void setState(fn) {
@@ -102,8 +108,11 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
         const SnackBar(content: Text('게시글이 삭제되었습니다!')),
       );
 
-      // 현재 화면 닫기
-      // Navigator.of(context).pop();
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const RootScreen()),
+      );
+
+      page_location = 0;
 
       // 게시글 목록 새로고침 (이 부분은 앱의 구조에 따라 다르게 구현해야 할 수 있습니다)
       // _refreshData();
@@ -732,7 +741,6 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       bottomNavigationBar: BotNaviWidget(
         postData: postData,
         refreshDataCallback: () {},
-        onPreviousPage: () {},
       ),
     );
   }

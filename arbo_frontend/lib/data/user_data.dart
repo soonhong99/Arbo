@@ -7,7 +7,10 @@ import 'package:google_geocoding/google_geocoding.dart';
 
 String nickname = 'null'; // To store the nickname of the user
 String userUid = 'null';
+
 int selectedIndex = -1;
+String selectedCategoryinRoot = 'All posts';
+
 List<dynamic> promptSearchHistory = [];
 User? currentLoginUser;
 bool dataChanged = false;

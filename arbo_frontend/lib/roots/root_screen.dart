@@ -28,11 +28,40 @@ class RootScreenState extends State<RootScreen> {
   bool _isLoading = false;
 
   NavigationState _currentNavigationState = NavigationState.initial;
-  int selectedIndex = -1; // Added to fix selectedIndex reference
+  // int selectedIndex = -1; // Added to fix selectedIndex reference
   final ScrollController _scrollController = ScrollController();
   bool firstClickedPrompt = true;
 
   DateTime? lastRefreshTime;
+
+  final List<Map<String, String>> furnitureCategories = [
+    {'name': 'All posts', 'image': 'images/categorized/all_posts.png'},
+    {
+      'name': 'Education and Development',
+      'image': 'images/categorized/Education_and_Youth_Development.png'
+    },
+    {
+      'name': 'Improving Facilites',
+      'image':
+          'images/categorized/Expanding_local_hospitals_and_medical_facilities.png'
+    },
+    {
+      'name': 'Recycling Management',
+      'image': 'images/categorized/Recycling_and_waste_management.png'
+    },
+    {
+      'name': 'Crime Prevention',
+      'image': 'images/categorized/Crime_Prevention_Program.png'
+    },
+    {
+      'name': 'Local Commercial',
+      'image': 'images/categorized/Revitalizing_local_commercial_districts.JPG'
+    },
+    {
+      'name': 'Local Events',
+      'image': 'images/categorized/Local festivals and cultural events.JPG'
+    },
+  ];
 
   @override
   void initState() {
@@ -124,6 +153,7 @@ class RootScreenState extends State<RootScreen> {
   void onCategoryTapped(int index) {
     setState(() {
       selectedIndex = index;
+      selectedCategoryinRoot = furnitureCategories[selectedIndex]['name']!;
       _currentNavigationState = NavigationState.main;
     });
   }
@@ -189,17 +219,6 @@ class RootScreenState extends State<RootScreen> {
     );
   }
 
-  // 현재 안쓰는중
-  Future<void> saveSearchHistoryToFirebase(List<dynamic> searchHistory) async {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId != null) {
-      await firestore_instance
-          .collection('users')
-          .doc(userId)
-          .update({'프롬프트 기록': searchHistory});
-    }
-  }
-
   String paintCommunityText(bool otherCountry) {
     if (otherCountry == false) {
       return 'You live in $locationMessage! Let\'s paint your community!';
@@ -254,36 +273,6 @@ class RootScreenState extends State<RootScreen> {
     if (userData.isLoggedIn(currentLoginUser) && !locationWithLogin) {
       initializeSelectedLocation();
     }
-
-    final List<Map<String, String>> furnitureCategories = [
-      {'name': 'All posts', 'image': 'images/categorized/all_posts.png'},
-      {
-        'name': 'Education and Development',
-        'image': 'images/categorized/Education_and_Youth_Development.png'
-      },
-      {
-        'name': 'Improving Facilites',
-        'image':
-            'images/categorized/Expanding_local_hospitals_and_medical_facilities.png'
-      },
-      {
-        'name': 'Recycling Management',
-        'image': 'images/categorized/Recycling_and_waste_management.png'
-      },
-      {
-        'name': 'Crime Prevention',
-        'image': 'images/categorized/Crime_Prevention_Program.png'
-      },
-      {
-        'name': 'Local Commercial',
-        'image':
-            'images/categorized/Revitalizing_local_commercial_districts.JPG'
-      },
-      {
-        'name': 'Local Events',
-        'image': 'images/categorized/Local festivals and cultural events.JPG'
-      },
-    ];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -533,11 +522,11 @@ class RootScreenState extends State<RootScreen> {
                   )),
                 ],
               )
-            : MainWidget(
-                onPreviousPage: navigateBackToInitial,
-                initialCategory: furnitureCategories[selectedIndex]
-                    ['name']!, // Pass the selected category
-              ),
+            : const MainWidget(
+                // onPreviousPage: navigateBackToInitial,
+                // initialCategory: furnitureCategories[selectedIndex]
+                //     ['name']!, // Pass the selected category
+                ),
       ),
     );
   }
@@ -593,29 +582,6 @@ class RootScreenState extends State<RootScreen> {
         const SizedBox(
           width: 20,
         ),
-        // DropdownButton<String>(
-        //   value: selectedDistrict,
-        //   items: {
-        //     'all',
-        //     ...userPlaces
-        //         .where((place) =>
-        //             place['country'] == selectedCountry &&
-        //             place['city'] == selectedCity)
-        //         .map((place) {
-        //       return place['district']!;
-        //     })
-        //   }.toList().map((district) {
-        //     return DropdownMenuItem<String>(
-        //       value: district,
-        //       child: Text(district),
-        //     );
-        //   }).toList(),
-        //   onChanged: (value) {
-        //     setState(() {
-        //       selectedDistrict = value!;
-        //     });
-        //   },
-        // ),
       ],
     );
   }

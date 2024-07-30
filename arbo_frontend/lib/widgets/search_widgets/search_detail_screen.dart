@@ -1,5 +1,7 @@
 import 'package:arbo_frontend/data/user_data.dart';
+import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:arbo_frontend/design/paint_stroke.dart';
+import 'package:arbo_frontend/roots/root_screen.dart';
 import 'package:arbo_frontend/screens/edit_post_screen.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/heart_animation_widget.dart';
@@ -25,6 +27,8 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
   bool _areCommentsVisible = false;
   bool animationCompleted = false;
   final Map<String, bool> _commentToggleState = {};
+  final UserDataProvider userDataProvider = UserDataProvider();
+  late Future<void> _fetchDataFuture;
 
   @override
   void setState(fn) {
@@ -112,6 +116,10 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
 
       // 게시글 목록 새로고침 (이 부분은 앱의 구조에 따라 다르게 구현해야 할 수 있습니다)
       // _refreshData();
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const RootScreen()),
+      );
     } catch (e) {
       // 오류 발생 시 로딩 인디케이터 닫기
       Navigator.of(context).pop();
@@ -373,10 +381,16 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false, // 기본 뒤로 가기 버튼 제거
         surfaceTintColor: Colors.white,
         shadowColor: Colors.black,
         elevation: 2,
         foregroundColor: Colors.black,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          tooltip: '검색결과로 돌아가기',
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Stack(children: [
         CustomPaint(

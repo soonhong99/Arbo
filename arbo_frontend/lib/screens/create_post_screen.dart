@@ -54,6 +54,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final List<String> _imageUrls = [];
   final int _visitedUsers = 0;
   final UserDataProvider userDataProvider = UserDataProvider();
+  late Future<void> _fetchDataFuture;
+
   bool _isPostSaved = false;
 
   @override
@@ -141,6 +143,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               Navigator.of(context).pop(true);
             });
           }
+
+          _fetchDataFuture = userDataProvider.fetchPostData();
         } catch (e) {
           print(e);
         }

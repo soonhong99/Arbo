@@ -1,8 +1,10 @@
 import 'package:arbo_frontend/data/history_data.dart';
 import 'package:arbo_frontend/data/user_data.dart';
+import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:arbo_frontend/screens/specific_post_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class SimplePostWidget extends StatefulWidget {
   final String postId;
@@ -90,6 +92,8 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
           setState(() {
             specificAllPostData = result;
           });
+        } else if (result == {}) {
+          return;
         }
       },
       child: Container(

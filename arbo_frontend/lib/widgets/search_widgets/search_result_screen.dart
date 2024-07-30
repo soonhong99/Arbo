@@ -146,7 +146,13 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false, // 기본 뒤로 가기 버튼 제거
         title: Text('Search Results for "${widget.query}"'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          tooltip: '홈으로 돌아가기',
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Stack(children: [
         CustomPaint(

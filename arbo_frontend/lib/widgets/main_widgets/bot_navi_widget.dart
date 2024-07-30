@@ -9,13 +9,11 @@ import 'package:flutter/material.dart';
 class BotNaviWidget extends StatefulWidget {
   final VoidCallback refreshDataCallback;
   final Map<String, dynamic>? postData;
-  final VoidCallback onPreviousPage; // Add this parameter
 
   const BotNaviWidget({
     super.key,
     required this.postData,
     required this.refreshDataCallback,
-    required this.onPreviousPage,
   });
 
   @override
@@ -134,7 +132,6 @@ class _BotNaviWidgetState extends State<BotNaviWidget> {
               page_location--;
               _previousPage();
             } else if (page_location == 0) {
-              // widget.onPreviousPage;
               selectedIndex = -1;
               Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) => const RootScreen()));

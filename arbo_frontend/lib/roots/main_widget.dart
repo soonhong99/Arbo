@@ -5,15 +5,11 @@ import 'package:arbo_frontend/roots/simple_post_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class MainWidget extends StatefulWidget {
-  final VoidCallback onPreviousPage;
-  final String initialCategory;
-
   const MainWidget({
     super.key,
-    required this.onPreviousPage,
-    required this.initialCategory,
   });
 
   @override
@@ -49,7 +45,8 @@ class MainWidgetState extends State<MainWidget> {
   void initState() {
     super.initState();
     _fetchDataFuture = userDataProvider.fetchPostData();
-    selectedCategory = widget.initialCategory;
+    // selectedCategory = widget.initialCategory;
+    selectedCategory = selectedCategoryinRoot;
   }
 
   void _refreshData() {
@@ -256,7 +253,6 @@ class MainWidgetState extends State<MainWidget> {
         refreshDataCallback: () {
           _refreshData();
         },
-        onPreviousPage: widget.onPreviousPage,
       ),
     );
   }
