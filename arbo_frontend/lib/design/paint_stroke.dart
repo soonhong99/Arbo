@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
 class PaintStroke {
-  final List<Offset> points;
-  Color color;
+  final Path path;
+  final Color color;
 
-  PaintStroke({required this.points, required this.color});
+  PaintStroke({required this.path, required this.color});
 }
 
-class StrokePainter extends CustomPainter {
+class PathPainter extends CustomPainter {
   final List<PaintStroke> strokes;
 
-  StrokePainter(this.strokes);
+  PathPainter(this.strokes);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -18,11 +18,10 @@ class StrokePainter extends CustomPainter {
       final paint = Paint()
         ..color = stroke.color
         ..strokeWidth = 5.0
-        ..strokeCap = StrokeCap.round;
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
 
-      for (int i = 0; i < stroke.points.length - 1; i++) {
-        canvas.drawLine(stroke.points[i], stroke.points[i + 1], paint);
-      }
+      canvas.drawPath(stroke.path, paint);
     }
   }
 

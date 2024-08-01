@@ -40,6 +40,11 @@ class MainWidgetState extends State<MainWidget> {
   late Future<void> _fetchDataFuture;
   late String selectedCategory;
   String sortBy = 'latest'; // 'latest', 'popular', 'best' 중 하나
+  int currentPage = 1;
+  int postsPerPage = 5;
+  int pageGroupSize = 10;
+  final ScrollController _scrollController = ScrollController();
+  bool showPaginationButtons = false;
 
   @override
   void initState() {
@@ -47,6 +52,36 @@ class MainWidgetState extends State<MainWidget> {
     _fetchDataFuture = userDataProvider.fetchPostData();
     // selectedCategory = widget.initialCategory;
     selectedCategory = selectedCategoryinRoot;
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.offset >=
+            _scrollController.position.maxScrollExtent &&
+        !_scrollController.position.outOfRange) {
+      setState(() {
+        showPaginationButtons = true;
+      });
+    } else {
+      setState(() {
+        showPaginationButtons = false;
+      });
+    }
+  }
+
+  void _changeSortBy(String newSortBy) {
+    setState(() {
+      sortBy = newSortBy;
+      currentPage = 1; // 페이지를 1로 리셋
+    });
+    _scrollToTop(); // 리스트를 맨 위로 스크롤
   }
 
   void _refreshData() {
@@ -58,18 +93,17 @@ class MainWidgetState extends State<MainWidget> {
   List<DocumentSnapshot> _filteredPosts() {
     DateTime now = DateTime.now();
     DateTime cutoff;
-
     switch (selectedUpdatedTime) {
-      case '지난 1일':
+      case 'Last 1 Day':
         cutoff = now.subtract(const Duration(days: 1));
         break;
-      case '지난 1주':
+      case 'Last 1 Week':
         cutoff = now.subtract(const Duration(days: 7));
         break;
-      case '지난 1개월':
+      case 'Last 1 Month':
         cutoff = now.subtract(const Duration(days: 30));
         break;
-      case '지난 1년':
+      case 'Last 1 Year':
         cutoff = now.subtract(const Duration(days: 365));
         break;
       default:
@@ -133,7 +167,7 @@ class MainWidgetState extends State<MainWidget> {
     return Scaffold(
       body: Stack(children: [
         CustomPaint(
-          painter: StrokePainter(userPaintBackGround),
+          painter: PathPainter(userPaintBackGround),
           size: Size.infinite,
         ),
         SafeArea(
@@ -194,11 +228,7 @@ class MainWidgetState extends State<MainWidget> {
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      sortBy = 'latest';
-                                    });
-                                  },
+                                  onPressed: () => _changeSortBy('latest'),
                                   child: const Row(
                                     children: [
                                       Icon(Icons.noise_aware_sharp),
@@ -207,11 +237,7 @@ class MainWidgetState extends State<MainWidget> {
                                   ),
                                 ),
                                 TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      sortBy = 'popular';
-                                    });
-                                  },
+                                  onPressed: () => _changeSortBy('popular'),
                                   child: const Row(
                                     children: [
                                       Icon(Icons.fire_hydrant_alt_sharp),
@@ -220,11 +246,7 @@ class MainWidgetState extends State<MainWidget> {
                                   ),
                                 ),
                                 TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      sortBy = 'progress';
-                                    });
-                                  },
+                                  onPressed: () => _changeSortBy('progress'),
                                   child: const Row(
                                     children: [
                                       Icon(Icons.local_fire_department_sharp),
@@ -241,6 +263,7 @@ class MainWidgetState extends State<MainWidget> {
                     Expanded(
                       child: _buildPostList(screenWidth, horizontalPadding),
                     ),
+                    if (showPaginationButtons) _buildPaginationButtons(),
                   ],
                 );
               }
@@ -257,33 +280,127 @@ class MainWidgetState extends State<MainWidget> {
     );
   }
 
-  ListView _buildPostList(double screenWidth, double horizontalPadding) {
-    List<DocumentSnapshot> filteredPosts = _filteredPosts();
-    return ListView.separated(
-      scrollDirection: Axis.vertical,
-      separatorBuilder: (context, index) => const SizedBox(
-        height: 10,
-      ),
-      itemCount: filteredPosts.length,
-      itemBuilder: (context, index) {
-        var post = filteredPosts[index];
+  // ListView _buildPostList(double screenWidth, double horizontalPadding) {
+  //   List<DocumentSnapshot> filteredPosts = _filteredPosts();
+  //   return ListView.separated(
+  //     scrollDirection: Axis.vertical,
+  //     separatorBuilder: (context, index) => const SizedBox(
+  //       height: 10,
+  //     ),
+  //     itemCount: filteredPosts.length,
+  //     itemBuilder: (context, index) {
+  //       var post = filteredPosts[index];
 
+  //       userDataProvider.makeAllDataLocal(post);
+
+  //       return Padding(
+  //         padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+  //         child: Column(
+  //           children: [
+  //             SimplePostWidget(
+  //               postId: post.id,
+  //             ),
+  //             const SizedBox(
+  //               height: 10,
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
+  Widget _buildPostList(double screenWidth, double horizontalPadding) {
+    List<DocumentSnapshot> filteredPosts = _filteredPosts();
+    int startIndex = (currentPage - 1) * postsPerPage;
+    int endIndex = startIndex + postsPerPage;
+    if (endIndex > filteredPosts.length) {
+      endIndex = filteredPosts.length;
+    }
+    List<DocumentSnapshot> currentPagePosts =
+        filteredPosts.sublist(startIndex, endIndex);
+
+    return ListView.separated(
+      controller: _scrollController,
+      scrollDirection: Axis.vertical,
+      separatorBuilder: (context, index) => const SizedBox(height: 10),
+      itemCount: currentPagePosts.length,
+      itemBuilder: (context, index) {
+        var post = currentPagePosts[index];
         userDataProvider.makeAllDataLocal(post);
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-          child: Column(
-            children: [
-              SimplePostWidget(
-                postId: post.id,
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-            ],
-          ),
+          child: SimplePostWidget(postId: post.id),
         );
       },
+    );
+  }
+
+  Widget _buildPaginationButtons() {
+    List<DocumentSnapshot> filteredPosts = _filteredPosts();
+    int totalPages = (filteredPosts.length / postsPerPage).ceil();
+    int currentGroup = (currentPage - 1) ~/ pageGroupSize;
+    int startPage = currentGroup * pageGroupSize + 1;
+    int endPage = (startPage + pageGroupSize - 1) > totalPages
+        ? totalPages
+        : (startPage + pageGroupSize - 1);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (startPage > 1)
+            IconButton(
+              icon: const Icon(Icons.chevron_left),
+              onPressed: () {
+                setState(() {
+                  currentPage = startPage - 1;
+                  _scrollToTop();
+                });
+              },
+            ),
+          ...List.generate(endPage - startPage + 1, (index) {
+            int pageNumber = startPage + index;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      currentPage == pageNumber ? Colors.blue : Colors.grey,
+                  minimumSize: const Size(40, 40),
+                ),
+                onPressed: () {
+                  setState(() {
+                    currentPage = pageNumber;
+                    _scrollToTop();
+                  });
+                },
+                child: Text('$pageNumber'),
+              ),
+            );
+          }),
+          if (endPage < totalPages)
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              onPressed: () {
+                setState(() {
+                  currentPage = endPage + 1;
+                  _scrollToTop();
+                });
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
     );
   }
 }

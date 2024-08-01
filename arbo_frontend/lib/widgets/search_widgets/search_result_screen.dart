@@ -156,7 +156,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
       ),
       body: Stack(children: [
         CustomPaint(
-          painter: StrokePainter(userPaintBackGround),
+          painter: PathPainter(userPaintBackGround),
           size: Size.infinite,
         ),
         Column(

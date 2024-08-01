@@ -4,6 +4,7 @@ import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:arbo_frontend/design/paint_stroke.dart';
 import 'package:arbo_frontend/roots/main_widget.dart';
 import 'package:arbo_frontend/roots/root_screen.dart';
+import 'package:arbo_frontend/screens/specific_comment_widget.dart';
 import 'package:arbo_frontend/screens/edit_post_screen.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
@@ -33,6 +34,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   final UserDataProvider userDataProvider = UserDataProvider();
   late Future<void> _fetchDataFuture;
   bool deleteInSpecific = false;
+  bool _sortByPopularity = true; // 초기 정렬 기준: 인기순
 
   @override
   void setState(fn) {
@@ -42,19 +44,134 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!dataInitialized) {
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        if (args != null) {
+          setState(() {
+            postData = args;
+            postData['comments'] = postData['comments'] ?? [];
+            dataInitialized = true;
+          });
+          _incrementViewCount();
+          checkIfUserLiked();
+          _checkIfPostOwner();
+          _sortComments();
+        }
+      }
+    });
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!dataInitialized) {
       final args =
-          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
-      postData = args;
-      postData['comments'] =
-          postData['comments'] ?? []; // Ensure comments is not null
-      _incrementViewCount(); // Increment view count when the screen is accessed
-      checkIfUserLiked();
-      _checkIfPostOwner();
-      dataInitialized = true;
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (args != null) {
+        postData = args;
+        postData['comments'] = postData['comments'] ?? [];
+        _incrementViewCount();
+        checkIfUserLiked();
+        _checkIfPostOwner();
+        _sortComments();
+        dataInitialized = true;
+        setState(() {});
+      }
     }
+  }
+
+  Future<void> _toggleCommentHeart(String commentId) async {
+    if (currentLoginUser == null) {
+      _showLoginPopup();
+      return;
+    }
+
+    final commentIndex =
+        postData['comments'].indexWhere((c) => c['commentId'] == commentId);
+    if (commentIndex == -1) return;
+
+    final comment = postData['comments'][commentIndex];
+    final hasLiked =
+        comment['likedBy']?.contains(currentLoginUser!.uid) ?? false;
+    final commentOwnerUserId = comment['userId']; // 새로 추가된 필드
+
+    // 댓글 작성자가 아닌 경우에만 receivedCommentsHearts를 업데이트
+    if (currentLoginUser!.uid != commentOwnerUserId) {
+      DocumentReference commentOwnerRef =
+          firestore_instance.collection('users').doc(commentOwnerUserId);
+
+      if (hasLiked) {
+        comment['hearts'] = (comment['hearts'] ?? 1) - 1;
+        comment['likedBy'].remove(currentLoginUser!.uid);
+
+        // receivedCommentsHearts 감소
+        await commentOwnerRef.get().then((doc) {
+          if (doc.exists) {
+            final data = doc.data() as Map<String, dynamic>?;
+            int currentHearts = data?['receivedCommentsHearts'] ?? 1;
+            commentOwnerRef
+                .update({'receivedCommentsHearts': currentHearts - 1});
+          }
+        });
+      } else {
+        comment['hearts'] = (comment['hearts'] ?? 0) + 1;
+        comment['likedBy'] = (comment['likedBy'] ?? [])
+          ..add(currentLoginUser!.uid);
+
+        // receivedCommentsHearts 증가
+        await commentOwnerRef.get().then((doc) {
+          if (doc.exists) {
+            final data = doc.data() as Map<String, dynamic>?;
+            int currentHearts = data?['receivedCommentsHearts'] ?? 0;
+            commentOwnerRef
+                .update({'receivedCommentsHearts': currentHearts + 1});
+          } else {
+            // 문서가 존재하지 않는 경우, 새로 생성
+            commentOwnerRef
+                .set({'receivedCommentsHearts': 1}, SetOptions(merge: true));
+          }
+        });
+      }
+    } else {
+      // 댓글 작성자가 자신의 댓글에 하트를 누르는 경우
+      if (hasLiked) {
+        comment['hearts'] = (comment['hearts'] ?? 1) - 1;
+        comment['likedBy'].remove(currentLoginUser!.uid);
+      } else {
+        comment['hearts'] = (comment['hearts'] ?? 0) + 1;
+        comment['likedBy'] = (comment['likedBy'] ?? [])
+          ..add(currentLoginUser!.uid);
+      }
+    }
+
+    await FirebaseFirestore.instance
+        .collection('posts')
+        .doc(postData['postId'])
+        .update({'comments': postData['comments']});
+
+    setState(() {});
+    _sortComments();
+  }
+
+  void _sortComments() {
+    if (_sortByPopularity) {
+      postData['comments'].sort((a, b) {
+        int heartsA = a['hearts'] ?? 0;
+        int heartsB = b['hearts'] ?? 0;
+        return heartsB.compareTo(heartsA);
+      });
+    } else {
+      postData['comments'].sort((a, b) {
+        Timestamp timestampA = a['timestamp'] as Timestamp;
+        Timestamp timestampB = b['timestamp'] as Timestamp;
+        return timestampB.compareTo(timestampA);
+      });
+    }
+    setState(() {});
   }
 
   Future<void> deletePost() async {
@@ -185,6 +302,9 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
         firestore_instance.collection('users').doc(userUid);
     DocumentReference heartRef =
         firestore_instance.collection('posts').doc(postData['postId']);
+    DocumentReference postOwnerRef =
+        firestore_instance.collection('users').doc(postData['postOwnerId']);
+
     if (currentLoginUser!.uid != postData['postOwnerId']) {
       try {
         await firestore_instance
@@ -195,6 +315,28 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
         });
       } catch (e) {
         print('cant go alert: $e');
+      }
+      try {
+        await postOwnerRef.get().then((doc) {
+          if (doc.exists) {
+            final data = doc.data() as Map<String, dynamic>?;
+
+            int currentHearts = data?['receivedPostHearts'] ?? 0;
+            if (_hasUserLiked) {
+              // User is unliking, decrease the count
+              postOwnerRef.update({'receivedPostHearts': currentHearts - 1});
+            } else {
+              // User is liking, increase the count
+              postOwnerRef.update({'receivedPostHearts': currentHearts + 1});
+            }
+          } else {
+            // Document doesn't exist, create it with initial value
+            postOwnerRef
+                .set({'receivedPostHearts': 1}, SetOptions(merge: true));
+          }
+        });
+      } catch (e) {
+        print('Error updating receivedPostHearts: $e');
       }
     }
 
@@ -355,13 +497,13 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     if (difference.inDays > 7) {
       return DateFormat('yyyy-MM-dd').format(date);
     } else if (difference.inDays > 0) {
-      return '${difference.inDays}일 전';
+      return '${difference.inDays} days ago';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}시간 전';
+      return '${difference.inHours} hours ago';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}분 전';
+      return '${difference.inMinutes} minutes ago';
     } else {
-      return '방금 전';
+      return 'Just before';
     }
   }
 
@@ -383,7 +525,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       ),
       body: Stack(children: [
         CustomPaint(
-          painter: StrokePainter(userPaintBackGround),
+          painter: PathPainter(userPaintBackGround),
           size: Size.infinite,
         ),
         SingleChildScrollView(
@@ -536,204 +678,72 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
               ),
               const SizedBox(height: 16.0),
               if (dataInitialized) ...[
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _areCommentsVisible = !_areCommentsVisible; // Toggle
-                      });
-                    },
-                    child: Text(
-                      _areCommentsVisible
-                          ? 'Hide ${countTotalComments(comments)} Comments'
-                          : 'View ${countTotalComments(comments)} Comments',
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton.icon(
+                      icon: Icon(_areCommentsVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility),
+                      label: Text(_areCommentsVisible
+                          ? 'Hide Comments'
+                          : 'View Comments'),
+                      onPressed: () {
+                        setState(() {
+                          _areCommentsVisible = !_areCommentsVisible;
+                        });
+                      },
                     ),
-                  ),
+                    DropdownButton<bool>(
+                      value: _sortByPopularity,
+                      icon: const Icon(Icons.sort),
+                      underline: Container(),
+                      onChanged: (bool? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _sortByPopularity = newValue;
+                            _sortComments();
+                          });
+                        }
+                      },
+                      items: const [
+                        DropdownMenuItem(
+                          value: true,
+                          child: Text('Popular',
+                              style: TextStyle(color: Colors.blue)),
+                        ),
+                        DropdownMenuItem(
+                          value: false,
+                          child: Text('Recent',
+                              style: TextStyle(color: Colors.blue)),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
               if (_areCommentsVisible)
-                ...(postData['comments'] as List).reversed.map((comment) {
-                  bool hasReplies = comment['replies'] != null &&
-                      comment['replies'].isNotEmpty;
-                  int replyCount = comment['replies']?.length ?? 0;
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: Colors.blue[100],
-                                  child: Text(
-                                    comment['nickname'][0].toUpperCase(),
-                                    style: TextStyle(color: Colors.blue[800]),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Text(
-                                            comment['nickname'],
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            _formatTimestamp(
-                                                comment['timestamp']
-                                                    as Timestamp),
-                                            style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 12),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(comment['comment']),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                TextButton.icon(
-                                  icon: Icon(
-                                    _commentToggleState[comment['commentId']] ??
-                                            false
-                                        ? Icons.arrow_drop_up
-                                        : Icons.arrow_drop_down,
-                                    color: Colors.blue,
-                                  ),
-                                  label: Text(
-                                    hasReplies
-                                        ? 'View $replyCount ${replyCount == 1 ? 'reply' : 'replies'}'
-                                        : 'No replies',
-                                    style: const TextStyle(color: Colors.blue),
-                                  ),
-                                  onPressed: hasReplies
-                                      ? () {
-                                          setState(() {
-                                            _commentToggleState[
-                                                    comment['commentId']] =
-                                                !(_commentToggleState[
-                                                        comment['commentId']] ??
-                                                    false);
-                                          });
-                                        }
-                                      : null,
-                                ),
-                                TextButton.icon(
-                                  icon: const Icon(Icons.reply,
-                                      color: Colors.green),
-                                  label: const Text('Reply',
-                                      style: TextStyle(color: Colors.green)),
-                                  onPressed: () {
-                                    if (currentLoginUser == null) {
-                                      _showLoginPopup();
-                                      return;
-                                    }
-                                    _showReplyDialog(comment['commentId']);
-                                  },
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (hasReplies &&
-                          (_commentToggleState[comment['commentId']] ?? false))
-                        Container(
-                          margin: const EdgeInsets.only(left: 40, bottom: 8),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[200]!),
-                          ),
-                          child: Column(
-                            children: (comment['replies'] as List)
-                                .reversed
-                                .map<Widget>((reply) {
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: Colors.green[100],
-                                      child: Text(
-                                        reply['nickname'][0].toUpperCase(),
-                                        style: TextStyle(
-                                            color: Colors.green[800],
-                                            fontSize: 12),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Text(
-                                                reply['nickname'],
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                _formatTimestamp(
-                                                    reply['timestamp']
-                                                        as Timestamp),
-                                                style: TextStyle(
-                                                    color: Colors.grey[600],
-                                                    fontSize: 10),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(reply['comment'],
-                                              style: const TextStyle(
-                                                  fontSize: 14)),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                    ],
-                  );
-                }),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: postData['comments'].length,
+                  itemBuilder: (context, index) {
+                    final comment = postData['comments'][index];
+                    return CommentWidget(
+                      comment: comment,
+                      onHeartPressed: () =>
+                          _toggleCommentHeart(comment['commentId']),
+                      currentUserId: currentLoginUser?.uid,
+                      onReplyPressed: (commentId) {
+                        if (currentLoginUser == null) {
+                          _showLoginPopup();
+                        } else {
+                          _showReplyDialog(commentId);
+                        }
+                      },
+                    );
+                  },
+                ),
             ],
           ),
         ),

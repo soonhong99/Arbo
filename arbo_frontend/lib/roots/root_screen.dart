@@ -5,7 +5,6 @@ import 'package:arbo_frontend/widgets/gemini_widgets/gemini_advisor_chat.dart';
 import 'package:arbo_frontend/widgets/place_widgets/get_user_places.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_dialog_widget.dart';
 import 'package:arbo_frontend/widgets/prompt_widgets/prompt_bar.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -327,7 +326,7 @@ class RootScreenState extends State<RootScreen> {
                 children: [
                   // 배경으로 _strokes 그리기
                   CustomPaint(
-                    painter: StrokePainter(userPaintBackGround),
+                    painter: PathPainter(userPaintBackGround),
                     size: Size.infinite,
                   ),
                   SingleChildScrollView(

@@ -14,11 +14,9 @@ class ReadyScreen extends StatefulWidget {
 class _ReadyScreenState extends State<ReadyScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  String? _locationMessage;
-  final bool _isLoading = false;
-
   final Random _random = Random();
   Color _currentColor = Colors.blue;
+  Path _currentPath = Path();
 
   @override
   void initState() {
@@ -27,6 +25,12 @@ class _ReadyScreenState extends State<ReadyScreen>
       vsync: this,
       duration: const Duration(seconds: 5),
     )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   Color _getRandomColor() {
@@ -41,25 +45,19 @@ class _ReadyScreenState extends State<ReadyScreen>
   void _startNewStroke(Offset position) {
     setState(() {
       _currentColor = _getRandomColor();
+      _currentPath = Path();
+      _currentPath.moveTo(position.dx, position.dy);
       userPaintBackGround
-          .add(PaintStroke(points: [position], color: _currentColor));
+          .add(PaintStroke(path: _currentPath, color: _currentColor));
     });
   }
 
   void _updateStroke(Offset position) {
     setState(() {
       if (userPaintBackGround.isNotEmpty) {
-        userPaintBackGround.last.points.add(position);
-        _currentColor = _getRandomColor();
-        userPaintBackGround.last.color = _currentColor;
+        _currentPath.lineTo(position.dx, position.dy);
       }
     });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   void _navigateToRootScreen() {
@@ -77,7 +75,7 @@ class _ReadyScreenState extends State<ReadyScreen>
             onPanStart: (details) => _startNewStroke(details.localPosition),
             onPanUpdate: (details) => _updateStroke(details.localPosition),
             child: CustomPaint(
-              painter: StrokePainter(userPaintBackGround),
+              painter: PathPainter(userPaintBackGround),
               size: Size.infinite,
             ),
           ),
@@ -94,26 +92,13 @@ class _ReadyScreenState extends State<ReadyScreen>
                   ),
                 ),
                 const SizedBox(height: 30),
-                if (!_isLoading)
-                  ElevatedButton(
-                    onPressed: _navigateToRootScreen,
-                    child: const Text(
-                      'Click and Paint Local Society YOURSELF!',
-                      style: TextStyle(
-                        fontSize: 18, // 'CommPain't 텍스트 크기와 동일하게 설정
-                      ),
-                    ),
+                ElevatedButton(
+                  onPressed: _navigateToRootScreen,
+                  child: const Text(
+                    'Click and Paint Local Society YOURSELF!',
+                    style: TextStyle(fontSize: 18),
                   ),
-                if (_isLoading) const CircularProgressIndicator(),
-                if (_locationMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      _locationMessage!,
-                      style: const TextStyle(fontSize: 18),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                ),
               ],
             ),
           ),

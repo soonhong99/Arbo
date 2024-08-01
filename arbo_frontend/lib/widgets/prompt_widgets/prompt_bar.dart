@@ -42,7 +42,7 @@ class PromptBar extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Click and Try to solve your problems with your community!',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: Colors.white, fontSize: 15),
                   ),
                 ),
                 Icon(Icons.arrow_forward, color: Colors.white),
