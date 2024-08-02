@@ -1,3 +1,5 @@
+import 'package:arbo_frontend/data/user_data.dart';
+import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -13,101 +15,55 @@ class _VoteSupportersScreenState extends State<VoteSupportersScreen> {
   String? selectedCountry;
   List<Map<String, dynamic>> topSupporters = [];
   Map<String, int> votes = {};
-  bool isVotingPeriod = false;
+  Map<String, List<String>> locations = {};
+  bool isLoading = true;
+  String? userVotedId;
+  String? userVotedNickname;
 
   @override
   void initState() {
     super.initState();
-    checkVotingPeriod();
+    _initializeData();
   }
 
-  void checkVotingPeriod() {
-    final now = DateTime.now();
-    final startOfMonth = DateTime(now.year, now.month, 1);
-    final endOfVoting = startOfMonth.add(const Duration(days: 7));
+  Future<void> _initializeData() async {
     setState(() {
-      isVotingPeriod = now.isAfter(startOfMonth) && now.isBefore(endOfVoting);
+      isLoading = true;
+    });
+    await fetchLocations();
+    if (locations.isNotEmpty) {
+      selectedCountry = locations.keys.first;
+      if (locations[selectedCountry]!.isNotEmpty) {
+        selectedCity = locations[selectedCountry]!.first;
+        await fetchTopSupporters();
+        await fetchUserVote();
+      }
+    }
+    setState(() {
+      isLoading = false;
     });
   }
 
-  Future<Map<String, List<String>>> fetchLocations() async {
-    // Fetch all unique locations from Firebase
+  Future<void> fetchLocations() async {
     final snapshot =
         await FirebaseFirestore.instance.collection('userPlaceInfo').get();
-    final locations = <String, Set<String>>{};
+    final locationsMap = <String, Set<String>>{};
     for (var doc in snapshot.docs) {
       final country = doc.data()['country'] as String?;
       final city = doc.data()['city'] as String?;
       if (country != null && city != null) {
-        locations.putIfAbsent(country, () => {}).add(city);
+        locationsMap.putIfAbsent(country, () => {}).add(city);
       }
     }
-    return locations.map((key, value) => MapEntry(key, value.toList()));
-  }
-
-  Future<void> showLocationSelector() async {
-    final locations = await fetchLocations();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Location'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButton<String>(
-              value: selectedCountry,
-              hint: const Text('Select Country'),
-              items: locations.keys.map((country) {
-                return DropdownMenuItem<String>(
-                  value: country,
-                  child: Text(country),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedCountry = value;
-                  selectedCity = null;
-                });
-              },
-            ),
-            if (selectedCountry != null)
-              DropdownButton<String>(
-                value: selectedCity,
-                hint: const Text('Select City'),
-                items: locations[selectedCountry]!.map((city) {
-                  return DropdownMenuItem<String>(
-                    value: city,
-                    child: Text(city),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedCity = value;
-                  });
-                },
-              ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: const Text('Confirm'),
-            onPressed: () {
-              if (selectedCity != null && selectedCountry != null) {
-                fetchTopSupporters();
-                Navigator.pop(context);
-              }
-            },
-          ),
-        ],
-      ),
-    );
+    setState(() {
+      locations =
+          locationsMap.map((key, value) => MapEntry(key, value.toList()));
+    });
   }
 
   Future<void> fetchTopSupporters() async {
+    if (selectedCity == null || selectedCountry == null) return;
+
     final snapshot = await FirebaseFirestore.instance
         .collection('users')
         .where('city', isEqualTo: selectedCity)
@@ -120,51 +76,364 @@ class _VoteSupportersScreenState extends State<VoteSupportersScreen> {
           (data['receivedPostHearts'] ?? 0);
       return {
         'id': doc.id,
-        'nickname': data['nickname'],
+        '닉네임': data['닉네임'],
         'totalHearts': totalHearts,
       };
     }).toList();
 
     supporters.sort((a, b) => b['totalHearts'].compareTo(a['totalHearts']));
+
+    final voteSnapshot = await FirebaseFirestore.instance
+        .collection('votes')
+        .doc('$selectedCountry-$selectedCity')
+        .get();
+
+    final voteData = voteSnapshot.data() ?? {};
+
     setState(() {
       topSupporters = supporters.take(5).toList();
-      votes = {for (var supporter in topSupporters) supporter['id']: 0};
+      votes = {
+        for (var supporter in topSupporters)
+          supporter['id']: voteData[supporter['id']] ?? 0
+      };
     });
   }
 
-  // fetchLocations, fetchTopSupporters, voteForSupporter, endVoting 메서드는 그대로 유지
-
-  void endVoting() {
-    if (!isVotingPeriod) return;
-
-    final sortedVotes = votes.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    final winners = sortedVotes.take(3).map((e) => e.key).toList();
-
-    // Save winners to Firebase
-    FirebaseFirestore.instance.collection('supportersVoting').add({
-      'city': selectedCity,
-      'country': selectedCountry,
-      'winners': winners,
-      'votingEndDate': DateTime.now(),
-    });
-
-    setState(() {
-      isVotingPeriod = false;
-    });
-  }
-
-  void voteForSupporter(String supporterId) {
-    if (isVotingPeriod) {
-      setState(() {
-        votes[supporterId] = (votes[supporterId] ?? 0) + 1;
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Voting period has ended')),
-      );
+  Future<void> fetchUserVote() async {
+    if (currentLoginUser != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentLoginUser!.uid)
+          .get();
+      final userData = userDoc.data();
+      if (userData != null) {
+        setState(() {
+          userVotedId = userData['voteUserId'];
+          userVotedNickname = userData['voteUserNickname'];
+        });
+      }
     }
+  }
+
+  Future<void> voteForSupporter(
+      String supporterId, String supporterNickname) async {
+    if (currentLoginUser == null) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return LoginPopupWidget(
+            onLoginSuccess: () {
+              Navigator.of(context).pop();
+              voteForSupporter(supporterId, supporterNickname);
+            },
+          );
+        },
+      );
+      return;
+    }
+
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentLoginUser!.uid)
+        .get();
+    final userData = userDoc.data();
+
+    if (userData == null || userData['country'] != selectedCountry) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You can only vote in your own country.')),
+      );
+      return;
+    }
+
+    if (userVotedId != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('You have already voted for $userVotedNickname!')),
+      );
+      return;
+    }
+
+    // Update user's vote
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentLoginUser!.uid)
+        .update({
+      'voteUserId': supporterId,
+      'voteUserNickname': supporterNickname,
+    });
+
+    // Update vote count
+    await FirebaseFirestore.instance
+        .collection('votes')
+        .doc('$selectedCountry-$selectedCity')
+        .set({supporterId: FieldValue.increment(1)}, SetOptions(merge: true));
+
+    // Refresh data
+    await fetchTopSupporters();
+    await fetchUserVote();
+  }
+
+  Future<void> cancelVote() async {
+    if (currentLoginUser == null || userVotedId == null) return;
+
+    // Remove user's vote
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentLoginUser!.uid)
+        .update({
+      'voteUserId': FieldValue.delete(),
+      'voteUserNickname': FieldValue.delete(),
+    });
+
+    // Update vote count
+    await FirebaseFirestore.instance
+        .collection('votes')
+        .doc('$selectedCountry-$selectedCity')
+        .set({userVotedId!: FieldValue.increment(-1)}, SetOptions(merge: true));
+
+    // Refresh data
+    await fetchTopSupporters();
+    await fetchUserVote();
+  }
+
+  Widget _buildSupportersTitle() {
+    return Text(
+      'Top Supporters in $selectedCity, $selectedCountry',
+      style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.blue[800],
+          ),
+    );
+  }
+
+  List<Widget> _buildSupportersList() {
+    return topSupporters.asMap().entries.map((entry) {
+      final index = entry.key;
+      final supporter = entry.value;
+      final isFirstPlace = index == 0;
+      final isTopThree = index < 3;
+
+      return Padding(
+        padding: EdgeInsets.only(bottom: isFirstPlace ? 24 : 16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: isFirstPlace
+                    ? Colors.yellow.withOpacity(0.5)
+                    : (isTopThree
+                        ? Colors.blue.withOpacity(0.3)
+                        : Colors.grey.withOpacity(0.3)),
+                spreadRadius: isFirstPlace ? 4 : 2,
+                blurRadius: isFirstPlace ? 10 : 5,
+                offset: const Offset(0, 3),
+              ),
+            ],
+            border: isTopThree
+                ? Border.all(
+                    color: isFirstPlace ? Colors.yellow : Colors.blue,
+                    width: isFirstPlace ? 3 : 2,
+                  )
+                : null,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: isFirstPlace
+                            ? Colors.yellow[100]
+                            : Colors.blue[100],
+                        radius: isFirstPlace ? 30 : 25,
+                        child: Text(
+                          supporter['닉네임'][0],
+                          style: TextStyle(
+                            color: isFirstPlace
+                                ? Colors.orange[800]
+                                : Colors.blue[800],
+                            fontWeight: FontWeight.bold,
+                            fontSize: isFirstPlace ? 24 : 20,
+                          ),
+                        ),
+                      ),
+                      if (isTopThree)
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          width: isFirstPlace ? 70 : 60,
+                          height: isFirstPlace ? 70 : 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isFirstPlace ? Colors.yellow : Colors.blue,
+                              width: isFirstPlace ? 3 : 2,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  title: Text(
+                    supporter['닉네임'],
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: isFirstPlace ? 18 : 16,
+                    ),
+                  ),
+                  subtitle: Row(
+                    children: [
+                      Icon(Icons.favorite, color: Colors.red[300], size: 16),
+                      const SizedBox(width: 4),
+                      Text('Total Hearts: ${supporter['totalHearts']}'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Votes: ${votes[supporter['id']]}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isFirstPlace
+                            ? Colors.orange[700]
+                            : Colors.blue[700],
+                        fontSize: isFirstPlace ? 16 : 14,
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      icon: Icon(
+                        userVotedId == supporter['id']
+                            ? Icons.check_circle
+                            : Icons.how_to_vote,
+                        color: Colors.white,
+                      ),
+                      label: Text(
+                        userVotedId == supporter['id'] ? 'Voted' : 'Vote',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: userVotedId == supporter['id']
+                            ? Colors.green
+                            : Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      onPressed: userVotedId == supporter['id']
+                          ? cancelVote
+                          : () => voteForSupporter(
+                              supporter['id'], supporter['닉네임']),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }).toList();
+  }
+
+  Widget _buildUserVoteInfo() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(top: 20),
+      decoration: BoxDecoration(
+        color: Colors.green[50],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.green),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle, color: Colors.green),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'You have voted for: $userVotedNickname',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationSelectors() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          DropdownButtonFormField<String>(
+            value: selectedCountry,
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.flag, color: Colors.blue),
+              labelText: 'Select Country',
+              border: OutlineInputBorder(),
+            ),
+            items: locations.keys.map((country) {
+              return DropdownMenuItem<String>(
+                value: country,
+                child: Text(country),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                selectedCountry = value;
+                selectedCity = locations[value]?.isNotEmpty == true
+                    ? locations[value]!.first
+                    : null;
+              });
+              fetchTopSupporters();
+            },
+          ),
+          const SizedBox(height: 16),
+          if (selectedCountry != null &&
+              locations[selectedCountry]?.isNotEmpty == true)
+            DropdownButtonFormField<String>(
+              value: selectedCity,
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.location_city, color: Colors.blue),
+                labelText: 'Select City',
+                border: OutlineInputBorder(),
+              ),
+              items: locations[selectedCountry]!.map((city) {
+                return DropdownMenuItem<String>(
+                  value: city,
+                  child: Text(city),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedCity = value;
+                });
+                fetchTopSupporters();
+              },
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -172,67 +441,28 @@ class _VoteSupportersScreenState extends State<VoteSupportersScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Vote Your Supporters'),
-        actions: [
-          if (isVotingPeriod)
-            IconButton(
-              icon: const Icon(Icons.how_to_vote),
-              onPressed: endVoting,
-              tooltip: 'End Voting',
-            ),
-        ],
+        backgroundColor: Colors.blue,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ElevatedButton.icon(
-                onPressed: showLocationSelector,
-                icon: const Icon(Icons.location_on),
-                label: Text(selectedCity != null && selectedCountry != null
-                    ? '$selectedCity, $selectedCountry'
-                    : 'Select Location'),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLocationSelectors(),
+                    const SizedBox(height: 20),
+                    if (topSupporters.isNotEmpty) ...[
+                      _buildSupportersTitle(),
+                      const SizedBox(height: 16),
+                      ..._buildSupportersList(),
+                    ],
+                    if (userVotedNickname != null) _buildUserVoteInfo(),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
-              if (topSupporters.isNotEmpty) ...[
-                Text(
-                  'Top Supporters in $selectedCity, $selectedCountry',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 10),
-                ...topSupporters.map((supporter) => Card(
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          child: Text(supporter['nickname'][0]),
-                        ),
-                        title: Text(supporter['nickname']),
-                        subtitle:
-                            Text('Total Hearts: ${supporter['totalHearts']}'),
-                        trailing: ElevatedButton.icon(
-                          icon: const Icon(Icons.thumb_up),
-                          label: const Text('Vote'),
-                          onPressed: isVotingPeriod
-                              ? () => voteForSupporter(supporter['id'])
-                              : null,
-                        ),
-                      ),
-                    )),
-                const SizedBox(height: 20),
-                Text(
-                  'Current Votes',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                ...votes.entries.map((entry) => ListTile(
-                      title: Text(topSupporters
-                          .firstWhere((s) => s['id'] == entry.key)['nickname']),
-                      trailing: Text('${entry.value} votes'),
-                    )),
-              ],
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

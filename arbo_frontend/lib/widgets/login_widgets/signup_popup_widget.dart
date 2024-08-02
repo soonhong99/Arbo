@@ -53,7 +53,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
   String? _nicknameErrorMessage =
       'Please enter at least 4 characters, English and numbers';
 
-  String? _phoneErrorMessage = 'Please write down your phone number';
+  final String _phoneErrorMessage = 'Please write down your phone number';
   String? _passwordError;
 
   bool _isPasswordValid = false;
@@ -446,12 +446,26 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
               ElevatedButton(
                 onPressed: authOk ? signUp : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
+                  backgroundColor: authOk ? Colors.lightGreen : Colors.grey,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 50, vertical: 10),
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   minimumSize: const Size(double.infinity, 0),
                 ),
-                child: const Text('Sign Up'),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.person_add, color: Colors.white),
+                    SizedBox(width: 10),
+                    Text(
+                      'Sign Up',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               if (showLoading) const Center(child: CircularProgressIndicator()),
               if (errorMessage != null)
@@ -680,6 +694,7 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
     final String phoneNumber =
         "$_selectedCountryCode${_phoneNumberController.text}";
 
+    // 전화번호 중복 체크
     final QuerySnapshot result = await _firestore
         .collection('duplicate_id_phonenum')
         .where('phoneNum', isEqualTo: phoneNumber)
@@ -687,24 +702,20 @@ class _SignupPopupWidgetState extends State<SignupPopupWidget> {
 
     if (result.docs.isNotEmpty) {
       setState(() {
-        _phoneErrorMessage =
-            'This is a previously authenticated phone number. Please authenticate with a different phone number.';
+        errorMessage =
+            'This phone number is already in use. Please use a different phone number.';
       });
       return;
     }
 
     setState(() {
       showLoading = true;
-      _phoneErrorMessage = null;
-    });
-    setState(() {
-      showLoading = true;
+      errorMessage = null;
     });
 
     await _auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       verificationCompleted: (phoneAuthCredential) async {
-        // 자동 인증 완료 (안드로이드에서만 작동)
         signInWithPhoneAuthCredential(phoneAuthCredential);
       },
       verificationFailed: (verificationFailed) async {
