@@ -182,8 +182,7 @@ class RootScreenState extends State<RootScreen> {
         responseMimeType: "text/plain");
 
     final model = vertexAI.generativeModel(
-      // model: 'gemini-1.5-flash',
-      model: 'gemini-1.5-pro',
+      model: 'gemini-1.5-flash',
       generationConfig: generationConfig,
       systemInstruction: Content.system(community_advisor_instructions),
     );

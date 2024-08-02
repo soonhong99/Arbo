@@ -1,5 +1,6 @@
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/roots/root_screen.dart';
+import 'package:arbo_frontend/roots/vote_supporters_screen.dart';
 import 'package:arbo_frontend/widgets/main_widgets/loading_screen.dart';
 import 'package:arbo_frontend/widgets/search_widgets/search_design_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -310,6 +311,14 @@ class _CustomSliverAppBarState extends State<CustomSliverAppBar> {
           SearchDesignBar(
             screenWidth: screenWidth / 2,
           ),
+          IconButton(
+              icon: const Icon(Icons.how_to_vote), // 투표 아이콘 사용
+              tooltip: 'Vote Your Supporters!',
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => const VoteSupportersScreen(),
+                ));
+              }),
           const Spacer(),
           if (widget.user != null) ...[
             Padding(
