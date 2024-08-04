@@ -51,7 +51,7 @@ class UserDataProvider with ChangeNotifier {
     //myDistrict = loginUserData!['district'];
     locationMessage = '$myCountry $myCity';
     firstLocationTouch = false;
-
+    nowSupporters = loginUserData!['nowSupporters'];
     notifyListeners();
   }
 

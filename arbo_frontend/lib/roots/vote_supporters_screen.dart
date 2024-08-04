@@ -19,10 +19,17 @@ class _VoteSupportersScreenState extends State<VoteSupportersScreen> {
   bool isLoading = true;
   String? userVotedId;
   String? userVotedNickname;
+  bool isMaster = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _initializeData();
   }
 
@@ -39,9 +46,100 @@ class _VoteSupportersScreenState extends State<VoteSupportersScreen> {
         await fetchUserVote();
       }
     }
+    checkIfMaster();
+
     setState(() {
       isLoading = false;
     });
+  }
+
+  checkIfMaster() {
+    if (currentLoginUser != null) {
+      if (nickname == 'master') {
+        setState(() {
+          isMaster = true;
+        });
+      }
+    }
+  }
+
+  Future<void> endVoting() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      // 모든 지역의 투표 데이터 가져오기
+      QuerySnapshot votesSnapshot =
+          await FirebaseFirestore.instance.collection('votes').get();
+
+      // 각 지역별 상위 3명의 서포터즈 ID를 저장할 맵
+      Map<String, List<String>> topSupportersByRegion = {};
+
+      // 각 지역별로 상위 3명의 서포터즈 선정
+      for (var voteDoc in votesSnapshot.docs) {
+        String region = voteDoc.id;
+        Map<String, dynamic> voteData = voteDoc.data() as Map<String, dynamic>;
+
+        // 투표 데이터를 리스트로 변환하고 정렬
+        List<MapEntry<String, dynamic>> sortedVotes = voteData.entries.toList()
+          ..sort((a, b) => (b.value as int).compareTo(a.value as int));
+
+        // 상위 3명의 서포터즈 ID 선택
+        List<String> topSupportersIds =
+            sortedVotes.take(3).map((e) => e.key).toList();
+        topSupportersByRegion[region] = topSupportersIds;
+      }
+
+      // 모든 사용자의 상태 업데이트
+      QuerySnapshot usersSnapshot =
+          await FirebaseFirestore.instance.collection('users').get();
+
+      for (QueryDocumentSnapshot userDoc in usersSnapshot.docs) {
+        String userId = userDoc.id;
+        String userRegion = '${userDoc['country']}-${userDoc['city']}';
+
+        bool isNewSupporter =
+            topSupportersByRegion[userRegion]?.contains(userId) ?? false;
+
+        await userDoc.reference.update({
+          'nowSupporters': isNewSupporter,
+          'receivedCommentsHearts': 0,
+          'receivedPostHearts': 0,
+          'voteUserId': FieldValue.delete(),
+          'voteUserNickname': FieldValue.delete(),
+        });
+      }
+
+      // 모든 투표 데이터 삭제
+      for (var voteDoc in votesSnapshot.docs) {
+        await voteDoc.reference.delete();
+      }
+
+      // 현재 화면의 데이터 새로고침
+      await fetchTopSupporters();
+      await fetchUserVote();
+
+      setState(() {
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text(
+                'Voting has ended and supporters have been selected for all regions.')),
+      );
+    } catch (e) {
+      print('Error in endVoting: $e');
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text(
+                'An error occurred while ending the voting. Please try again.')),
+      );
+    }
   }
 
   Future<void> fetchLocations() async {
@@ -123,7 +221,6 @@ class _VoteSupportersScreenState extends State<VoteSupportersScreen> {
         builder: (BuildContext context) {
           return LoginPopupWidget(
             onLoginSuccess: () {
-              Navigator.of(context).pop();
               voteForSupporter(supporterId, supporterNickname);
             },
           );
@@ -442,6 +539,17 @@ class _VoteSupportersScreenState extends State<VoteSupportersScreen> {
       appBar: AppBar(
         title: const Text('Vote Your Supporters'),
         backgroundColor: Colors.blue,
+        actions: [
+          if (isMaster)
+            ElevatedButton(
+              onPressed: endVoting,
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.red,
+              ),
+              child: const Text('vote 종료!'),
+            ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

@@ -4,6 +4,7 @@ import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:arbo_frontend/design/paint_stroke.dart';
 import 'package:arbo_frontend/roots/main_widget.dart';
 import 'package:arbo_frontend/roots/root_screen.dart';
+import 'package:arbo_frontend/screens/answering_post_screen.dart';
 import 'package:arbo_frontend/screens/specific_comment_widget.dart';
 import 'package:arbo_frontend/screens/edit_post_screen.dart';
 import 'package:arbo_frontend/widgets/login_widgets/login_popup_widget.dart';
@@ -34,7 +35,10 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   final UserDataProvider userDataProvider = UserDataProvider();
   late Future<void> _fetchDataFuture;
   bool deleteInSpecific = false;
-  bool _sortByPopularity = true; // 초기 정렬 기준: 인기순
+  bool _sortByPopularity = true; // 초기 정렬 기준: 인기순;
+  bool isSupporter = false;
+  bool canApprove = false;
+  List<Map<String, dynamic>> answeringPosts = [];
 
   @override
   void setState(fn) {
@@ -56,10 +60,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
             postData['comments'] = postData['comments'] ?? [];
             dataInitialized = true;
           });
-          _incrementViewCount();
-          checkIfUserLiked();
-          _checkIfPostOwner();
-          _sortComments();
+          _initializeData();
         }
       }
     });
@@ -74,14 +75,141 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
       if (args != null) {
         postData = args;
         postData['comments'] = postData['comments'] ?? [];
-        _incrementViewCount();
-        checkIfUserLiked();
-        _checkIfPostOwner();
-        _sortComments();
+        _initializeData();
         dataInitialized = true;
         setState(() {});
       }
     }
+  }
+
+  Future<void> _initializeData() async {
+    await _incrementViewCount();
+    await checkIfUserLiked();
+    await _checkIfPostOwner();
+    await _fetchAnsweringPosts();
+
+    _sortComments();
+    _checkIfCanApprove();
+  }
+
+  Future<void> _fetchAnsweringPosts() async {
+    final answersSnapshot = await FirebaseFirestore.instance
+        .collection('posts')
+        .doc(postData['postId'])
+        .collection('answeringPost')
+        .orderBy('timestamp', descending: true)
+        .get();
+
+    setState(() {
+      answeringPosts = answersSnapshot.docs.map((doc) {
+        final data = doc.data();
+        // imageUrls를 명시적으로 List<String>으로 변환
+        data['imageUrls'] = (data['imageUrls'] as List<dynamic>?)
+                ?.map((url) => url.toString())
+                .toList() ??
+            [];
+        return data;
+      }).toList();
+    });
+  }
+
+  Future<void> _toggleGreatAnswer(
+      String answerPostId, bool isGreatAnswer) async {
+    if (currentLoginUser?.uid != postData['postOwnerId']) return;
+
+    await FirebaseFirestore.instance
+        .collection('posts')
+        .doc(postData['postId'])
+        .collection('answeringPost')
+        .doc(answerPostId)
+        .update({'greatAnswer': isGreatAnswer});
+
+    _fetchAnsweringPosts(); // 데이터 새로고침
+  }
+
+  Widget _buildAnsweringPostWidget(Map<String, dynamic> answerPost) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  answerPost['title'],
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                if (currentLoginUser?.uid == postData['postOwnerId'])
+                  ElevatedButton(
+                    onPressed: () => _toggleGreatAnswer(
+                      answerPost['answeredUserId'],
+                      !answerPost['greatAnswer'],
+                    ),
+                    child: Text(answerPost['greatAnswer']
+                        ? 'Remove Great Answer'
+                        : 'Mark as Great Answer'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+                'By ${answerPost['nickname']} - ${_formatTimestamp(answerPost['timestamp'])}'),
+            const SizedBox(height: 8),
+            Text(answerPost['content']),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8.0,
+              runSpacing: 8.0,
+              children: (answerPost['imageUrls'] as List<dynamic>?)
+                      ?.map((url) => Image.network(url.toString(),
+                          width: 100, height: 100, fit: BoxFit.cover))
+                      .toList() ??
+                  [],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.favorite, color: Colors.red),
+                const SizedBox(width: 4),
+                Text('${answerPost['hearts']}'),
+                const SizedBox(width: 16),
+                const Icon(Icons.comment),
+                const SizedBox(width: 4),
+                Text('${answerPost['comments'].length}'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _checkIfCanApprove() {
+    setState(() {
+      canApprove = nowSupporters &&
+          (postData['hearts'] as int? ?? 0) >= 10 &&
+          (postData['status'] as String? ?? '') == 'pending';
+    });
+  }
+
+  Future<void> _approvePost() async {
+    if (!canApprove) return;
+
+    await FirebaseFirestore.instance
+        .collection('posts')
+        .doc(postData['postId'])
+        .update({'status': 'approved'});
+
+    setState(() {
+      postData['status'] = 'approved';
+      canApprove = false;
+    });
   }
 
   Future<void> _toggleCommentHeart(String commentId) async {
@@ -257,7 +385,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     }
   }
 
-  void checkIfUserLiked() async {
+  Future<void> checkIfUserLiked() async {
     try {
       if (currentLoginUser == null) return;
       if (firstSpecificPostTouch) {
@@ -523,231 +651,261 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
         foregroundColor: Colors.black,
         automaticallyImplyLeading: false,
       ),
-      body: Stack(children: [
-        CustomPaint(
-          painter: PathPainter(userPaintBackGround),
-          size: Size.infinite,
-        ),
-        SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    postData['topic'],
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
-                      color: Colors.red,
+      body: Stack(
+        children: [
+          CustomPaint(
+            painter: PathPainter(userPaintBackGround),
+            size: Size.infinite,
+          ),
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      postData['topic'],
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        color: Colors.red,
+                      ),
                     ),
-                  ),
-                  const Spacer(), // This will push the IconButton to the right
-                  if (_isPostOwner)
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: _navigateToEditPost,
-                    ),
-                  const SizedBox(width: 8.0),
-                  if (_isPostOwner)
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: deletePost,
-                    ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Hero(
-                tag: 'title_${postData['title']}',
-                child: Text(
-                  postData['title'],
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: Colors.black),
-                ),
-              ),
-              const SizedBox(height: 8.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'By ${postData['nickname']} - ${postTime.year}-${postTime.month}-${postTime.day}',
-                    style: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                  Text(
-                    'Views: ${postData['visitedUser']}',
-                    style: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              Center(
-                child: Wrap(
-                  spacing: 10.0,
-                  runSpacing: 10.0,
-                  children: postData['designedPicture']
-                      .map<Widget>((imageUrl) => GestureDetector(
-                            onDoubleTap: () {
-                              _updateHearts();
-                              if (_hasUserLiked == false &&
-                                  currentLoginUser != null) {
-                                animationCompleted = true;
-                              }
-                            },
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Container(
-                                  width: imageSize,
-                                  height: imageSize,
-                                  color: Colors.grey[300], // Placeholder color
-                                  child: Image.network(
-                                    imageUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      print(error);
-                                      return const Icon(
-                                        Icons.error,
-                                        color: Colors.red,
-                                      );
-                                    },
-                                  ),
-                                ),
-                                Opacity(
-                                  opacity: animationCompleted ? 1 : 0,
-                                  child: HeartAnimationWidget(
-                                      isAnimating: animationCompleted,
-                                      duration:
-                                          const Duration(milliseconds: 700),
-                                      onEnd: () => setState(
-                                            () => animationCompleted = false,
-                                          ),
-                                      child: const Icon(
-                                        Icons.favorite,
-                                        color: Colors.red,
-                                        size: 100.0,
-                                      )),
-                                ),
-                              ],
+                    const Spacer(), // This will push the IconButton to the right
+                    if (canApprove)
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.check_circle),
+                        label: const Text('Post approved!'),
+                        onPressed: _approvePost,
+                      ),
+                    if (postData['status'] == 'approved' && nowSupporters)
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.arrow_forward),
+                        label: const Text('Giving your own answer!'),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AnsweringPostScreen(
+                                  postId: postData['postId']),
                             ),
-                          ))
-                      .toList(),
+                          );
+                        },
+                      ),
+                    if (_isPostOwner)
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: _navigateToEditPost,
+                      ),
+                    const SizedBox(width: 8.0),
+                    if (_isPostOwner)
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: deletePost,
+                      ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      _hasUserLiked ? Icons.favorite : Icons.favorite_border,
-                    ),
-                    onPressed: _updateHearts,
-                  ),
-                  const SizedBox(width: 4.0),
-                  Text('${postData['hearts']}'),
-                  const SizedBox(width: 10.0),
-                  const Icon(Icons.comment),
-                  const SizedBox(width: 4.0),
-                  Text('${countTotalComments(comments)}'),
-                ],
-              ),
-              Text(
-                postData['content'],
-                style: const TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.normal,
-                    color: Colors.black),
-              ),
-              const SizedBox(height: 8.0),
-              TextField(
-                controller: _commentController,
-                decoration: InputDecoration(
-                  hintText: 'Please enter your comments.',
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: () =>
-                        _addComment(_commentController.text), // Add this line
+                const SizedBox(height: 20),
+                Hero(
+                  tag: 'title_${postData['title']}',
+                  child: Text(
+                    postData['title'],
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.black),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              if (dataInitialized) ...[
+                const SizedBox(height: 8.0),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    TextButton.icon(
-                      icon: Icon(_areCommentsVisible
-                          ? Icons.visibility_off
-                          : Icons.visibility),
-                      label: Text(_areCommentsVisible
-                          ? 'Hide Comments'
-                          : 'View Comments'),
-                      onPressed: () {
-                        setState(() {
-                          _areCommentsVisible = !_areCommentsVisible;
-                        });
-                      },
+                    Text(
+                      'By ${postData['nickname']} - ${postTime.year}-${postTime.month}-${postTime.day}',
+                      style: const TextStyle(
+                        color: Colors.grey,
+                      ),
                     ),
-                    DropdownButton<bool>(
-                      value: _sortByPopularity,
-                      icon: const Icon(Icons.sort),
-                      underline: Container(),
-                      onChanged: (bool? newValue) {
-                        if (newValue != null) {
-                          setState(() {
-                            _sortByPopularity = newValue;
-                            _sortComments();
-                          });
-                        }
-                      },
-                      items: const [
-                        DropdownMenuItem(
-                          value: true,
-                          child: Text('Popular',
-                              style: TextStyle(color: Colors.blue)),
-                        ),
-                        DropdownMenuItem(
-                          value: false,
-                          child: Text('Recent',
-                              style: TextStyle(color: Colors.blue)),
-                        ),
-                      ],
+                    Text(
+                      'Views: ${postData['visitedUser']}',
+                      style: const TextStyle(
+                        color: Colors.grey,
+                      ),
                     ),
                   ],
                 ),
-              ],
-              if (_areCommentsVisible)
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: postData['comments'].length,
-                  itemBuilder: (context, index) {
-                    final comment = postData['comments'][index];
-                    return CommentWidget(
-                      comment: comment,
-                      onHeartPressed: () =>
-                          _toggleCommentHeart(comment['commentId']),
-                      currentUserId: currentLoginUser?.uid,
-                      onReplyPressed: (commentId) {
-                        if (currentLoginUser == null) {
-                          _showLoginPopup();
-                        } else {
-                          _showReplyDialog(commentId);
-                        }
-                      },
-                    );
-                  },
+                const SizedBox(height: 16.0),
+                Center(
+                  child: Wrap(
+                    spacing: 10.0,
+                    runSpacing: 10.0,
+                    children: postData['designedPicture']
+                        .map<Widget>((imageUrl) => GestureDetector(
+                              onDoubleTap: () {
+                                _updateHearts();
+                                if (_hasUserLiked == false &&
+                                    currentLoginUser != null) {
+                                  animationCompleted = true;
+                                }
+                              },
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Container(
+                                    width: imageSize,
+                                    height: imageSize,
+                                    color:
+                                        Colors.grey[300], // Placeholder color
+                                    child: Image.network(
+                                      imageUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        print(error);
+                                        return const Icon(
+                                          Icons.error,
+                                          color: Colors.red,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  Opacity(
+                                    opacity: animationCompleted ? 1 : 0,
+                                    child: HeartAnimationWidget(
+                                        isAnimating: animationCompleted,
+                                        duration:
+                                            const Duration(milliseconds: 700),
+                                        onEnd: () => setState(
+                                              () => animationCompleted = false,
+                                            ),
+                                        child: const Icon(
+                                          Icons.favorite,
+                                          color: Colors.red,
+                                          size: 100.0,
+                                        )),
+                                  ),
+                                ],
+                              ),
+                            ))
+                        .toList(),
+                  ),
                 ),
-            ],
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        _hasUserLiked ? Icons.favorite : Icons.favorite_border,
+                      ),
+                      onPressed: _updateHearts,
+                    ),
+                    const SizedBox(width: 4.0),
+                    Text('${postData['hearts']}'),
+                    const SizedBox(width: 10.0),
+                    const Icon(Icons.comment),
+                    const SizedBox(width: 4.0),
+                    Text('${countTotalComments(comments)}'),
+                  ],
+                ),
+                Text(
+                  postData['content'],
+                  style: const TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.normal,
+                      color: Colors.black),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  controller: _commentController,
+                  decoration: InputDecoration(
+                    hintText: 'Please enter your comments.',
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.send),
+                      onPressed: () =>
+                          _addComment(_commentController.text), // Add this line
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+                if (dataInitialized) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton.icon(
+                        icon: Icon(_areCommentsVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        label: Text(_areCommentsVisible
+                            ? 'Hide Comments'
+                            : 'View Comments'),
+                        onPressed: () {
+                          setState(() {
+                            _areCommentsVisible = !_areCommentsVisible;
+                          });
+                        },
+                      ),
+                      DropdownButton<bool>(
+                        value: _sortByPopularity,
+                        icon: const Icon(Icons.sort),
+                        underline: Container(),
+                        onChanged: (bool? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _sortByPopularity = newValue;
+                              _sortComments();
+                            });
+                          }
+                        },
+                        items: const [
+                          DropdownMenuItem(
+                            value: true,
+                            child: Text('Popular',
+                                style: TextStyle(color: Colors.blue)),
+                          ),
+                          DropdownMenuItem(
+                            value: false,
+                            child: Text('Recent',
+                                style: TextStyle(color: Colors.blue)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+                if (_areCommentsVisible)
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: postData['comments'].length,
+                    itemBuilder: (context, index) {
+                      final comment = postData['comments'][index];
+                      return CommentWidget(
+                        comment: comment,
+                        onHeartPressed: () =>
+                            _toggleCommentHeart(comment['commentId']),
+                        currentUserId: currentLoginUser?.uid,
+                        onReplyPressed: (commentId) {
+                          if (currentLoginUser == null) {
+                            _showLoginPopup();
+                          } else {
+                            _showReplyDialog(commentId);
+                          }
+                        },
+                      );
+                    },
+                  ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Answers',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                ...answeringPosts.map(_buildAnsweringPostWidget),
+              ],
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
       bottomNavigationBar: BotNaviWidget(
         postData: postData,
         refreshDataCallback: () {},

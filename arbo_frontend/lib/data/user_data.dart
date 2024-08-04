@@ -57,6 +57,8 @@ bool locationWithLogin = false;
 
 List<Map<String, dynamic>> userPlaces = [];
 
+bool nowSupporters = false;
+
 bool isLocationSet() {
   return myCountry.isNotEmpty && myCity.isNotEmpty;
 }

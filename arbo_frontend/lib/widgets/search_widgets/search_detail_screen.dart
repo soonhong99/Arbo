@@ -32,6 +32,7 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
   late Future<void> _fetchDataFuture;
   bool deleteInSpecific = false;
   bool _sortByPopularity = true; // 초기 정렬 기준: 인기순
+  bool canApprove = false;
 
   @override
   void setState(fn) {
@@ -56,6 +57,8 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
                   _checkIfUserLiked();
                   _checkIfPostOwner();
                   _sortComments();
+                  _checkIfCanApprove();
+
                   dataInitialized = true;
                 },
               );
@@ -69,20 +72,6 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // if (!dataInitialized) {
-    //   final args =
-    //       ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    //   if (args != null) {
-    //     postData = args;
-    //     postData['comments'] = postData['comments'] ?? [];
-    //     _incrementViewCount();
-    //     _checkIfUserLiked();
-    //     _checkIfPostOwner();
-    //     _sortComments();
-    //     dataInitialized = true;
-    //     setState(() {});
-    //   }
-    // }
     if (!dataInitialized) {
       _fetchPostDetails().then(
         (data) {
@@ -94,12 +83,36 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
               _checkIfUserLiked();
               _checkIfPostOwner();
               _sortComments();
+              _checkIfCanApprove();
+
               dataInitialized = true;
             },
           );
         },
       );
     }
+  }
+
+  void _checkIfCanApprove() {
+    setState(() {
+      canApprove = nowSupporters &&
+          (postData['hearts'] as int? ?? 0) >= 10 &&
+          (postData['status'] as String? ?? '') == 'pending';
+    });
+  }
+
+  Future<void> _approvePost() async {
+    if (!canApprove) return;
+
+    await FirebaseFirestore.instance
+        .collection('posts')
+        .doc(postData['postId'])
+        .update({'status': 'approved'});
+
+    setState(() {
+      postData['status'] = 'approved';
+      canApprove = false;
+    });
   }
 
   Future<void> _toggleCommentHeart(String commentId) async {
@@ -554,6 +567,20 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
                     ),
                   ),
                   const Spacer(), // This will push the IconButton to the right
+                  if (canApprove)
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.check_circle),
+                      label: const Text('Post approved!'),
+                      onPressed: _approvePost,
+                    ),
+                  if (postData['status'] == 'approved')
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.arrow_forward),
+                      label: const Text('What we are putting into action'),
+                      onPressed: () {
+                        // TODO: Implement action for this button
+                      },
+                    ),
                   if (_isPostOwner)
                     IconButton(
                       icon: const Icon(Icons.edit),
