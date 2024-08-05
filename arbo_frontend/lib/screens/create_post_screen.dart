@@ -131,7 +131,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             'country': loginUserData!['country'],
             'city': loginUserData!['city'],
             //'district': loginUserData!['district'],
-            'status': 'pending'
+            'status': 'pending',
+            'answeringPosts': 0,
           });
 
           setState(() {

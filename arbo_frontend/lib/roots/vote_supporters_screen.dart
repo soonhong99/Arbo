@@ -168,16 +168,19 @@ class _VoteSupportersScreenState extends State<VoteSupportersScreen> {
         .where('country', isEqualTo: selectedCountry)
         .get();
 
-    final supporters = snapshot.docs.map((doc) {
-      final data = doc.data();
-      final totalHearts = (data['receivedCommentsHearts'] ?? 0) +
-          (data['receivedPostHearts'] ?? 0);
-      return {
-        'id': doc.id,
-        '닉네임': data['닉네임'],
-        'totalHearts': totalHearts,
-      };
-    }).toList();
+    final supporters = snapshot.docs
+        .map((doc) {
+          final data = doc.data();
+          final totalHearts = (data['receivedCommentsHearts'] ?? 0) +
+              (data['receivedPostHearts'] ?? 0);
+          return {
+            'id': doc.id,
+            '닉네임': data['닉네임'],
+            'totalHearts': totalHearts,
+          };
+        })
+        .where((supporter) => supporter['totalHearts'] > 0)
+        .toList();
 
     supporters.sort((a, b) => b['totalHearts'].compareTo(a['totalHearts']));
 
@@ -294,12 +297,34 @@ class _VoteSupportersScreenState extends State<VoteSupportersScreen> {
   }
 
   Widget _buildSupportersTitle() {
-    return Text(
-      'Top Supporters in $selectedCity, $selectedCountry',
-      style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Colors.blue[800],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Top Supporters in $selectedCity, $selectedCountry',
+          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.blue[800],
+              ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.blue[300]!),
           ),
+          child: const Text(
+            'The top 5 users in this region with at least 1 heart from comments or posts are competing here! Please cast your valuable vote!',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.blue,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

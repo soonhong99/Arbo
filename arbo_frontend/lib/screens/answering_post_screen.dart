@@ -55,7 +55,7 @@ class _AnsweringPostScreenState extends State<AnsweringPostScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       try {
-        await FirebaseFirestore.instance
+        final docRef = await FirebaseFirestore.instance
             .collection('posts')
             .doc(widget.postId)
             .collection('answeringPost')
@@ -70,6 +70,18 @@ class _AnsweringPostScreenState extends State<AnsweringPostScreen> {
           'comments': _comments,
           'hearts': _hearts,
         });
+
+        DocumentReference postRef =
+            firestore_instance.collection('posts').doc(widget.postId);
+
+        try {
+          // Update the 'answeringPosts' field by incrementing it by 1
+          await postRef.update({'answeringPosts': FieldValue.increment(1)});
+          print('answeringPosts count incremented successfully.');
+          await docRef.update({'docId': docRef.id});
+        } catch (e) {
+          print('Error updating answeringPosts: $e');
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

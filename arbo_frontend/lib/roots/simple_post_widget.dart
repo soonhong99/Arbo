@@ -29,6 +29,8 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
         return 'Approved';
       case 'rejected':
         return 'Rejected';
+      case 'clear':
+        return 'Paint Done!';
       default:
         return 'None';
     }
@@ -41,6 +43,8 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
       case 'approved':
         return 1.0;
       case 'rejected':
+        return 1.0;
+      case 'clear':
         return 1.0;
       default:
         return 0.0;
@@ -55,6 +59,8 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
         return Colors.green;
       case 'rejected':
         return Colors.red;
+      case 'clear':
+        return Colors.blue;
       default:
         return Colors.grey;
     }
@@ -103,12 +109,17 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 2,
-              blurRadius: 5,
+              color: specificAllPostData['status'] == 'clear'
+                  ? Colors.blue.withOpacity(0.5)
+                  : Colors.grey.withOpacity(0.3),
+              spreadRadius: specificAllPostData['status'] == 'clear' ? 3 : 2,
+              blurRadius: specificAllPostData['status'] == 'clear' ? 7 : 5,
               offset: const Offset(0, 3),
             ),
           ],
+          border: specificAllPostData['status'] == 'clear'
+              ? Border.all(color: Colors.blue, width: 2)
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,6 +200,35 @@ class _SimplePostWidgetState extends State<SimplePostWidget> {
               valueColor: AlwaysStoppedAnimation<Color>(
                   _getStatusColor(specificAllPostData['status'])),
             ),
+            if (specificAllPostData['status'] == 'clear' &&
+                (specificAllPostData['answeringPosts'] ?? 0) > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 12.0),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.green[100],
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.green),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.question_answer,
+                          color: Colors.green, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'This post has ${specificAllPostData['answeringPosts']} answering posts!',
+                        style: TextStyle(
+                          color: Colors.green[800],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(8),

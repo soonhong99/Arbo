@@ -280,36 +280,6 @@ class MainWidgetState extends State<MainWidget> {
     );
   }
 
-  // ListView _buildPostList(double screenWidth, double horizontalPadding) {
-  //   List<DocumentSnapshot> filteredPosts = _filteredPosts();
-  //   return ListView.separated(
-  //     scrollDirection: Axis.vertical,
-  //     separatorBuilder: (context, index) => const SizedBox(
-  //       height: 10,
-  //     ),
-  //     itemCount: filteredPosts.length,
-  //     itemBuilder: (context, index) {
-  //       var post = filteredPosts[index];
-
-  //       userDataProvider.makeAllDataLocal(post);
-
-  //       return Padding(
-  //         padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-  //         child: Column(
-  //           children: [
-  //             SimplePostWidget(
-  //               postId: post.id,
-  //             ),
-  //             const SizedBox(
-  //               height: 10,
-  //             ),
-  //           ],
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
-
   Widget _buildPostList(double screenWidth, double horizontalPadding) {
     List<DocumentSnapshot> filteredPosts = _filteredPosts();
     int startIndex = (currentPage - 1) * postsPerPage;
@@ -324,8 +294,12 @@ class MainWidgetState extends State<MainWidget> {
       controller: _scrollController,
       scrollDirection: Axis.vertical,
       separatorBuilder: (context, index) => const SizedBox(height: 10),
-      itemCount: currentPagePosts.length,
+      itemCount: currentPagePosts.length + 1,
       itemBuilder: (context, index) {
+        if (index == currentPagePosts.length) {
+          // 마지막 아이템 다음에 추가 공간
+          return const SizedBox(height: 60); // 페이지 버튼과의 간격
+        }
         var post = currentPagePosts[index];
         userDataProvider.makeAllDataLocal(post);
 

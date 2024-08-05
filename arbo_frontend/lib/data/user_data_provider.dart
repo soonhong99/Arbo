@@ -23,7 +23,7 @@ class UserDataProvider with ChangeNotifier {
       'status': allDataSnapshot['status'],
       'country': allDataSnapshot['country'],
       'city': allDataSnapshot['city'],
-      //'district': allDataSnapshot['district'],
+      'answeringPosts': allDataSnapshot['answeringPosts'],
     };
   }
 

@@ -39,6 +39,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   bool isSupporter = false;
   bool canApprove = false;
   List<Map<String, dynamic>> answeringPosts = [];
+  final Map<String, bool> _answerCommentsVisibility = {};
 
   @override
   void setState(fn) {
@@ -103,91 +104,417 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
     setState(() {
       answeringPosts = answersSnapshot.docs.map((doc) {
         final data = doc.data();
-        // imageUrls를 명시적으로 List<String>으로 변환
         data['imageUrls'] = (data['imageUrls'] as List<dynamic>?)
                 ?.map((url) => url.toString())
                 .toList() ??
             [];
+        data['docId'] = doc.id; // 문서 ID 저장
         return data;
       }).toList();
     });
   }
 
-  Future<void> _toggleGreatAnswer(
-      String answerPostId, bool isGreatAnswer) async {
-    if (currentLoginUser?.uid != postData['postOwnerId']) return;
+  Future<void> _toggleGreatAnswer(String docId, bool isGreatAnswer) async {
+    if (!_isPostOwner) return;
 
-    await FirebaseFirestore.instance
-        .collection('posts')
-        .doc(postData['postId'])
-        .collection('answeringPost')
-        .doc(answerPostId)
-        .update({'greatAnswer': isGreatAnswer});
+    try {
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(postData['postId'])
+          .collection('answeringPost')
+          .doc(docId)
+          .update({'greatAnswer': isGreatAnswer});
 
-    _fetchAnsweringPosts(); // 데이터 새로고침
+      // UI 업데이트
+      setState(() {
+        final answerIndex =
+            answeringPosts.indexWhere((post) => post['docId'] == docId);
+        if (answerIndex != -1) {
+          answeringPosts[answerIndex]['greatAnswer'] = isGreatAnswer;
+        }
+      });
+
+      if (isGreatAnswer) {
+        await FirebaseFirestore.instance
+            .collection('posts')
+            .doc(postData['postId'])
+            .update({'status': 'clear'});
+
+        // 로컬 상태 업데이트
+        setState(() {
+          postData['status'] = 'clear';
+        });
+
+        // 사용자에게 알림
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('This post has been marked as clear!')),
+        );
+      }
+    } catch (e) {
+      print('Error toggling great answer: $e');
+    }
   }
 
   Widget _buildAnsweringPostWidget(Map<String, dynamic> answerPost) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  answerPost['title'],
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+    String answerId = answerPost['docId'];
+    bool areCommentsVisible = _answerCommentsVisibility[answerId] ?? false;
+    final TextEditingController commentController = TextEditingController();
+
+    return StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) {
+      return AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        decoration: BoxDecoration(
+          border: answerPost['greatAnswer'] == true
+              ? Border.all(
+                  color: Colors.green,
+                  width: 3,
+                )
+              : null,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: answerPost['greatAnswer'] == true
+              ? [
+                  BoxShadow(
+                    color: Colors.green.withOpacity(0.5),
+                    spreadRadius: 2,
+                    blurRadius: 7,
+                    offset: const Offset(0, 3),
                   ),
-                ),
-                if (currentLoginUser?.uid == postData['postOwnerId'])
-                  ElevatedButton(
-                    onPressed: () => _toggleGreatAnswer(
-                      answerPost['answeredUserId'],
-                      !answerPost['greatAnswer'],
+                ]
+              : null,
+        ),
+        child: Card(
+          margin: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (answerPost['greatAnswer'] == true)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Text(
+                      "${postData['nickname']} choose this answer is great!!",
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
-                    child: Text(answerPost['greatAnswer']
-                        ? 'Remove Great Answer'
-                        : 'Mark as Great Answer'),
                   ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        answerPost['title'],
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
+                    if (currentLoginUser?.uid == postData['postOwnerId'])
+                      ElevatedButton.icon(
+                        onPressed: () => _toggleGreatAnswer(
+                          answerPost['docId'],
+                          !answerPost['greatAnswer'],
+                        ),
+                        icon: Icon(answerPost['greatAnswer']
+                            ? Icons.star
+                            : Icons.star_border),
+                        label: Text(answerPost['greatAnswer']
+                            ? 'Great Answer'
+                            : 'Mark as Great'),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Divider(),
+                const Text(
+                  'Content:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                Text(
+                  answerPost['content'],
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: (answerPost['imageUrls'] as List<dynamic>?)
+                          ?.map((url) => Image.network(url.toString(),
+                              width: 100, height: 100, fit: BoxFit.cover))
+                          .toList() ??
+                      [],
+                ),
+                const SizedBox(height: 8),
+                const Divider(),
+                Row(
+                  children: [
+                    const Icon(Icons.person, size: 16),
+                    Text(' ${answerPost['nickname']}'),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.access_time, size: 16),
+                    Text(' ${_formatTimestamp(answerPost['timestamp'])}'),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        answerPost['likedBy']
+                                    ?.contains(currentLoginUser?.uid) ??
+                                false
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: Colors.red,
+                      ),
+                      onPressed: () => _toggleAnswerHeart(answerPost['docId']),
+                    ),
+                    Text('${answerPost['hearts'] ?? 0}'),
+                    const SizedBox(width: 16),
+                    TextButton.icon(
+                      icon: Icon(
+                        areCommentsVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.blue, // 아이콘 색상 설정 (선택사항)
+                      ),
+                      label: Text(
+                        areCommentsVisible ? 'Hide Comments' : 'View Comments',
+                        style: const TextStyle(
+                            color: Colors.blue), // 텍스트 색상 설정 (선택사항)
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          areCommentsVisible = !areCommentsVisible;
+                        });
+                      },
+                    ),
+                    Text(
+                      '${(answerPost['comments'] as List?)?.length ?? 0} comment in this answer',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                if (areCommentsVisible) ...[
+                  const Divider(),
+                  TextField(
+                    controller: commentController,
+                    decoration: InputDecoration(
+                      hintText: 'Please enter your comments.',
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.send),
+                        onPressed: () {
+                          if (currentLoginUser == null) {
+                            _showLoginPopup();
+                            return;
+                          }
+                          _addAnswerComment(
+                              answerPost['docId'], commentController.text);
+                          commentController.clear();
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...(answerPost['comments'] as List? ?? [])
+                      .map((comment) => comment as Map<String, dynamic>)
+                      .toList()
+                      .reversed
+                      .map((comment) => Padding(
+                            padding: const EdgeInsets.only(
+                                bottom: 12.0), // 댓글 사이 간격 추가
+                            child: Card(
+                              elevation: 2, // 그림자 효과 추가
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.person,
+                                            size: 18,
+                                            color: Colors.blue), // 사용자 아이콘
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${comment['nickname']}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        Icon(Icons.access_time,
+                                            size: 16,
+                                            color: Colors.grey[600]), // 시간 아이콘
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _formatTimestamp(
+                                              comment['timestamp']),
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.chat_bubble_outline,
+                                            size: 18,
+                                            color: Colors.green), // 댓글 내용 아이콘
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            comment['text'],
+                                            style:
+                                                const TextStyle(fontSize: 15),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ))
+                ],
+                const Divider(),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.support_agent, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text(
+                      'Supporter Answer',
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-                'By ${answerPost['nickname']} - ${_formatTimestamp(answerPost['timestamp'])}'),
-            const SizedBox(height: 8),
-            Text(answerPost['content']),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8.0,
-              runSpacing: 8.0,
-              children: (answerPost['imageUrls'] as List<dynamic>?)
-                      ?.map((url) => Image.network(url.toString(),
-                          width: 100, height: 100, fit: BoxFit.cover))
-                      .toList() ??
-                  [],
+          ),
+        ),
+      );
+    });
+  }
+
+  Future<void> _toggleAnswerHeart(String answerPostId) async {
+    if (currentLoginUser == null) {
+      _showLoginPopup();
+      return;
+    }
+
+    final answerRef = FirebaseFirestore.instance
+        .collection('posts')
+        .doc(postData['postId'])
+        .collection('answeringPost')
+        .doc(answerPostId);
+
+    final answerDoc = await answerRef.get();
+    final answerData = answerDoc.data() as Map<String, dynamic>;
+
+    final List<String> likedBy = List<String>.from(answerData['likedBy'] ?? []);
+    final bool isLiked = likedBy.contains(currentLoginUser!.uid);
+
+    if (isLiked) {
+      likedBy.remove(currentLoginUser!.uid);
+      await answerRef.update({
+        'hearts': FieldValue.increment(-1),
+        'likedBy': likedBy,
+      });
+    } else {
+      likedBy.add(currentLoginUser!.uid);
+      await answerRef.update({
+        'hearts': FieldValue.increment(1),
+        'likedBy': likedBy,
+      });
+    }
+
+    _fetchAnsweringPosts(); // Refresh the data
+  }
+
+  void _showAnswerCommentDialog(String docId) {
+    if (currentLoginUser == null) {
+      _showLoginPopup();
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        TextEditingController commentController = TextEditingController();
+        return AlertDialog(
+          title: const Text('Add Comment'),
+          content: TextField(
+            controller: commentController,
+            decoration: const InputDecoration(hintText: 'Enter your comment'),
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.favorite, color: Colors.red),
-                const SizedBox(width: 4),
-                Text('${answerPost['hearts']}'),
-                const SizedBox(width: 16),
-                const Icon(Icons.comment),
-                const SizedBox(width: 4),
-                Text('${answerPost['comments'].length}'),
-              ],
+            TextButton(
+              child: const Text('Submit'),
+              onPressed: () {
+                _addAnswerComment(docId, commentController.text);
+                Navigator.of(context).pop();
+              },
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
+  }
+
+  Future<void> _addAnswerComment(String docId, String commentText) async {
+    if (commentText.isEmpty) return;
+
+    final comment = {
+      'userId': currentLoginUser!.uid,
+      'nickname': nickname,
+      'text': commentText,
+      'timestamp': Timestamp.now(),
+    };
+    try {
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(postData['postId'])
+          .collection('answeringPost')
+          .doc(docId)
+          .update({
+        'comments': FieldValue.arrayUnion([comment]),
+      });
+
+      // 댓글 추가 후 상태 업데이트
+      setState(() {
+        _answerCommentsVisibility[docId] = true; // 댓글 가시성 상태 유지
+      });
+
+      // 새 댓글을 해당 답변 포스트의 댓글 목록 시작 부분에 추가
+      final answerIndex =
+          answeringPosts.indexWhere((post) => post['docId'] == docId);
+      if (answerIndex != -1) {
+        answeringPosts[answerIndex]['comments'] = [
+          comment,
+          ...?answeringPosts[answerIndex]['comments']
+        ];
+      }
+    } catch (e) {
+      print('answering comment error: $e');
+    }
+
+    await _fetchAnsweringPosts(); // Refresh the data
   }
 
   void _checkIfCanApprove() {
@@ -860,12 +1187,12 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                         items: const [
                           DropdownMenuItem(
                             value: true,
-                            child: Text('Popular',
+                            child: Text('Comments Popular',
                                 style: TextStyle(color: Colors.blue)),
                           ),
                           DropdownMenuItem(
                             value: false,
-                            child: Text('Recent',
+                            child: Text('Comments Recent',
                                 style: TextStyle(color: Colors.blue)),
                           ),
                         ],
@@ -896,11 +1223,12 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                     },
                   ),
                 const SizedBox(height: 24),
-                const Text(
-                  'Answers',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                ...answeringPosts.map(_buildAnsweringPostWidget),
+                ...answeringPosts.map((post) => Column(
+                      children: [
+                        _buildAnsweringPostWidget(post),
+                        const SizedBox(height: 30), // 각 답변 포스트 사이에 간격 추가
+                      ],
+                    )),
               ],
             ),
           ),
