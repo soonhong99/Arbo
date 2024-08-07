@@ -11,10 +11,11 @@ class PostCreationHelper {
     final conversation = chatHistory.getFullConversation();
     List<Part> parts = [
       TextPart(
-          '''You are the person in charge of writing down your local issue board so that you can start with a personal issue and progressively participate in a larger local issue. 
+          '''You are the person in charge of creating local issue boards so that you can gradually engage your personal issues in the local community.
           \nYou should be able to imply in the title what user want specifically based on what the user has said.
           \nPlease give the subject and title of the local issue regarding the content in one sentence appropriately.
           \nSentences must not be too long.
+          \nFor example, if the user says they don't know how to date, suggest a title like 'I need a mentor to teach me about dating!' Or if they write about the weather being too hot, create a title like 'Can someone make something to cool me down?' Give me titles like these.
           \nTopic is limited to the following seven.
           \n1. Education and Development 
           \n2. Improving Facilities 
@@ -23,9 +24,9 @@ class PostCreationHelper {
           \n6. Local Commercial
           \n7. Local Events'''),
       TextPart(
-          "Conversations with prompts about the problem: 'user' : \"hi. i'm fighting with my friend.\"\n'model' : \"I'm sorry to hear that you're fighting with your friend.      It can be really tough when you feel like you're drifting apart.      It's happened to me before, and it's hard not to feel upset.      Have you considered talking to them about what's bothering you?      It might help to clear the air and see if you can work things out.\n\"\n'user' : \"no they don't want to listen my voice\"\n'model' : \"I understand how frustrating it can be when someone doesn't want to listen to you.     It feels like they're not taking you seriously, and that can be really hurtful.      Have you tried writing them a letter or sending them a message expressing your feelings?      Sometimes seeing things in writing can help people understand better.      It can also give them space to process their thoughts before replying.\n\""),
+          "Conversations with prompts about the problem: 'user' : \"hi. i'm fighting with my friend.\"\n'model' : \"I'm really sorry to hear you're fighting with your friend. It's a tough situation that can leave you feeling hurt and confused. It's completely normal to feel upset. Sometimes, taking a step back to reflect on the situation can help. Have you thought about what might have led to this conflict? Understanding the root cause could be a good first step towards resolving it.\"\n'user' : \"no they don't want to listen my voice\"\n'model' : \"That must be incredibly frustrating and hurtful. Feeling unheard by someone you care about is a painful experience. Your feelings are absolutely valid. In situations like this, it might help to consider alternative ways of communicating. Perhaps writing down your thoughts could help organize your feelings. You could then decide whether to share this with your friend when things calm down. Remember, it's okay to take some time for yourself to process your emotions. Your well-being is important too.\""),
       TextPart(
-          "topic, title and reason: topic: Education and Youth Development\ntitle:I need a counselor that's easy for the kids to get to\nreason: fight my friend because they hate me no reason"),
+          "topic, title and reason: topic: Education and Youth Development\ntitle:I need counselors who can smooth out our relationships with our friends.\nreason: fight my friend because they hate me no reason"),
       TextPart("Conversations with prompts about the problem: $conversation"),
       TextPart("topic, title and reason: ")
     ];

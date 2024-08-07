@@ -170,8 +170,8 @@ class _CustomSliverAppBarState extends State<CustomSliverAppBar> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         ListTile(
-                                          title:
-                                              Text('$postTitle에 대한 알림이 왔습니다!'),
+                                          title: Text(
+                                              'You have a notification for $postTitle!'),
                                           trailing: IconButton(
                                             icon: Icon(
                                                 _expandedStates[postId] ?? false
@@ -195,8 +195,8 @@ class _CustomSliverAppBarState extends State<CustomSliverAppBar> {
                                                     title: Text(alert[
                                                                 'comment'] !=
                                                             null
-                                                        ? '${alert['nickname'] ?? 'Unknown'}님이 댓글을 달았습니다: ${alert['comment']}'
-                                                        : '${alert['nickname'] ?? 'Unknown'}님이 좋아요를 눌렀습니다'),
+                                                        ? '${alert['nickname'] ?? 'Unknown'} commented: ${alert['comment']}'
+                                                        : '${alert['nickname'] ?? 'Unknown'} liked your post'),
                                                     subtitle: Text(DateTime.parse(alert[
                                                                 'commentTimestamp'] ??
                                                             alert[
@@ -207,7 +207,7 @@ class _CustomSliverAppBarState extends State<CustomSliverAppBar> {
                                                         .toString()),
                                                   )),
                                         ElevatedButton(
-                                          child: const Text('해당 게시글로 이동하기!'),
+                                          child: const Text('Go to the post!'),
                                           onPressed: () async {
                                             // 알림 삭제 로직
                                             await _deleteAlerts(postId);

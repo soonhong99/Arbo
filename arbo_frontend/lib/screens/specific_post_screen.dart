@@ -2,7 +2,6 @@ import 'package:arbo_frontend/data/history_data.dart';
 import 'package:arbo_frontend/data/user_data.dart';
 import 'package:arbo_frontend/data/user_data_provider.dart';
 import 'package:arbo_frontend/design/paint_stroke.dart';
-import 'package:arbo_frontend/roots/main_widget.dart';
 import 'package:arbo_frontend/roots/root_screen.dart';
 import 'package:arbo_frontend/screens/answering_post_screen.dart';
 import 'package:arbo_frontend/screens/specific_comment_widget.dart';
@@ -31,9 +30,7 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   bool dataInitialized = false;
   bool _areCommentsVisible = false;
   bool animationCompleted = false;
-  final Map<String, bool> _commentToggleState = {};
   final UserDataProvider userDataProvider = UserDataProvider();
-  late Future<void> _fetchDataFuture;
   bool deleteInSpecific = false;
   bool _sortByPopularity = true; // 초기 정렬 기준: 인기순;
   bool isSupporter = false;

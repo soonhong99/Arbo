@@ -212,7 +212,7 @@ class _PromptDialogState extends State<PromptDialog> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text("키워드를 추출하는 중..."),
+              Text("Extracting keywords..."),
             ],
           ),
         );
@@ -240,11 +240,12 @@ class _PromptDialogState extends State<PromptDialog> {
       builder: (BuildContext context) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: const Text('추출된 키워드'),
+            title: const Text('Extracted Keywords'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('검색에 사용할 키워드를 선택해주세요. (중복 선택 가능)'),
+                const Text(
+                    'Please select keywords to use for search. (Multiple selection allowed)'),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
@@ -271,12 +272,12 @@ class _PromptDialogState extends State<PromptDialog> {
                       .toList(),
                 ),
                 const SizedBox(height: 20),
-                Text('선택된 키워드: ${selectedKeywords.join(", ")}'),
+                Text('Selected keywords: ${selectedKeywords.join(", ")}'),
               ],
             ),
             actions: [
               TextButton(
-                child: const Text('취소'),
+                child: const Text('Cancel'),
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
@@ -288,7 +289,7 @@ class _PromptDialogState extends State<PromptDialog> {
                         _searchWithKeywords(selectedKeywords, suggestions);
                       }
                     : null,
-                child: const Text('검색하기'),
+                child: const Text('Search'),
               ),
             ],
           );
@@ -309,7 +310,7 @@ class _PromptDialogState extends State<PromptDialog> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text("유사한 게시물을 검색 중..."),
+              Text("Searching for similar posts..."),
             ],
           ),
         );
@@ -349,7 +350,7 @@ class _PromptDialogState extends State<PromptDialog> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('No Similar Boards'),
-          content: const Text('아이쿠! 해당 내용으로된 게시물이 없네요!'),
+          content: const Text('Oops! There are no pain\'ts with this content!'),
           actions: [
             TextButton(
               onPressed: () {
@@ -357,13 +358,13 @@ class _PromptDialogState extends State<PromptDialog> {
                 // 여기에 새 게시물 작성 로직 추가
                 _createNewPost(suggestions);
               },
-              child: const Text('새로운 게시물 만들기'),
+              child: const Text('Create a new pain\'t!'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('취소'),
+              child: const Text('Cancel'),
             ),
           ],
         );
@@ -376,21 +377,22 @@ class _PromptDialogState extends State<PromptDialog> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('키워드 없음'),
-          content: const Text('추출된 키워드가 없습니다. 새로운 게시물을 작성하시겠습니까?'),
+          title: const Text('No Keywords'),
+          content: const Text(
+              'No keywords were extracted. Would you like to create a new post?'),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 _createNewPost(suggestions);
               },
-              child: const Text('새로운 게시물 만들기'),
+              child: const Text('Create a new post'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('취소'),
+              child: const Text('Cancel'),
             ),
           ],
         );
@@ -422,13 +424,13 @@ class _PromptDialogState extends State<PromptDialog> {
                 Navigator.of(context).pop();
                 _createNewPost(suggestions);
               },
-              child: const Text('새로운 게시물 만들기'),
+              child: const Text('Create New Pain\'t!'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('취소'),
+              child: const Text('Cancel'),
             ),
           ],
         );
@@ -459,14 +461,14 @@ class _PromptDialogState extends State<PromptDialog> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('이미 참여 중'),
-              content: const Text('해당 게시물에 이미 하트를 누르셨네요!'),
+              title: const Text('Already Participating'),
+              content: const Text('You have already liked this post!'),
               actions: [
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: const Text('확인'),
+                  child: const Text('OK'),
                 ),
               ],
             );
@@ -487,8 +489,9 @@ class _PromptDialogState extends State<PromptDialog> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('참여 완료'),
-              content: const Text('해당 게시물에 하트를 누르고, 참여가 완료되었습니다!'),
+              title: const Text('Joined Successfully'),
+              content: const Text(
+                  'You have liked the pain\'t and joined successfully!'),
               actions: [
                 TextButton(
                   onPressed: () {
@@ -500,7 +503,7 @@ class _PromptDialogState extends State<PromptDialog> {
                       builder: (_) => SearchDetailScreen(postId: boardId),
                     ));
                   },
-                  child: const Text('확인'),
+                  child: const Text('OK'),
                 ),
               ],
             );

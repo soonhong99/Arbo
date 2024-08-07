@@ -5,7 +5,6 @@ import 'package:arbo_frontend/roots/simple_post_widget.dart';
 import 'package:arbo_frontend/widgets/main_widgets/bot_navi_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class MainWidget extends StatefulWidget {
   const MainWidget({
