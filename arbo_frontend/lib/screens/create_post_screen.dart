@@ -23,6 +23,7 @@ Future<String> createNewPost(String title, String content, String topic) async {
       'status': 'pending',
       'country': myCountry,
       'city': myCity,
+      'answeringPosts': 0,
       //'district': myDistrict,
     });
     print('Post created successfully');
