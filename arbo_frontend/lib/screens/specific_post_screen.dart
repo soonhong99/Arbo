@@ -962,7 +962,6 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
   @override
   Widget build(BuildContext context) {
     final comments = postData['comments'] ?? [];
-
     DateTime postTime = (postData['timestamp'] as Timestamp).toDate();
     final screenWidth = MediaQuery.of(context).size.width;
     final imageSize = screenWidth * 0.7; // 70% of the screen width
@@ -1030,14 +1029,14 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                       ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 30),
                 Hero(
                   tag: 'title_${postData['title']}',
                   child: Text(
                     postData['title'],
                     style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                        fontSize: 28,
                         color: Colors.black),
                   ),
                 ),
@@ -1132,12 +1131,47 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                     Text('${countTotalComments(comments)}'),
                   ],
                 ),
-                Text(
-                  postData['content'],
-                  style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.black),
+                // Text(
+                //   postData['content'],
+                //   style: const TextStyle(
+                //       fontSize: 22,
+                //       fontWeight: FontWeight.normal,
+                //       color: Colors.black),
+                // ),
+                Card(
+                  elevation: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 10),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.article, color: Colors.blue, size: 28),
+                            SizedBox(width: 8),
+                            Text(
+                              'Content',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          postData['content'],
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 8.0),
                 TextField(
