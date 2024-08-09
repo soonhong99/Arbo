@@ -1006,14 +1006,19 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
                     ElevatedButton.icon(
                       icon: const Icon(Icons.arrow_forward),
                       label: const Text('Giving your own answer!'),
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        final result = Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
                                 AnsweringPostScreen(postId: widget.postId),
                           ),
                         );
+                        if (result == true) {
+                          // 새 답변이 추가되었으므로 데이터를 새로고침합니다.
+                          await _fetchAnsweringPosts();
+                          setState(() {});
+                        }
                       },
                     ),
                   if (_isPostOwner)
@@ -1029,14 +1034,14 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
                     ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
               Hero(
                 tag: 'title_${postData['title']}',
                 child: Text(
                   postData['title'],
                   style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                      fontSize: 28,
                       color: Colors.black),
                 ),
               ),
@@ -1129,12 +1134,40 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
                   Text('${countTotalComments(comments)}'),
                 ],
               ),
-              Text(
-                postData['content'],
-                style: const TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.normal,
-                    color: Colors.black),
+              Card(
+                elevation: 4,
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.article, color: Colors.blue, size: 28),
+                          SizedBox(width: 8),
+                          Text(
+                            'Content',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        postData['content'],
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 8.0),
               TextField(

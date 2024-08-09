@@ -88,7 +88,7 @@ class _AnsweringPostScreenState extends State<AnsweringPostScreen> {
               content: Text('Answering post uploaded successfully!')),
         );
 
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       } catch (e) {
         print('Error saving answering post: $e');
         ScaffoldMessenger.of(context).showSnackBar(

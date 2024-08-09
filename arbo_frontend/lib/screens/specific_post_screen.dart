@@ -1006,14 +1006,19 @@ class SpecificPostScreenState extends State<SpecificPostScreen> {
                       ElevatedButton.icon(
                         icon: const Icon(Icons.arrow_forward),
                         label: const Text('Giving your own answer!'),
-                        onPressed: () {
-                          Navigator.push(
+                        onPressed: () async {
+                          final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => AnsweringPostScreen(
                                   postId: postData['postId']),
                             ),
                           );
+                          if (result == true) {
+                            // 새 답변이 추가되었으므로 데이터를 새로고침합니다.
+                            await _fetchAnsweringPosts();
+                            setState(() {});
+                          }
                         },
                       ),
                     if (_isPostOwner)
